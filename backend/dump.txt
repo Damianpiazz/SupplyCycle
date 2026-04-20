@@ -1,0 +1,278 @@
+
+===============================
+assets/
+-------------------------------
+[empty directory]
+
+===============================
+scripts/
+-------------------------------
+[empty directory]
+
+===============================
+src/config/
+-------------------------------
+[empty directory]
+
+===============================
+src/constants/
+-------------------------------
+[empty directory]
+
+===============================
+src/features/
+-------------------------------
+[empty directory]
+
+===============================
+src/lib/
+-------------------------------
+[empty directory]
+
+===============================
+src/middleware/
+-------------------------------
+[empty directory]
+
+===============================
+src/utils/
+-------------------------------
+[empty directory]
+
+===============================
+.prettierrc.json
+-------------------------------
+{
+  "printWidth": 100,
+  "semi": true,
+  "singleQuote": true,
+  "trailingComma": "all",
+  "tabWidth": 2,
+  "endOfLine": "lf",
+  "arrowParens": "avoid",
+  "jsxSingleQuote": false,
+  "jsxBracketSameLine": false,
+  "proseWrap": "always",
+  "quoteProps": "as-needed",
+  "bracketSpacing": true,
+  "insertPragma": false,
+  "requirePragma": false,
+  "embeddedLanguageFormatting": "auto",
+  "overrides": [
+    {
+      "files": "*.json",
+      "options": {
+        "tabWidth": 2
+      }
+    },
+    {
+      "files": ["*.prisma"],
+      "options": {
+        "tabWidth": 2
+      }
+    }
+  ]
+}
+
+===============================
+eslint.config.js
+-------------------------------
+import eslintPluginNode from 'eslint-plugin-node';
+import eslintPluginPrettier from 'eslint-plugin-prettier';
+import eslintPluginImport from 'eslint-plugin-import';
+import eslintPluginSimpleImportSort from 'eslint-plugin-simple-import-sort';
+import eslintPluginUnicorn from 'eslint-plugin-unicorn';
+import eslintPluginSecurity from 'eslint-plugin-security';
+import typescriptEslintPlugin from '@typescript-eslint/eslint-plugin';
+import tsParser from '@typescript-eslint/parser';
+import eslintConfigPrettier from 'eslint-config-prettier';
+
+export default [
+  // Ignore patterns
+  {
+    ignores: ['dist', 'node_modules', 'prisma'],
+  },
+  // Base config for TypeScript files
+  {
+    files: ['**/*.ts'],
+    languageOptions: {
+      parser: tsParser,
+      parserOptions: {
+        project: './tsconfig.json', // Use your tsconfig for type-aware linting
+        sourceType: 'module', // ES modules
+      },
+    },
+    plugins: {
+      node: eslintPluginNode,
+      '@typescript-eslint': typescriptEslintPlugin,
+      prettier: eslintPluginPrettier,
+      import: eslintPluginImport,
+      'simple-import-sort': eslintPluginSimpleImportSort,
+      unicorn: eslintPluginUnicorn,
+      security: eslintPluginSecurity,
+    },
+    rules: {
+      // Prettier integration
+      'prettier/prettier': 'error',
+
+      // Import sorting
+      'simple-import-sort/imports': 'error',
+      'simple-import-sort/exports': 'error',
+
+      // TypeScript-specific rules
+      '@typescript-eslint/explicit-function-return-type': 'off', // Allow implicit returns
+      '@typescript-eslint/no-explicit-any': 'warn', // Warn on 'any', don’t error
+
+      // Node.js rules
+      'node/no-process-env': 'error', // Enforce env handling (e.g., via env-config)
+
+      // Relaxed rules for flexibility
+      'security/detect-object-injection': 'off', // Disable noisy security rule
+      'unicorn/prefer-module': 'off', // Don’t enforce module syntax
+      'unicorn/no-array-reduce': 'off', // Allow reduce for flexibility
+
+      // Import rules (no extension enforcement)
+      'import/extensions': 'off',
+      'unicorn/filename-case': [
+        'error',
+        {
+          case: 'kebabCase',
+          ignore: ['README.md'],
+        },
+      ],
+    },
+  },
+  // Turn off ESLint rules that conflict with Prettier
+  eslintConfigPrettier,
+];
+
+===============================
+package.json
+-------------------------------
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "@prisma/adapter-pg": "^7.7.0",
+    "@prisma/client": "^7.7.0",
+    "bcrypt": "^6.0.0",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.3",
+    "morgan": "^1.10.1",
+    "pino": "^10.3.1",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/bcrypt": "^6.0.0",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/morgan": "^1.9.10",
+    "@types/node": "^25.6.0",
+    "prisma": "^7.7.0",
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.3"
+  }
+}
+
+===============================
+prisma.config.ts
+-------------------------------
+// This file was generated by Prisma, and assumes you have installed the following:
+// npm install --save-dev prisma dotenv
+import "dotenv/config";
+import { defineConfig } from "prisma/config";
+
+export default defineConfig({
+  schema: "prisma/schema.prisma",
+  migrations: {
+    path: "prisma/migrations",
+  },
+  datasource: {
+    url: process.env["DATABASE_URL"],
+  },
+});
+
+===============================
+prisma/prisma.ts
+-------------------------------
+import "dotenv/config";
+import { PrismaPg } from "@prisma/adapter-pg";
+import { PrismaClient } from "../generated/prisma/client";
+
+const connectionString = `${process.env.DATABASE_URL}`;
+
+const adapter = new PrismaPg({ connectionString });
+const prisma = new PrismaClient({ adapter });
+
+export { prisma };
+
+===============================
+prisma/schema.prisma
+-------------------------------
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+===============================
+README.md
+-------------------------------
+
+
+===============================
+src/app.ts
+-------------------------------
+
+
+===============================
+src/server.ts
+-------------------------------
+
+
+===============================
+tsconfig.json
+-------------------------------
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "moduleDetection": "force",
+    "verbatimModuleSyntax": true,
+    "rootDir": "./src",
+    "outDir": "./dist",
+    "strict": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "noUncheckedIndexedAccess": true
+  },
+  "include": ["src"],
+  "exclude": ["node_modules", "dist", "coverage", "__tests__"]
+}
+
