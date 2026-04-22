@@ -1,0 +1,90 @@
+# =========================================
+# DEPENDENCIAS
+# =========================================
+# Nunca copiar dependencias locales
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# =========================================
+# BUILD / OUTPUT
+# =========================================
+# Carpetas generadas por build
+dist
+build
+.out
+.next
+coverage
+
+# Archivos temporales
+*.tsbuildinfo
+
+# =========================================
+# CONFIGURACIÓN LOCAL
+# =========================================
+# Variables de entorno (no deben ir a la imagen)
+.env
+.env.*
+!.env.example
+
+# Archivos de configuración local
+*.local
+
+# =========================================
+# GIT / CONTROL DE VERSIONES
+# =========================================
+.git
+.gitignore
+.gitattributes
+
+# =========================================
+# DOCKER
+# =========================================
+# Evita copiar otros Dockerfiles o compose
+docker-compose*
+Dockerfile*
+.dockerignore
+
+# =========================================
+# EDITORES / IDE
+# =========================================
+.vscode
+.idea
+*.swp
+*.swo
+
+# =========================================
+# SISTEMA OPERATIVO
+# =========================================
+.DS_Store
+Thumbs.db
+
+# =========================================
+# LOGS
+# =========================================
+logs
+*.log
+
+# =========================================
+# TESTING
+# =========================================
+# Tests y fixtures no necesarios en runtime
+__tests__
+tests
+*.spec.ts
+*.test.ts
+
+# =========================================
+# DOCUMENTACIÓN
+# =========================================
+README.md
+docs
+
+# =========================================
+# CACHE / TEMP
+# =========================================
+.cache
+.tmp
+temp

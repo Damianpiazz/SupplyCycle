@@ -1,0 +1,98 @@
+services:
+  db:
+    image: postgres:15
+    container_name: supplycycle_db_dev
+    restart: unless-stopped
+
+    # Variables de entorno para inicializar la base de datos
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: supplycycle
+
+    # Expone Postgres al host (para herramientas externas como DBeaver o Prisma Studio)
+    ports:
+      - "5432:5432"
+
+    # Persistencia de datos en volumen Docker
+    volumes:
+      - db_data_dev:/var/lib/postgresql/data
+
+    # Healthcheck para saber cuándo la DB está lista para conexiones
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+    # Límites de recursos
+    mem_limit: 512m
+    cpus: 0.5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+
+    container_name: supplycycle_backend_dev
+    restart: unless-stopped
+
+    # Espera a que la DB esté lista
+    depends_on:
+      db:
+        condition: service_healthy
+
+    # Variables de entorno del backend
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@db:5432/supplycycle
+      NODE_ENV: development
+      CHOKIDAR_USEPOLLING: "true" # necesario para hot reload en Docker
+
+    # Expone el backend en localhost:3000
+    ports:
+      - "3000:3000"
+
+    # Volúmenes para desarrollo
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+
+    # Secuencia de arranque
+    # Nota: migrate dev puede ser inestable en Docker, usar deploy si falla
+    command: sh -c "npx prisma generate && npx prisma migrate dev && npm run dev"
+
+    # Límites de recursos
+    mem_limit: 1g
+    cpus: 1.0
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: supplycycle_pgadmin_dev
+    restart: unless-stopped
+
+    # Credenciales de acceso a pgAdmin (solo dev)
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@supplycycle.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+
+    # Expone interfaz web
+    ports:
+      - "5050:80"
+
+    # Espera a que la DB esté disponible
+    depends_on:
+      db:
+        condition: service_healthy
+
+    # Volumen opcional para persistir configuración de pgAdmin
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+
+    # Límites de recursos
+    mem_limit: 512m
+    cpus: 0.5
+
+# Volúmenes persistentes
+volumes:
+  db_data_dev:
+  pgadmin_data:

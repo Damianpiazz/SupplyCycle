@@ -1,0 +1,49 @@
+# Usa una imagen liviana de Node.js
+FROM node:20-alpine
+
+# Directorio de trabajo dentro del contenedor
+WORKDIR /app
+
+# -----------------------------------------
+# DEPENDENCIAS
+# -----------------------------------------
+# Copiamos primero package.json y lockfile
+# para aprovechar el cache de Docker
+COPY package*.json ./
+
+# Instalamos dependencias
+# En dev necesitamos TODAS (incluyendo devDependencies)
+RUN npm install
+
+# -----------------------------------------
+# PRISMA
+# -----------------------------------------
+# Copiamos solo el schema de Prisma primero
+# para evitar reinstalar dependencias si solo cambia el código
+COPY prisma ./prisma
+
+# Generamos el cliente Prisma
+# Esto evita errores en runtime tipo "Prisma Client not found"
+RUN npx prisma generate
+
+# -----------------------------------------
+# CÓDIGO FUENTE
+# -----------------------------------------
+# Copiamos el resto del proyecto
+COPY . .
+
+# -----------------------------------------
+# CONFIGURACIÓN
+# -----------------------------------------
+# Expone el puerto del backend
+EXPOSE 3000
+
+# -----------------------------------------
+# COMANDO POR DEFECTO
+# -----------------------------------------
+# En desarrollo:
+# - no hacemos build
+# - usamos hot reload (ej: nodemon / ts-node-dev)
+# El comando real se sobreescribe en docker-compose,
+# pero esto sirve como fallback
+CMD ["npm", "run", "dev"]
