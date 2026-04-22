@@ -136,6 +136,53 @@ Los commits son validados automáticamente mediante:
 
 ---
 
+## 🐳 Ejecución con Docker
+
+### 📦 Levantar el entorno completo
+
+```bash
+docker compose -f docker-compose.dev.yml up --build
+```
+
+---
+
+### ⛔ Detener contenedores
+
+```bash
+docker compose down
+```
+
+---
+
+### 🔄 Reiniciar entorno
+
+```bash
+docker compose down -v
+docker compose -f docker-compose.dev.yml up --build
+```
+
+> ⚠️ `-v` elimina volúmenes (borra datos de la base)
+
+---
+
+## 🌐 Puertos del sistema
+
+| Servicio   | Contenedor              | Puerto Host | Puerto Contenedor | URL                   |
+| ---------- | ----------------------- | ----------- | ----------------- | --------------------- |
+| Backend    | supplycycle_backend_dev | 3000        | 3000              | http://localhost:3000 |
+| PostgreSQL | supplycycle_db_dev      | 5432        | 5432              | localhost:5432        |
+| pgAdmin    | supplycycle_pgadmin_dev | 5050        | 80                | http://localhost:5050 |
+
+---
+
+## 📌 Notas sobre Docker
+
+* El backend se conecta a la DB usando el host `db`
+* No usar `localhost` dentro de contenedores
+* Los datos de PostgreSQL se persisten en volúmenes
+
+---
+
 ## 📌 Convención de Pull Requests
 
 Las Pull Requests deben ser claras, consistentes y facilitar la revisión.
