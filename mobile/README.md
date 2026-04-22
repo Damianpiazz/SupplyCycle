@@ -1,50 +1,298 @@
-# Welcome to your Expo app 👋
+# 📱 Mobile App — Expo + React Native (TypeScript)
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Aplicación móvil construida con **Expo** y **React Native**, utilizando **TypeScript** y **Expo Router** (file-based routing). La arquitectura está pensada para escalar mediante un enfoque **feature-based (vertical slicing)**, alineado con el backend.
 
-## Get started
+---
 
-1. Install dependencies
+## 🚀 Stack
 
-   ```bash
-   npm install
-   ```
+* Expo
+* React Native
+* TypeScript
+* Expo Router (file-based routing)
+* React Navigation
+* Expo APIs (Haptics, Image, WebBrowser, etc.)
+* ESLint + Prettier
 
-2. Start the app
+---
 
-   ```bash
-   npx expo start
-   ```
+## 📦 Instalación
 
-In the output, you'll find options to open the app in a
+```bash
+npm install
+```
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+---
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+## 🧪 Desarrollo
 
-## Get a fresh project
+### Iniciar entorno de desarrollo
 
-When you're ready, run:
+```bash
+npm run dev
+```
+
+> ⚠️ Si no existe, podés mapearlo a:
+>
+> ```json
+> "dev": "expo start"
+> ```
+
+---
+
+### Ejecutar en navegador (web)
+
+Una vez iniciado:
+
+```bash
+npm run web
+```
+
+o presioná:
+
+```
+w
+```
+
+en la terminal.
+
+---
+
+### Otras opciones
+
+```bash
+npm run android
+npm run ios
+```
+
+---
+
+## 🌐 Acceso desde navegador
+
+Expo levanta un servidor local, típicamente:
+
+```
+http://localhost:8081
+```
+
+---
+
+## 📁 Estructura del proyecto
+
+```
+.
+├── app/
+│   ├── (tabs)/
+│   ├── _layout.tsx
+│   ├── modal.tsx
+│
+├── components/
+│   ├── ui/
+│
+├── hooks/
+├── constants/
+├── assets/
+├── scripts/
+│
+├── app.json
+├── package.json
+├── tsconfig.json
+```
+
+---
+
+## 🧠 Arquitectura (Feature-based)
+
+Aunque Expo Router organiza por rutas, la lógica debe escalar hacia:
+
+```
+features/
+  auth/
+    screens/
+    components/
+    services/
+    hooks/
+```
+
+👉 La idea es **agrupar por funcionalidad**, no por tipo técnico.
+
+---
+
+## 🧩 Explicación de carpetas
+
+### `/app`
+
+Sistema de rutas basado en archivos.
+
+Ejemplo:
+
+```
+app/
+  index.tsx        → "/"
+  modal.tsx        → "/modal"
+  (tabs)/
+    index.tsx      → tab Home
+    explore.tsx    → tab Explore
+```
+
+#### `_layout.tsx`
+
+Define navegación global (Stack, Tabs, etc.).
+
+---
+
+### `/components`
+
+Componentes reutilizables:
+
+* UI genérica (`ui/`)
+* componentes de layout
+* elementos visuales compartidos
+
+Ejemplo:
+
+* `ThemedText`
+* `ParallaxScrollView`
+* `IconSymbol`
+
+---
+
+### `/hooks`
+
+Custom hooks:
+
+* manejo de tema (`useColorScheme`)
+* lógica reutilizable
+* abstracciones de estado
+
+---
+
+### `/constants`
+
+Configuraciones estáticas:
+
+* colores (`theme.ts`)
+* tipografías
+* valores globales
+
+---
+
+### `/assets`
+
+Recursos estáticos:
+
+* imágenes
+* íconos
+* splash screens
+
+---
+
+### `/scripts`
+
+Scripts auxiliares:
+
+* reset del proyecto
+* automatizaciones
+
+---
+
+## 🎨 Theming
+
+El proyecto soporta:
+
+* modo claro / oscuro
+* sistema basado en `useThemeColor`
+* configuración centralizada en `constants/theme.ts`
+
+---
+
+## 🔗 Navegación
+
+Basada en:
+
+* **Expo Router**
+* **React Navigation**
+
+Tipos:
+
+* Stack (global)
+* Tabs (`(tabs)`)
+
+---
+
+## 🧠 Convenciones
+
+### Imports
+
+```ts
+import { ThemedText } from '@/components/themed-text';
+```
+
+---
+
+### Evitar
+
+* lógica de negocio en componentes UI
+* duplicación de llamadas API
+* estado global innecesario
+
+---
+
+## ⚙️ Configuración técnica
+
+### TypeScript
+
+* modo estricto
+* alias `@/*` configurado
+* tipado fuerte
+
+---
+
+### ESLint
+
+* reglas de Expo
+* auto-fix en guardado
+
+---
+
+## 🔄 Flujo de desarrollo
+
+1. crear feature (o ruta en `/app`)
+2. definir UI
+3. extraer lógica a hooks
+4. conectar con servicios (API)
+5. testear en web/emulador
+
+---
+
+## 🧹 Reset del proyecto
 
 ```bash
 npm run reset-project
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Esto:
 
-## Learn more
+* mueve código actual a `app-example/`
+* crea una base limpia
 
-To learn more about developing your project with Expo, look at the following resources:
+---
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## 📌 Notas importantes
 
-## Join the community
+* `android/` e `ios/` están ignorados → proyecto en modo managed
+* soporte web habilitado
+* alias `@/` activo (definido en `tsconfig.json`)
+* animaciones con `react-native-reanimated`
 
-Join our community of developers creating universal apps.
+---
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## 🔗 Recursos
+
+* https://docs.expo.dev/
+* https://docs.expo.dev/router/introduction/
+* https://reactnative.dev/
+
+## 📌 Boilerplate basado en:
+
+* https://github.com/obytes/react-native-template-obytes/tree/master
