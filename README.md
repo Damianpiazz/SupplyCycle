@@ -11,7 +11,7 @@ Proyecto monorepo que contiene:
 
 * Nombre Apellido
 * Nombre Apellido
-* Nombre Apellido
+* Martina García Améndola
 * Tiago Solis
 * Damian Piazza
 
