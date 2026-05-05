@@ -12,7 +12,7 @@ Proyecto monorepo que contiene:
 * Nombre Apellido
 * Nombre Apellido
 * Nombre Apellido
-* Nombre Apellido
+* Tiago Solis
 * Damian Piazza
 
 ---
