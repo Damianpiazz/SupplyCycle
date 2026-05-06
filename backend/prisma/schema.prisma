@@ -11,3 +11,37 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+/*
+
+model User {
+  id        Int      @id @default(autoincrement()) // serial
+  email     String   @unique                       // único
+  name      String                                 // requerido
+  password  String                                 // requerido
+  createdAt DateTime @default(now())               // timestamp automático
+  updatedAt DateTime @updatedAt                    // auto update
+}
+
+Campos:
+- id → serial (autoincrement)
+- email → único
+- name → string required
+- password → string required
+- createdAt → timestamp automático
+- updatedAt → timestamp automático (se actualiza solo)
+Otros tipos comunes:
+model Product {
+  id          Int     @id @default(autoincrement())
+  sku         String  @unique
+  name        String
+  price       Decimal @db.Decimal(10, 2)
+  stock       Int     @default(0)
+  isActive    Boolean @default(true)
+  createdAt   DateTime @default(now())
+}
+Para aplicar este modelo a la DB, una vez definido ejecutás:
+npx prisma migrate dev --name init
+
+
+*/
