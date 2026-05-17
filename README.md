@@ -10,7 +10,7 @@ Proyecto monorepo que contiene:
 ## 👥 Integrantes
 
 * Nombre Apellido
-* Nombre Apellido
+* Lucia Meza
 * Martina García Améndola
 * Tiago Solis
 * Damian Piazza
