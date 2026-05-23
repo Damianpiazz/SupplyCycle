@@ -78,3 +78,4 @@ prisma/dev.db
 # =========================
 .tsx-cache/
 /generated/prisma
+/src/generated/prisma

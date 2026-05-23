@@ -1,47 +1,42 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client"
-  output   = "../generated/prisma"
+  output   = "../src/generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
 }
 
-/*
+// ============================================================
+// ENUMS
+// ============================================================
 
-model User {
-  id        Int      @id @default(autoincrement()) // serial
-  email     String   @unique                       // único
-  name      String                                 // requerido
-  password  String                                 // requerido
-  createdAt DateTime @default(now())               // timestamp automático
-  updatedAt DateTime @updatedAt                    // auto update
+enum EstadoPedido {
+  PENDIENTE
+  ENTREGADO
+  NO_ENTREGADO
 }
 
-Campos:
-- id → serial (autoincrement)
-- email → único
-- name → string required
-- password → string required
-- createdAt → timestamp automático
-- updatedAt → timestamp automático (se actualiza solo)
-Otros tipos comunes:
-model Product {
-  id          Int     @id @default(autoincrement())
-  sku         String  @unique
-  name        String
-  price       Decimal @db.Decimal(10, 2)
-  stock       Int     @default(0)
-  isActive    Boolean @default(true)
-  createdAt   DateTime @default(now())
+enum MotivoFalla {
+  CLIENTE_AUSENTE
+  DIRECCION_INCORRECTA
+  ACCESO_DENEGADO
+  OTRO
 }
-Para aplicar este modelo a la DB, una vez definido ejecutás:
-npx prisma migrate dev --name init
 
+// ============================================================
+// MODELS
+// ============================================================
 
-*/
+model Pedido {
+  id          String       @id @default(uuid()) @db.Uuid
+  estado      EstadoPedido @default(PENDIENTE)
+  motivoFalla MotivoFalla?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@map("pedidos")
+}
