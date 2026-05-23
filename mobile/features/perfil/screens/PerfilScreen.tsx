@@ -1,5 +1,4 @@
 import { Alert, StyleSheet, Text, View } from 'react-native';
-import { router } from 'expo-router';
 import { ThemedView } from '@/components/themed-view';
 import { Card, Button, Header } from '@/components/ui';
 import { Colors, Spacing, FontSizes, BorderRadius } from '@/constants/theme';
@@ -24,7 +23,8 @@ export default function PerfilScreen() {
           onPress: async () => {
             await clearToken();
             logout();
-            router.replace('/login');
+            // La redirección la maneja el auth gate en _layout.tsx
+            // al detectar isAuthenticated === false
           },
         },
       ]
