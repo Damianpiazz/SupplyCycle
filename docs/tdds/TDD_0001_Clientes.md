@@ -21,9 +21,12 @@ Definir la entidad Cliente como base del sistema. Un cliente es una persona que 
 
 - El sistema debe permitir obtener los datos de un cliente por su ID.
 - El cliente debe tener asociado un día fijo de entrega en la semana.
-- El cliente debe tener una franja horaria preferida de entrega.
+- El cliente debe tener una franja horaria preferida de entrega, y `horarioDesde` debe ser anterior a `horarioHasta`.
 - El contacto telefónico del cliente debe estar disponible para que el repartidor pueda llamar directamente desde la app.
 - El domicilio debe incluir calle, número, localidad y coordenadas geográficas para su uso en el mapa.
+- El nombre y apellido no pueden estar vacíos ni ser menores a 2 caracteres.
+- El teléfono debe tener un formato válido (solo números, mínimo 7 dígitos).
+- La calle y el número no pueden estar vacíos.
 
 ---
 
@@ -33,22 +36,22 @@ Definir la entidad Cliente como base del sistema. Un cliente es una persona que 
 
 ```prisma
 model Cliente {
-  id          String    @id @default(uuid())
-  nombre      String
-  apellido    String
-  telefono    String
-  calle       String
-  numero      String
-  localidad   String
-  latitud     Float
-  longitud    Float
-  diaEntrega  DiaSemana
-  horarioDesde String   // ej: "10:00"
-  horarioHasta String   // ej: "12:00"
+  id            String    @id @default(uuid())
+  nombre        String    @db.VarChar(100)
+  apellido      String    @db.VarChar(100)
+  telefono      String    @db.VarChar(20)
+  calle         String
+  numero        String
+  localidad     String
+  latitud       Float
+  longitud      Float
+  diaEntrega    DiaSemana
+  horarioDesde  String    // ej: "10:00"
+  horarioHasta  String    // ej: "12:00"
   observaciones String?
-  creadoEn    DateTime  @default(now())
-  actualizadoEn DateTime @updatedAt
-  pedidos     Pedido[]
+  creadoEn      DateTime  @default(now())
+  actualizadoEn DateTime  @updatedAt
+  pedidos       Pedido[]
 }
 
 enum DiaSemana {
@@ -59,6 +62,28 @@ enum DiaSemana {
   VIERNES
   SABADO
 }
+```
+
+### Validaciones (Zod)
+
+```ts
+const clienteSchema = z.object({
+  nombre: z.string().min(2, 'El nombre debe tener al menos 2 caracteres').max(100),
+  apellido: z.string().min(2, 'El apellido debe tener al menos 2 caracteres').max(100),
+  telefono: z.string().regex(/^\d{7,15}$/, 'El teléfono debe tener entre 7 y 15 dígitos'),
+  calle: z.string().min(1, 'La calle es requerida'),
+  numero: z.string().min(1, 'El número es requerido'),
+  localidad: z.string().min(1, 'La localidad es requerida'),
+  latitud: z.number().min(-90).max(90),
+  longitud: z.number().min(-180).max(180),
+  diaEntrega: z.enum(['LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES', 'SABADO']),
+  horarioDesde: z.string().regex(/^\d{2}:\d{2}$/),
+  horarioHasta: z.string().regex(/^\d{2}:\d{2}$/),
+  observaciones: z.string().optional(),
+}).refine(
+  (data) => data.horarioDesde < data.horarioHasta,
+  { message: 'horarioDesde debe ser anterior a horarioHasta', path: ['horarioDesde'] }
+);
 ```
 
 ### Contrato de API
@@ -130,7 +155,7 @@ export interface Cliente {
 
 ### Componentes de Arquitectura (Backend)
 
-- **Domain**: Entidad `Cliente`, Value Object `Domicilio`, regla de negocio: el día de entrega debe ser un día válido de la semana
+- **Domain**: Entidad `Cliente`, Value Object `Domicilio`, reglas de negocio: el día de entrega debe ser válido, `horarioDesde` debe ser anterior a `horarioHasta`
 - **Application**: Caso de uso `ObtenerClientePorId`, `ListarClientes`
 - **Infrastructure**: Controlador `clientes.controller.ts`, servicio `clientes.service.ts`, rutas `clientes.routes.ts`, schema Zod `clientes.schemas.ts`
 
@@ -140,10 +165,15 @@ export interface Cliente {
 
 | Escenario | Resultado Esperado | Código HTTP |
 |---|---|---|
-| ID de cliente inexistente | Error con mensaje "Cliente no encontrado" | 404 Not Found |
+| ID de cliente inexistente | Error "Cliente no encontrado" | 404 Not Found |
 | ID con formato inválido | Error de validación | 400 Bad Request |
 | Coordenadas fuera de rango | Error de validación | 400 Bad Request |
-| Día de entrega inválido | Error de validación con valores aceptados | 400 Bad Request |
+| Día de entrega inválido | Error con valores aceptados | 400 Bad Request |
+| Nombre o apellido menor a 2 caracteres | Error de validación | 400 Bad Request |
+| Teléfono con formato inválido | Error "El teléfono debe tener entre 7 y 15 dígitos" | 400 Bad Request |
+| Calle o número vacíos | Error de validación | 400 Bad Request |
+| `horarioDesde` mayor o igual a `horarioHasta` | Error "horarioDesde debe ser anterior a horarioHasta" | 400 Bad Request |
+| No hay clientes registrados | Lista vacía sin error | 200 OK |
 
 ---
 

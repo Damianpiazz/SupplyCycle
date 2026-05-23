@@ -19,9 +19,12 @@ Definir la entidad Item como los productos que pueden ser incluidos en un pedido
 
 ### Criterios de Aceptación
 
-- Cada ítem debe tener un nombre, descripción opcional y unidad de medida.
+- Cada ítem debe tener un nombre de al menos 2 caracteres y una unidad de medida.
 - Un ítem puede estar activo o inactivo (para no eliminarlo si tiene historial).
 - El repartidor debe ver los ítems asociados a cada pedido con su cantidad.
+- La cantidad de un ítem en un pedido debe ser mayor a 0.
+- Un ítem inactivo no puede ser incluido en un pedido nuevo.
+- Si no hay ítems activos, el sistema responde con lista vacía sin error.
 
 ---
 
@@ -31,14 +34,30 @@ Definir la entidad Item como los productos que pueden ser incluidos en un pedido
 
 ```prisma
 model Item {
-  id          String      @id @default(uuid())
-  nombre      String
+  id          String       @id @default(uuid())
+  nombre      String       @db.VarChar(100)
   descripcion String?
-  unidad      String      // ej: "unidad", "litros"
-  activo      Boolean     @default(true)
-  creadoEn    DateTime    @default(now())
+  unidad      String       // ej: "unidad", "litros"
+  activo      Boolean      @default(true)
+  creadoEn    DateTime     @default(now())
   pedidoItems PedidoItem[]
 }
+```
+
+### Validaciones (Zod)
+
+```ts
+const itemSchema = z.object({
+  nombre: z.string().min(2, 'El nombre debe tener al menos 2 caracteres').max(100),
+  descripcion: z.string().optional(),
+  unidad: z.string().min(1, 'La unidad es requerida'),
+  activo: z.boolean().default(true),
+});
+
+const pedidoItemSchema = z.object({
+  itemId: z.string().uuid('El ID del ítem debe ser un UUID válido'),
+  cantidad: z.number().int().min(1, 'La cantidad debe ser mayor a 0'),
+});
 ```
 
 ### Contrato de API
@@ -46,6 +65,7 @@ model Item {
 #### Listar ítems disponibles
 
 - **Endpoint**: `GET /api/v1/items`
+- **Query params opcionales**: `activo` (boolean, por defecto `true`)
 - **Response Body**:
 
 ```ts
@@ -82,13 +102,13 @@ export interface Item {
 
 export interface PedidoItem {
   item: Item;
-  cantidad: number;
+  cantidad: number; // siempre > 0
 }
 ```
 
 ### Componentes de Arquitectura (Backend)
 
-- **Domain**: Entidad `Item`, regla: no se puede eliminar un ítem con historial de pedidos, solo desactivar
+- **Domain**: Entidad `Item`, regla: no se puede eliminar un ítem con historial de pedidos, solo desactivar; la cantidad en `PedidoItem` debe ser mayor a 0
 - **Application**: Caso de uso `ListarItems`, `ObtenerItemPorId`
 - **Infrastructure**: Controlador `items.controller.ts`, servicio `items.service.ts`, rutas `items.routes.ts`, schema Zod `items.schemas.ts`
 
@@ -99,8 +119,11 @@ export interface PedidoItem {
 | Escenario | Resultado Esperado | Código HTTP |
 |---|---|---|
 | ID de ítem inexistente | Error "Ítem no encontrado" | 404 Not Found |
-| Ítem inactivo incluido en pedido nuevo | Error de validación | 400 Bad Request |
-| Nombre vacío | Error de validación | 400 Bad Request |
+| Ítem inactivo incluido en pedido nuevo | Error "El ítem no está disponible" | 400 Bad Request |
+| Nombre vacío o menor a 2 caracteres | Error de validación | 400 Bad Request |
+| Cantidad igual a 0 o negativa en PedidoItem | Error "La cantidad debe ser mayor a 0" | 400 Bad Request |
+| No hay ítems activos | Lista vacía sin error | 200 OK |
+| Unidad vacía | Error de validación | 400 Bad Request |
 
 ---
 
