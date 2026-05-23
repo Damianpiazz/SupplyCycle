@@ -13,6 +13,12 @@
       "skillPath": "skills/api-security-hardening/SKILL.md",
       "computedHash": "d6ce866c17f268a6eb86b7c2afc0c06178ca653cc8f655860a6997b4e6a11bcf"
     },
+    "backend-testing": {
+      "source": "akillness/oh-my-skills",
+      "sourceType": "github",
+      "skillPath": ".agent-skills/backend-testing/SKILL.md",
+      "computedHash": "e2f9cdf6e1a85763b3cfb1925a803548a94d5a1f0c9fbff208cae41cc614877c"
+    },
     "express-typescript": {
       "source": "mindrally/skills",
       "sourceType": "github",
@@ -36,6 +42,12 @@
       "sourceType": "github",
       "skillPath": "skills/typescript-strict-mode/SKILL.md",
       "computedHash": "de0587bce81b289fcd72d4ae5acef6f64f5507c86687f3b094c2f6c3611f84dc"
+    },
+    "whatsapp-cloud-api": {
+      "source": "bellopushon/whatsapp-cloud-api",
+      "sourceType": "github",
+      "skillPath": "skills/whatsapp-cloud-api/SKILL.md",
+      "computedHash": "ede0274890801c402b4b358ba639a819eb41bb9d234c6289fbeace758b32fffc"
     }
   }
 }
