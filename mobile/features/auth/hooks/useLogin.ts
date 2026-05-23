@@ -18,8 +18,12 @@ export function useLogin() {
       }
       return loginRequest(credentials);
     },
-    onSuccess: async (data) => {
-      await saveToken(data.token);
+    onSuccess: (data) => {
+      // Save token in parallel — no await para no bloquear setAuth
+      saveToken(data.token).catch(() => {
+        // Si falla SecureStore, igual continuamos con el login
+        console.warn('saveToken failed, continuing without persistent session');
+      });
       setAuth(data.token, data.usuario);
       router.replace('/');
     },
