@@ -278,9 +278,13 @@ export const apiClient = axios.create({
 });
 
 // Interceptor para agregar JWT en cada request
-apiClient.interceptors.request.use((config) => {
-  const token = getToken(); // desde expo-secure-store
-  if (token) config.headers.Authorization = `Bearer ${token}`;
+apiClient.interceptors.request.use(async (config) => {
+  const token = await getToken();
+
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+
   return config;
 });
 
