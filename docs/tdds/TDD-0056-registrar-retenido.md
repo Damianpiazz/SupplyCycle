@@ -1,0 +1,55 @@
+---
+autor: Equipo SupplyCycle
+fecha: 2026-05-22
+titulo: Registrar Retenido
+---
+
+# TDD-0056: Registrar Retenido
+
+## Contexto de Negocio (PRD)
+
+### Objetivo
+Registrar un producto retenido (envase) que el cliente no devolvió. Aplica a productos retornables como bidones.
+
+### User Persona
+- **Nombre**: Administrador
+- **Necesidad**: Llevar control de los envases retenidos por cada cliente.
+
+### Criterios de Aceptación
+- El retenido se asocia a un producto, cliente y pedido
+- El producto debe ser retornable
+- Estado inicial: `retenido`
+
+## Diseño Técnico (RFC)
+
+### Modelo de Datos
+
+**Retenido**
+
+| Campo | Tipo | Restricciones |
+|---|---|---|
+| id | Int | PK, autoincrement |
+| estado | EstadoRetenido | DEFAULT retenido |
+| inicio | DateTime | @default(now()) |
+| fin | DateTime? | |
+| productoId | Int | FK -> Producto |
+| clienteId | Int | FK -> Cliente |
+| pedidoId | Int | FK -> Pedido |
+
+### Contrato de API
+
+- **Endpoint**: `POST /api/v1/retenidos`
+- **Auth**: JWT (rol ADMIN)
+- **Request Body**: `{ "productoId": 1, "clienteId": 1, "pedidoId": 1 }`
+- **Response** `201 Created`
+
+## Plan de Implementación
+
+### Backend
+1. Schema Zod
+2. Service: verificar producto retornable → `prisma.retenido.create()`
+3. Tests
+
+### Mobile
+4. Formulario en el detalle del pedido
+5. Mutation

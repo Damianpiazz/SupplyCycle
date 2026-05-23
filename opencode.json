@@ -33,7 +33,15 @@
         },
         "skill": {
           "prisma-migrate": "allow",
-          "add-endpoint": "allow"
+          "api-authentication": "allow",
+          "api-error-handling": "allow",
+          "api-security-hardening": "allow",
+          "express-typescript": "allow",
+          "rest-api-design": "allow",
+          "typescript-strict-mode": "allow",
+          "prisma-orm-v7-skills": "allow",
+          "backend-testing": "allow",
+          "reglas-negocio": "allow"
         }
       }
     },
@@ -53,7 +61,13 @@
         },
         "skill": {
           "add-screen": "allow",
-          "expo-build": "allow"
+          "mobile-offline-support": "allow",
+          "react-native-web-navigation": "allow",
+          "react-state-management": "allow",
+          "expo-architect": "allow",
+          "vercel-react-native-skills": "allow",
+          "typescript-react-reviewer": "allow",
+          "ui-ux-pro-max": "allow"
         }
       }
     },
@@ -74,15 +88,22 @@
         },
         "skill": {
           "add-flow": "allow",
-          "deploy-bot": "allow"
+          "whatsapp-cloud-api": "allow"
         }
       }
     },
     "plan": {
       "mode": "primary",
+      "description": "Planifica tareas y analiza requerimientos antes de implementar",
+      "model": "anthropic/claude-sonnet-4-20250514",
+      "color": "#8B5CF6",
+      "prompt": "Eres un arquitecto de software. Tu rol es analizar requerimientos, proponer soluciones y planificar la implementacion antes de escribir codigo. Nunca generes codigo directamente. Debes entregar planes claros con estimaciones y riesgos.",
       "permission": {
         "edit": "deny",
-        "bash": "deny"
+        "bash": "deny",
+        "skill": {
+          "documentation-writer": "allow"
+        }
       }
     }
   }
