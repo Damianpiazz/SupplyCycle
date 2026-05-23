@@ -48,8 +48,7 @@ export default function RootLayout() {
     bootstrap();
   }, [setAuth, setLoading]);
 
-  // Auth gate: redirect SOLO al terminar bootstrap (isLoading pasa de true a false)
-  // El redirect post-login lo maneja el hook useLogin, no este efecto
+  // Auth gate: redirect cuando cambia isLoading (bootstrap) o isAuthenticated (login/logout)
   useEffect(() => {
     if (!isLoading) {
       if (isAuthenticated) {
@@ -58,7 +57,7 @@ export default function RootLayout() {
         router.replace('/login');
       }
     }
-  }, [isLoading]);
+  }, [isLoading, isAuthenticated]);
 
   if (isLoading) {
     return (
