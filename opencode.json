@@ -39,7 +39,9 @@
           "express-typescript": "allow",
           "rest-api-design": "allow",
           "typescript-strict-mode": "allow",
-          "prisma-orm-v7-skills": "allow"
+          "prisma-orm-v7-skills": "allow",
+          "backend-testing": "allow",
+          "reglas-negocio": "allow"
         }
       }
     },
@@ -64,7 +66,8 @@
           "react-state-management": "allow",
           "expo-architect": "allow",
           "vercel-react-native-skills": "allow",
-          "typescript-react-reviewer": "allow"
+          "typescript-react-reviewer": "allow",
+          "ui-ux-pro-max": "allow"
         }
       }
     },
@@ -84,7 +87,8 @@
           "npm run lint": "allow"
         },
         "skill": {
-          "add-flow": "allow"
+          "add-flow": "allow",
+          "whatsapp-cloud-api": "allow"
         }
       }
     },
@@ -96,7 +100,10 @@
       "prompt": "Eres un arquitecto de software. Tu rol es analizar requerimientos, proponer soluciones y planificar la implementacion antes de escribir codigo. Nunca generes codigo directamente. Debes entregar planes claros con estimaciones y riesgos.",
       "permission": {
         "edit": "deny",
-        "bash": "deny"
+        "bash": "deny",
+        "skill": {
+          "documentation-writer": "allow"
+        }
       }
     }
   }
