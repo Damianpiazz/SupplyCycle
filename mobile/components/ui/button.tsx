@@ -12,7 +12,6 @@ interface ButtonProps extends TouchableOpacityProps {
 
 export default function Button({
   title,
-  variant = 'primary',
   loading = false,
   style,
   disabled,
@@ -21,37 +20,21 @@ export default function Button({
   const colorScheme = useColorScheme() ?? 'light';
   const theme = Colors[colorScheme];
 
-  const backgroundColor = {
-    primary: theme.tint,
-    secondary: theme.surface,
-    danger: theme.error,
-    ghost: 'transparent',
-    success: theme.success,
-    warning: theme.warning,
-  }[variant];
-
-  const textColor = variant === 'primary' || variant === 'danger' || variant === 'success'
-    ? '#FFFFFF'
-    : variant === 'ghost'
-    ? theme.tint
-    : theme.text;
+  const backgroundColor = disabled ? theme.muted : theme.surface;
+  const textColor = disabled ? '#FFFFFF' : theme.text;
 
   return (
     <TouchableOpacity
       style={[
         styles.button,
-        {
-          backgroundColor: disabled ? theme.muted : backgroundColor,
-          borderWidth: variant === 'ghost' ? 0 : 1,
-          borderColor: variant === 'secondary' ? theme.border : 'transparent',
-        },
+        { backgroundColor },
         style,
       ]}
       disabled={disabled || loading}
       activeOpacity={0.7}
       {...rest}
     >
-      <Text style={[styles.text, { color: disabled ? '#FFFFFF' : textColor }]}>
+      <Text style={[styles.text, { color: textColor }]}>
         {loading ? 'Cargando...' : title}
       </Text>
     </TouchableOpacity>
@@ -60,15 +43,15 @@ export default function Button({
 
 const styles = StyleSheet.create({
   button: {
-    paddingVertical: Spacing.md,
-    paddingHorizontal: Spacing.xl,
-    borderRadius: BorderRadius.md,
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.lg,
+    borderRadius: BorderRadius.xl,
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 48,
+    minHeight: 36,
   },
   text: {
-    fontSize: FontSizes.md,
+    fontSize: FontSizes.sm,
     fontWeight: '600',
   },
 });
