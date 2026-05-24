@@ -1,10 +1,9 @@
 import { useEffect } from 'react';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { Stack, router } from 'expo-router';
+import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import axios from 'axios';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useAuthStore } from '@/stores/authStore';
@@ -26,7 +25,7 @@ export const unstable_settings = {
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
-  const { isLoading, isAuthenticated, setAuth, setLoading } = useAuthStore();
+  const { isLoading, setAuth, setLoading } = useAuthStore();
 
   // Bootstrap: check if we have a stored token
   useEffect(() => {
@@ -34,7 +33,6 @@ export default function RootLayout() {
       try {
         const token = await getToken();
         if (token) {
-          // Intentar obtener usuario real del backend
           try {
             const response = await fetch(
               `${process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api/v1'}/auth/me`,
@@ -46,10 +44,9 @@ export default function RootLayout() {
               return;
             }
           } catch {
-            // Si falla la red, usar mock como fallback
+            // fallback a mock
           }
 
-          // Fallback: mock user
           const { mockGetMeRequest } = await import(
             '@/features/auth/services/mockAuthService'
           );
@@ -64,17 +61,6 @@ export default function RootLayout() {
     }
     bootstrap();
   }, [setAuth, setLoading]);
-
-  // Auth gate: redirect cuando cambia isLoading (bootstrap) o isAuthenticated (login/logout)
-  useEffect(() => {
-    if (!isLoading) {
-      if (isAuthenticated) {
-        router.replace('/');
-      } else {
-        router.replace('/login');
-      }
-    }
-  }, [isLoading, isAuthenticated]);
 
   if (isLoading) {
     return (

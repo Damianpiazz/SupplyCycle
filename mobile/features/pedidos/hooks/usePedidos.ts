@@ -7,6 +7,11 @@ import {
   confirmarEntregaRequest,
   cancelarPedidoRequest,
 } from '@/features/pedidos/services/pedidoService';
+import {
+  mockGetPedidosDelDiaRequest,
+  mockGetPedidoByIdRequest,
+  mockGetPedidosRequest,
+} from '@/features/pedidos/mocks/pedidoMockData';
 import type { Pedido, EstadoPedido, MotivoCancelacion } from '@/types';
 
 function getRepartidorId(): string {
@@ -17,7 +22,13 @@ function getRepartidorId(): string {
 export function usePedidosDelDia() {
   return useQuery<Pedido[]>({
     queryKey: ['pedidos', 'hoy'],
-    queryFn: () => getPedidosDelDiaRequest(getRepartidorId()),
+    queryFn: async () => {
+      try {
+        return await getPedidosDelDiaRequest(getRepartidorId());
+      } catch {
+        return await mockGetPedidosDelDiaRequest();
+      }
+    },
     staleTime: 5 * 60 * 1000,
   });
 }
@@ -26,7 +37,13 @@ export function usePedidosDelDia() {
 export function usePedidoDetalle(id: string) {
   return useQuery<Pedido>({
     queryKey: ['pedido', id],
-    queryFn: () => getPedidoByIdRequest(id),
+    queryFn: async () => {
+      try {
+        return await getPedidoByIdRequest(id);
+      } catch {
+        return await mockGetPedidoByIdRequest(id);
+      }
+    },
     enabled: !!id,
   });
 }
@@ -39,7 +56,13 @@ export function useBuscarPedidos(params?: {
 }) {
   return useQuery<{ data: Pedido[]; total: number }>({
     queryKey: ['pedidos', 'buscar', params],
-    queryFn: () => getPedidosRequest(params),
+    queryFn: async () => {
+      try {
+        return await getPedidosRequest(params);
+      } catch {
+        return await mockGetPedidosRequest(params);
+      }
+    },
     staleTime: 5 * 60 * 1000,
   });
 }
