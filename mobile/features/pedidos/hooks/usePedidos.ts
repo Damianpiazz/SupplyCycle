@@ -1,27 +1,23 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { MOCK_PEDIDOS } from '@/mocks/mockData';
+import { useAuthStore } from '@/stores/authStore';
+import {
+  getPedidosDelDiaRequest,
+  getPedidoByIdRequest,
+  getPedidosRequest,
+  confirmarEntregaRequest,
+  cancelarPedidoRequest,
+} from '@/features/pedidos/services/pedidoService';
 import type { Pedido, EstadoPedido, MotivoCancelacion } from '@/types';
 
-const USE_MOCK = true;
-
-function delay(ms: number): Promise<void> {
-  return new Promise((r) => setTimeout(r, ms));
+function getRepartidorId(): string {
+  return useAuthStore.getState().usuario?.id ?? '';
 }
 
 // Fetch pedidos del día
 export function usePedidosDelDia() {
   return useQuery<Pedido[]>({
     queryKey: ['pedidos', 'hoy'],
-    queryFn: async () => {
-      if (USE_MOCK) {
-        await delay(500);
-        return MOCK_PEDIDOS;
-      }
-      const { getPedidosDelDiaRequest } = await import(
-        '@/features/pedidos/services/pedidoService'
-      );
-      return getPedidosDelDiaRequest('mock-user-001');
-    },
+    queryFn: () => getPedidosDelDiaRequest(getRepartidorId()),
     staleTime: 5 * 60 * 1000,
   });
 }
@@ -30,18 +26,7 @@ export function usePedidosDelDia() {
 export function usePedidoDetalle(id: string) {
   return useQuery<Pedido>({
     queryKey: ['pedido', id],
-    queryFn: async () => {
-      if (USE_MOCK) {
-        await delay(300);
-        const pedido = MOCK_PEDIDOS.find((p) => p.id === id);
-        if (!pedido) throw new Error('Pedido no encontrado');
-        return pedido;
-      }
-      const { getPedidoByIdRequest } = await import(
-        '@/features/pedidos/services/pedidoService'
-      );
-      return getPedidoByIdRequest(id);
-    },
+    queryFn: () => getPedidoByIdRequest(id),
     enabled: !!id,
   });
 }
@@ -54,28 +39,7 @@ export function useBuscarPedidos(params?: {
 }) {
   return useQuery<{ data: Pedido[]; total: number }>({
     queryKey: ['pedidos', 'buscar', params],
-    queryFn: async () => {
-      if (USE_MOCK) {
-        await delay(400);
-        let filtered = [...MOCK_PEDIDOS];
-        if (params?.estado) {
-          filtered = filtered.filter((p) => p.estado === params.estado);
-        }
-        if (params?.clienteNombre) {
-          const search = params.clienteNombre.toLowerCase();
-          filtered = filtered.filter(
-            (p) =>
-              p.cliente.nombre.toLowerCase().includes(search) ||
-              p.cliente.apellido.toLowerCase().includes(search)
-          );
-        }
-        return { data: filtered, total: filtered.length };
-      }
-      const { getPedidosRequest } = await import(
-        '@/features/pedidos/services/pedidoService'
-      );
-      return getPedidosRequest(params);
-    },
+    queryFn: () => getPedidosRequest(params),
     staleTime: 5 * 60 * 1000,
   });
 }
@@ -85,21 +49,12 @@ export function useConfirmarEntrega() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (pedidoId: string) => {
-      if (USE_MOCK) {
-        await delay(400);
-        return {
-          id: pedidoId,
-          estado: 'ENTREGADO' as const,
-          actualizadoEn: new Date().toISOString(),
-        };
-      }
-      const { confirmarEntregaRequest } = await import(
-        '@/features/pedidos/services/pedidoService'
-      );
-      return confirmarEntregaRequest(pedidoId);
-    },
-    onSuccess: () => {
+    mutationFn: (pedidoId: string) => confirmarEntregaRequest(pedidoId),
+    onSuccess: (data) => {
+      queryClient.setQueryData<Pedido>(['pedido', data.id], (old) => {
+        if (old) return { ...old, estado: 'ENTREGADO' as const };
+        return old;
+      });
       queryClient.invalidateQueries({ queryKey: ['pedidos'] });
       queryClient.invalidateQueries({ queryKey: ['reparto'] });
     },
@@ -111,28 +66,19 @@ export function useCancelarPedido() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({
+    mutationFn: ({
       pedidoId,
       motivo,
     }: {
       pedidoId: string;
       motivo: MotivoCancelacion;
-    }) => {
-      if (USE_MOCK) {
-        await delay(400);
-        return {
-          id: pedidoId,
-          estado: 'NO_ENTREGADO' as const,
-          motivoFalla: motivo,
-          actualizadoEn: new Date().toISOString(),
-        };
-      }
-      const { cancelarPedidoRequest } = await import(
-        '@/features/pedidos/services/pedidoService'
-      );
-      return cancelarPedidoRequest(pedidoId, motivo);
-    },
-    onSuccess: () => {
+    }) => cancelarPedidoRequest(pedidoId, motivo),
+    onSuccess: (data) => {
+      queryClient.setQueryData<Pedido>(['pedido', data.id], (old) => {
+        if (old)
+          return { ...old, estado: 'NO_ENTREGADO' as const, motivoFalla: data.motivoFalla };
+        return old;
+      });
       queryClient.invalidateQueries({ queryKey: ['pedidos'] });
       queryClient.invalidateQueries({ queryKey: ['reparto'] });
     },

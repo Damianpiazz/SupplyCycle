@@ -15,9 +15,11 @@ export const apiClient = axios.create({
 });
 
 // Request interceptor: attach JWT token
+// Lee primero del store en memoria (más rápido, evita race conditions con SecureStore)
 apiClient.interceptors.request.use(
   async (config) => {
-    const token = await getToken();
+    const fromStore = useAuthStore.getState().token;
+    const token = fromStore ?? (await getToken());
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
