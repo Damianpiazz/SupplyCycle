@@ -8,12 +8,13 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { usePedidosDelDia } from '@/features/pedidos/hooks/usePedidos';
 import type { Pedido, EstadoPedido } from '@/types';
 
-type FiltroEstado = 'TODAS' | 'PENDIENTES' | 'COMPLETADAS';
+type FiltroEstado = 'TODAS' | 'PENDIENTE' | 'ENTREGADO' | 'NO_ENTREGADO';
 
 const FILTROS: { key: FiltroEstado; label: string }[] = [
-  { key: 'TODAS', label: 'Todas' },
-  { key: 'PENDIENTES', label: 'Pendientes' },
-  { key: 'COMPLETADAS', label: 'Completadas' },
+  { key: 'TODAS', label: 'Todo' },
+  { key: 'PENDIENTE', label: 'Pendientes' },
+  { key: 'ENTREGADO', label: 'Entregados' },
+  { key: 'NO_ENTREGADO', label: 'No entregados' },
 ];
 
 function getEstadoColor(estado: EstadoPedido, theme: typeof Colors.light): string {
@@ -46,7 +47,7 @@ function EntregaCard({
   theme: typeof Colors.light;
 }) {
   return (
-    <Card onPress={() => router.push(`/pedidos/${pedido.id}`)}>
+    <Card onPress={() => router.push(`/repartos/${pedido.id}`)}>
       <View style={styles.cardHeader}>
         <Text style={[styles.cardNombre, { color: theme.text }]}>
           {pedido.cliente.nombre} {pedido.cliente.apellido}
@@ -104,10 +105,8 @@ export default function RepartosListScreen() {
   }
 
   const filteredPedidos = (pedidos ?? []).filter((p) => {
-    if (filtro === 'PENDIENTES') return p.estado === 'PENDIENTE';
-    if (filtro === 'COMPLETADAS')
-      return p.estado === 'ENTREGADO' || p.estado === 'NO_ENTREGADO';
-    return true;
+    if (filtro === 'TODAS') return true;
+    return p.estado === filtro;
   });
 
   return (
@@ -117,25 +116,25 @@ export default function RepartosListScreen() {
         {FILTROS.map((f) => (
           <TouchableOpacity
             key={f.key}
-            style={[
-              styles.filtroButton,
-              {
-                backgroundColor:
-                  filtro === f.key ? theme.tint : theme.surface,
-              },
-            ]}
-            onPress={() => setFiltro(f.key)}
-          >
-            <Text
               style={[
-                styles.filtroText,
-                {
-                  color: filtro === f.key ? '#FFFFFF' : theme.text,
-                },
-              ]}
-            >
-              {f.label}
-            </Text>
+                  styles.filtroButton,
+                  {
+                    backgroundColor:
+                      filtro === f.key ? theme.headerBackground : theme.surface,
+                  },
+                ]}
+                onPress={() => setFiltro(f.key)}
+              >
+                <Text
+                  style={[
+                    styles.filtroText,
+                    {
+                      color: filtro === f.key ? theme.headerText : theme.text,
+                    },
+                  ]}
+                >
+                  {f.label}
+                </Text>
           </TouchableOpacity>
         ))}
       </View>
@@ -165,6 +164,7 @@ const styles = StyleSheet.create({
   },
   filtrosContainer: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.md,
     gap: Spacing.sm,
