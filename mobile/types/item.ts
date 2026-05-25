@@ -5,10 +5,13 @@ export interface Item {
   nombre: string;
   descripcion?: string;
   unidad: string;
+  precio?: number;
   activo: boolean;
 }
 
 export interface PedidoItem {
+  id: string;
   item: Item;
   cantidad: number;
+  precioUnitario?: number;
 }
