@@ -16,6 +16,7 @@ import {
   Button,
   LoadingSpinner,
   ErrorMessage,
+  Header,
 } from '@/components/ui';
 import { Colors, Spacing, FontSizes, BorderRadius } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -26,6 +27,15 @@ import {
 } from '@/features/pedidos/hooks/usePedidos';
 import { MOCK_MOTIVOS } from '@/mocks/mockData';
 import type { EstadoPedido, MotivoCancelacion } from '@/types';
+
+const MOTIVO_LABELS: Record<string, string> = {};
+for (const m of MOCK_MOTIVOS) {
+  MOTIVO_LABELS[m.value] = m.label;
+}
+
+function getMotivoLabel(motivo: string): string {
+  return MOTIVO_LABELS[motivo] ?? motivo;
+}
 
 function getEstadoColor(estado: EstadoPedido, theme: typeof Colors.light): string {
   switch (estado) {
@@ -106,15 +116,23 @@ export default function PedidoDetalleScreen({ id }: PedidoDetalleScreenProps) {
   };
 
   if (isLoading) {
-    return <LoadingSpinner message="Cargando detalle del pedido..." />;
+    return (
+      <ThemedView style={styles.container}>
+        <Header />
+        <LoadingSpinner message="Cargando detalle del pedido..." />
+      </ThemedView>
+    );
   }
 
   if (isError || !pedido) {
     return (
-      <ErrorMessage
-        message={error?.message || 'Error al cargar el pedido'}
-        onRetry={() => router.back()}
-      />
+      <ThemedView style={styles.container}>
+        <Header />
+        <ErrorMessage
+          message={error?.message || 'Error al cargar el pedido'}
+          onRetry={() => router.back()}
+        />
+      </ThemedView>
     );
   }
 
@@ -122,6 +140,7 @@ export default function PedidoDetalleScreen({ id }: PedidoDetalleScreenProps) {
 
   return (
     <ThemedView style={styles.container}>
+      <Header />
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Estado */}
         <View style={styles.estadoContainer}>
@@ -229,8 +248,8 @@ export default function PedidoDetalleScreen({ id }: PedidoDetalleScreenProps) {
               Motivo de no entrega
             </Text>
             <Text style={[styles.motivoText, { color: theme.text }]}>
-              {pedido.motivoFalla}
-            </Text>
+                {getMotivoLabel(pedido.motivoFalla)}
+              </Text>
           </Card>
         )}
 

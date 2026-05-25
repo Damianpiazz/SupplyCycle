@@ -1,8 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client"
   output   = "../generated/prisma"
@@ -12,36 +7,111 @@ datasource db {
   provider = "postgresql"
 }
 
-/*
-
-model User {
-  id        Int      @id @default(autoincrement()) // serial
-  email     String   @unique                       // único
-  name      String                                 // requerido
-  password  String                                 // requerido
-  createdAt DateTime @default(now())               // timestamp automático
-  updatedAt DateTime @updatedAt                    // auto update
+enum Rol {
+  REPARTIDOR
+  ADMIN
 }
 
-Campos:
-- id → serial (autoincrement)
-- email → único
-- name → string required
-- password → string required
-- createdAt → timestamp automático
-- updatedAt → timestamp automático (se actualiza solo)
-Otros tipos comunes:
-model Product {
-  id          Int     @id @default(autoincrement())
-  sku         String  @unique
-  name        String
-  price       Decimal @db.Decimal(10, 2)
-  stock       Int     @default(0)
-  isActive    Boolean @default(true)
-  createdAt   DateTime @default(now())
+enum DiaSemana {
+  LUNES
+  MARTES
+  MIERCOLES
+  JUEVES
+  VIERNES
+  SABADO
 }
-Para aplicar este modelo a la DB, una vez definido ejecutás:
-npx prisma migrate dev --name init
 
+enum EstadoPedido {
+  PENDIENTE
+  ENTREGADO
+  NO_ENTREGADO
+}
 
-*/
+enum EstadoReparto {
+  PENDIENTE
+  EN_CURSO
+  COMPLETADO
+}
+
+model Usuario {
+  id            String   @id @default(uuid())
+  email         String   @unique
+  password      String
+  nombre        String   @db.VarChar(100)
+  apellido      String   @db.VarChar(100)
+  rol           Rol      @default(REPARTIDOR)
+  activo        Boolean  @default(true)
+  creadoEn      DateTime @default(now())
+  actualizadoEn DateTime @updatedAt
+  repartos      Reparto[]
+}
+
+model Cliente {
+  id            String    @id @default(uuid())
+  nombre        String    @db.VarChar(100)
+  apellido      String    @db.VarChar(100)
+  telefono      String    @db.VarChar(20)
+  calle         String
+  numero        String
+  localidad     String
+  latitud       Float
+  longitud      Float
+  diaEntrega    DiaSemana
+  horarioDesde  String
+  horarioHasta  String
+  observaciones String?
+  creadoEn      DateTime  @default(now())
+  actualizadoEn DateTime  @updatedAt
+  pedidos       Pedido[]
+}
+
+model Item {
+  id          String       @id @default(uuid())
+  nombre      String       @db.VarChar(100)
+  descripcion String?
+  unidad      String
+  activo      Boolean      @default(true)
+  creadoEn    DateTime     @default(now())
+  pedidoItems PedidoItem[]
+}
+
+model Pedido {
+  id            String        @id @default(uuid())
+  clienteId     String
+  repartoId     String
+  fecha         DateTime
+  estado        EstadoPedido  @default(PENDIENTE)
+  motivoFalla   String?
+  orden         Int
+  creadoEn      DateTime      @default(now())
+  actualizadoEn DateTime      @updatedAt
+  cliente       Cliente       @relation(fields: [clienteId], references: [id])
+  reparto       Reparto       @relation(fields: [repartoId], references: [id])
+  items         PedidoItem[]
+
+  @@unique([clienteId, fecha])
+}
+
+model PedidoItem {
+  id       String @id @default(uuid())
+  pedidoId String
+  itemId   String
+  cantidad Int
+  pedido   Pedido @relation(fields: [pedidoId], references: [id])
+  item     Item   @relation(fields: [itemId], references: [id])
+}
+
+model Reparto {
+  id            String        @id @default(uuid())
+  repartidorId  String
+  fecha         DateTime      @db.Date
+  estado        EstadoReparto @default(PENDIENTE)
+  horaInicio    String?
+  horaFin       String?
+  creadoEn      DateTime      @default(now())
+  actualizadoEn DateTime      @updatedAt
+  repartidor    Usuario       @relation(fields: [repartidorId], references: [id])
+  pedidos       Pedido[]
+
+  @@unique([repartidorId, fecha])
+}

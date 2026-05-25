@@ -23,7 +23,7 @@ export async function mockLoginRequest(
 
   if (
     credentials.email === 'repartidor@supplycycle.com' &&
-    credentials.password === '12345678'
+    (credentials.password === 'Repartidor123' || credentials.password === '12345678')
   ) {
     return {
       token: MOCK_TOKEN,

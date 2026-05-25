@@ -1,4 +1,5 @@
-import { Alert, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
+import { router } from 'expo-router';
 import { ThemedView } from '@/components/themed-view';
 import { Card, Button, Header } from '@/components/ui';
 import { Colors, Spacing, FontSizes, BorderRadius } from '@/constants/theme';
@@ -11,24 +12,22 @@ export default function PerfilScreen() {
   const theme = Colors[colorScheme];
   const { usuario, logout } = useAuthStore();
 
-  const handleLogout = () => {
-    Alert.alert(
-      'Cerrar sesión',
-      '¿Estás seguro de que querés cerrar sesión?',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Cerrar sesión',
-          style: 'destructive',
-          onPress: async () => {
-            await clearToken();
-            logout();
-            // La redirección la maneja el auth gate en _layout.tsx
-            // al detectar isAuthenticated === false
-          },
-        },
-      ]
-    );
+  const handleLogout = async () => {
+    // 1. Actualizar store primero (el usuario queda deslogueado inmediatamente)
+    logout();
+
+    // 2. Limpiar token de SecureStore (con manejo de errores)
+    try {
+      await clearToken();
+    } catch (e) {
+      console.warn('Error al limpiar token:', e);
+    }
+
+    // 3. Redirigir al login
+    // Usamos setTimeout por si React no ha procesado aún el cambio de estado
+    setTimeout(() => {
+      router.replace('/login');
+    }, 0);
   };
 
   if (!usuario) {

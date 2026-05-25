@@ -5,7 +5,7 @@
     "moduleResolution": "NodeNext",
     "moduleDetection": "force",
     "verbatimModuleSyntax": true,
-    "rootDir": "./src",
+    "rootDir": ".",
     "outDir": "./dist",
     "strict": true,
     "esModuleInterop": true,

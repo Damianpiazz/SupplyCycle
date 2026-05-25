@@ -19,6 +19,8 @@ export default function Input({ label, error, style, ...rest }: InputProps) {
   const theme = Colors[colorScheme];
   const [isFocused, setIsFocused] = useState(false);
 
+  const placeholderColor = colorScheme === 'light' ? '#64748B' : '#94A3B8';
+
   return (
     <View style={styles.container}>
       {label && <Text style={[styles.label, { color: theme.text }]}>{label}</Text>}
@@ -32,7 +34,7 @@ export default function Input({ label, error, style, ...rest }: InputProps) {
           },
           style,
         ]}
-        placeholderTextColor={theme.muted}
+        placeholderTextColor={placeholderColor}
         onFocus={() => setIsFocused(true)}
         onBlur={() => setIsFocused(false)}
         {...rest}
