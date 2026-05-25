@@ -1,42 +1,53 @@
 import { prisma } from '../../lib/prisma.js';
 import { ApiError } from '../../utils/api-error.js';
+import type { Prisma } from '../../../generated/prisma/client.js';
 
-function formatPedido(pedido: {
-  id: string;
-  orden: number;
-  estado: string;
-  fecha: Date;
-  motivoFalla: string | null;
-  cliente: {
-    id: string;
-    nombre: string;
-    apellido: string;
-    telefono: string;
-    calle: string;
-    numero: string;
-    localidad: string;
-    latitud: number;
-    longitud: number;
-    horarioDesde: string;
-    horarioHasta: string;
+// ─── Tipos ──────────────────────────────────────────────────────────────────
+
+type PedidoConRelaciones = Prisma.PedidoGetPayload<{
+  include: {
+    cliente: true;
+    items: { include: { item: true } };
   };
-  items: Array<{
-    cantidad: number;
-    item: {
-      id: string;
-      nombre: string;
-      descripcion: string | null;
-      unidad: string;
-      activo: boolean;
-    };
-  }>;
-}) {
+}>;
+
+type EstadoPedido = 'PENDIENTE' | 'EN_RUTA' | 'ENTREGADO' | 'NO_ENTREGADO' | 'CANCELADO';
+
+// ─── Mapa de transiciones válidas ────────────────────────────────────────────
+
+const TRANSICIONES: Record<EstadoPedido, EstadoPedido[]> = {
+  PENDIENTE: ['EN_RUTA', 'NO_ENTREGADO', 'CANCELADO'],
+  EN_RUTA: ['ENTREGADO', 'NO_ENTREGADO'],
+  ENTREGADO: [],
+  NO_ENTREGADO: [],
+  CANCELADO: [],
+};
+
+function validarTransicion(actual: string, nuevo: string): void {
+  const permitidos = TRANSICIONES[actual as EstadoPedido];
+  if (!permitidos || !permitidos.includes(nuevo as EstadoPedido)) {
+    throw ApiError.conflict(
+      `No se puede cambiar el estado de "${actual}" a "${nuevo}"`
+    );
+  }
+}
+
+// ─── Format ──────────────────────────────────────────────────────────────────
+
+function formatPedido(pedido: PedidoConRelaciones) {
+  const total = pedido.items.reduce(
+    (sum, pi) => sum + (pi.precioUnitario ?? 0) * pi.cantidad,
+    0
+  );
+
   return {
     id: pedido.id,
     orden: pedido.orden,
     estado: pedido.estado,
     fecha: pedido.fecha.toISOString(),
     motivoFalla: pedido.motivoFalla ?? undefined,
+    total,
+    itemsCount: pedido.items.length,
     cliente: {
       id: pedido.cliente.id,
       nombre: pedido.cliente.nombre,
@@ -53,6 +64,7 @@ function formatPedido(pedido: {
       horarioHasta: pedido.cliente.horarioHasta,
     },
     items: pedido.items.map((pi) => ({
+      id: pi.id,
       item: {
         id: pi.item.id,
         nombre: pi.item.nombre,
@@ -61,9 +73,38 @@ function formatPedido(pedido: {
         activo: pi.item.activo,
       },
       cantidad: pi.cantidad,
+      precioUnitario: pi.precioUnitario,
     })),
   };
 }
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+async function findPedidoActivo(
+  id: string
+): Promise<PedidoConRelaciones> {
+  const pedido = await prisma.pedido.findUnique({
+    where: { id },
+    include: {
+      cliente: true,
+      items: { include: { item: true } },
+    },
+  });
+
+  if (!pedido) {
+    throw ApiError.notFound('Pedido no encontrado');
+  }
+
+  if (pedido.deletedAt) {
+    throw ApiError.notFound('Pedido no encontrado');
+  }
+
+  return pedido;
+}
+
+// =============================================================================
+// ENDPOINTS PÚBLICOS
+// =============================================================================
 
 /** GET /pedidos/hoy?repartidorId= */
 export async function obtenerPedidosDelDia(repartidorId: string) {
@@ -76,6 +117,7 @@ export async function obtenerPedidosDelDia(repartidorId: string) {
     where: {
       reparto: { repartidorId },
       fecha: { gte: startOfDay, lt: endOfDay },
+      deletedAt: null,
     },
     include: {
       cliente: true,
@@ -89,28 +131,25 @@ export async function obtenerPedidosDelDia(repartidorId: string) {
 
 /** GET /pedidos/:id */
 export async function obtenerPedido(id: string) {
-  const pedido = await prisma.pedido.findUnique({
-    where: { id },
-    include: {
-      cliente: true,
-      items: { include: { item: true } },
-    },
-  });
-
-  if (!pedido) {
-    throw ApiError.notFound('Pedido no encontrado');
-  }
-
+  const pedido = await findPedidoActivo(id);
   return formatPedido(pedido);
 }
 
-/** GET /pedidos?clienteNombre=&estado= */
+/** GET /pedidos?clienteNombre=&estado=&page=&pageSize= */
 export async function listarPedidos(params?: {
   clienteNombre?: string;
   fecha?: string;
   estado?: string;
+  page?: number;
+  pageSize?: number;
 }) {
-  const where: Record<string, unknown> = {};
+  const page = params?.page ?? 1;
+  const pageSize = params?.pageSize ?? 20;
+  const skip = (page - 1) * pageSize;
+
+  const where: Record<string, unknown> = {
+    deletedAt: null,
+  };
 
   if (params?.estado) {
     where['estado'] = params.estado;
@@ -118,8 +157,8 @@ export async function listarPedidos(params?: {
 
   if (params?.clienteNombre) {
     where['OR'] = [
-      { cliente: { nombre: { contains: params.clienteNombre, mode: 'insensitive' } } },
-      { cliente: { apellido: { contains: params.clienteNombre, mode: 'insensitive' } } },
+      { cliente: { nombre: { contains: params.clienteNombre, mode: 'insensitive' as const } } },
+      { cliente: { apellido: { contains: params.clienteNombre, mode: 'insensitive' as const } } },
     ];
   }
 
@@ -136,6 +175,8 @@ export async function listarPedidos(params?: {
         items: { include: { item: true } },
       },
       orderBy: { orden: 'asc' },
+      skip,
+      take: pageSize,
     }),
     prisma.pedido.count({ where }),
   ]);
@@ -143,10 +184,16 @@ export async function listarPedidos(params?: {
   return {
     data: pedidos.map(formatPedido),
     total,
+    page,
+    pageSize,
   };
 }
 
-/** PATCH /pedidos/:id/confirmar */
+// =============================================================================
+// MUTACIONES — Repartidor
+// =============================================================================
+
+/** PATCH /pedidos/:id/confirmar — PENDIENTE/EN_RUTA → ENTREGADO */
 export async function confirmarEntrega(id: string) {
   const pedido = await prisma.pedido.findUnique({ where: { id } });
 
@@ -154,8 +201,8 @@ export async function confirmarEntrega(id: string) {
     throw ApiError.notFound('Pedido no encontrado');
   }
 
-  if (pedido.estado !== 'PENDIENTE') {
-    throw ApiError.conflict('El pedido ya fue procesado');
+  if (pedido.estado !== 'PENDIENTE' && pedido.estado !== 'EN_RUTA') {
+    throw ApiError.conflict('El pedido no puede ser entregado desde su estado actual');
   }
 
   const updated = await prisma.pedido.update({
@@ -170,16 +217,16 @@ export async function confirmarEntrega(id: string) {
   };
 }
 
-/** PATCH /pedidos/:id/cancelar */
-export async function cancelarPedido(id: string, motivo: string) {
+/** PATCH /pedidos/:id/cancelar — PENDIENTE/EN_RUTA → NO_ENTREGADO (repartidor) */
+export async function cancelarPedidoRepartidor(id: string, motivo: string) {
   const pedido = await prisma.pedido.findUnique({ where: { id } });
 
   if (!pedido) {
     throw ApiError.notFound('Pedido no encontrado');
   }
 
-  if (pedido.estado !== 'PENDIENTE') {
-    throw ApiError.conflict('El pedido ya fue procesado');
+  if (pedido.estado !== 'PENDIENTE' && pedido.estado !== 'EN_RUTA') {
+    throw ApiError.conflict('El pedido no puede marcarse como no entregado desde su estado actual');
   }
 
   const updated = await prisma.pedido.update({
@@ -195,27 +242,34 @@ export async function cancelarPedido(id: string, motivo: string) {
   };
 }
 
+// =============================================================================
+// MUTACIONES — Admin
+// =============================================================================
+
 /** POST /pedidos */
 export async function crearPedido(data: {
   clienteId: string;
-  repartoId: string;
-  fecha: string;
-  orden: number;
+  repartoId?: string;
+  fecha?: string;
+  orden?: number;
   items: Array<{ itemId: string; cantidad: number }>;
 }) {
-  // Verificar que el cliente existe
+  // Verificar cliente
   const cliente = await prisma.cliente.findUnique({ where: { id: data.clienteId } });
   if (!cliente) {
     throw ApiError.notFound('Cliente no encontrado');
   }
 
-  // Verificar que el reparto existe
-  const reparto = await prisma.reparto.findUnique({ where: { id: data.repartoId } });
-  if (!reparto) {
-    throw ApiError.notFound('Reparto no encontrado');
+  // Verificar reparto (si se provee)
+  if (data.repartoId) {
+    const reparto = await prisma.reparto.findUnique({ where: { id: data.repartoId } });
+    if (!reparto) {
+      throw ApiError.notFound('Reparto no encontrado');
+    }
   }
 
-  // Verificar que todos los items existen y están activos
+  // Verificar items
+  const itemsValidos: Array<{ id: string; nombre: string; precio: number | null }> = [];
   for (const item of data.items) {
     const dbItem = await prisma.item.findUnique({ where: { id: item.itemId } });
     if (!dbItem) {
@@ -224,28 +278,38 @@ export async function crearPedido(data: {
     if (!dbItem.activo) {
       throw ApiError.badRequest(`El ítem "${dbItem.nombre}" no está disponible`);
     }
+    itemsValidos.push({ id: dbItem.id, nombre: dbItem.nombre, precio: dbItem.precio });
   }
 
-  // Verificar que no haya pedido duplicado para el mismo cliente en la misma fecha
-  const fechaDate = new Date(data.fecha);
-  const existente = await prisma.pedido.findFirst({
-    where: { clienteId: data.clienteId, fecha: fechaDate },
-  });
-  if (existente) {
-    throw ApiError.conflict('El cliente ya tiene un pedido para esa fecha');
+  // Auto-asignar fecha si no se provee
+  const fechaDate = data.fecha ? new Date(data.fecha) : new Date();
+  fechaDate.setHours(0, 0, 0, 0);
+
+  // Auto-asignar orden si no se provee
+  let orden = data.orden;
+  if (!orden) {
+    const maxOrden = await prisma.pedido.aggregate({
+      _max: { orden: true },
+      where: { fecha: fechaDate },
+    });
+    orden = (maxOrden._max.orden ?? 0) + 1;
   }
 
   const pedido = await prisma.pedido.create({
     data: {
       clienteId: data.clienteId,
-      repartoId: data.repartoId,
+      repartoId: data.repartoId ?? undefined,
       fecha: fechaDate,
-      orden: data.orden,
+      orden,
       items: {
-        create: data.items.map((i) => ({
-          itemId: i.itemId,
-          cantidad: i.cantidad,
-        })),
+        create: data.items.map((i) => {
+          const itemInfo = itemsValidos.find((iv) => iv.id === i.itemId)!;
+          return {
+            itemId: i.itemId,
+            cantidad: i.cantidad,
+            precioUnitario: itemInfo.precio,
+          };
+        }),
       },
     },
     include: {
@@ -254,9 +318,184 @@ export async function crearPedido(data: {
     },
   });
 
+  return formatPedido(pedido);
+}
+
+/** DELETE /pedidos/:id — Soft delete (admin) */
+export async function eliminarPedido(id: string) {
+  const pedido = await prisma.pedido.findUnique({ where: { id } });
+
+  if (!pedido) {
+    throw ApiError.notFound('Pedido no encontrado');
+  }
+
+  if (pedido.estado === 'EN_RUTA' || pedido.estado === 'ENTREGADO') {
+    throw ApiError.conflict('No se puede eliminar un pedido en reparto');
+  }
+
+  const updated = await prisma.pedido.update({
+    where: { id },
+    data: { deletedAt: new Date() },
+  });
+
   return {
-    id: pedido.id,
-    estado: 'PENDIENTE' as const,
-    creadoEn: pedido.creadoEn.toISOString(),
+    id: updated.id,
+    deletedAt: updated.deletedAt!.toISOString(),
   };
+}
+
+/** PATCH /pedidos/:id/estado — Máquina de estados */
+export async function actualizarEstado(id: string, nuevoEstado: string) {
+  const pedido = await prisma.pedido.findUnique({ where: { id } });
+
+  if (!pedido) {
+    throw ApiError.notFound('Pedido no encontrado');
+  }
+
+  validarTransicion(pedido.estado, nuevoEstado);
+
+  const updated = await prisma.pedido.update({
+    where: { id },
+    data: { estado: nuevoEstado as EstadoPedido },
+  });
+
+  return {
+    id: updated.id,
+    estado: updated.estado,
+    actualizadoEn: updated.actualizadoEn.toISOString(),
+  };
+}
+
+/** POST /pedidos/:id/cancelar — Admin: PENDIENTE → CANCELADO */
+export async function cancelarPedido(id: string) {
+  const pedido = await prisma.pedido.findUnique({ where: { id } });
+
+  if (!pedido) {
+    throw ApiError.notFound('Pedido no encontrado');
+  }
+
+  if (pedido.estado !== 'PENDIENTE') {
+    throw ApiError.conflict('Solo se pueden cancelar pedidos en estado pendiente');
+  }
+
+  const updated = await prisma.pedido.update({
+    where: { id },
+    data: { estado: 'CANCELADO' },
+  });
+
+  return {
+    id: updated.id,
+    estado: 'CANCELADO' as const,
+    actualizadoEn: updated.actualizadoEn.toISOString(),
+  };
+}
+
+// =============================================================================
+// MUTACIONES — Items del pedido (admin)
+// =============================================================================
+
+/** POST /pedidos/:pedidoId/items */
+export async function agregarItem(
+  pedidoId: string,
+  data: { itemId: string; cantidad: number }
+) {
+  const pedido = await prisma.pedido.findUnique({ where: { id: pedidoId } });
+
+  if (!pedido) {
+    throw ApiError.notFound('Pedido no encontrado');
+  }
+
+  if (pedido.estado !== 'PENDIENTE' && pedido.estado !== 'EN_RUTA') {
+    throw ApiError.conflict('Solo se pueden modificar pedidos en estado pendiente o en ruta');
+  }
+
+  const dbItem = await prisma.item.findUnique({ where: { id: data.itemId } });
+  if (!dbItem) {
+    throw ApiError.badRequest('El ítem no existe');
+  }
+  if (!dbItem.activo) {
+    throw ApiError.badRequest(`El ítem "${dbItem.nombre}" no está disponible`);
+  }
+
+  const existente = await prisma.pedidoItem.findFirst({
+    where: { pedidoId, itemId: data.itemId },
+  });
+  if (existente) {
+    throw ApiError.conflict('El ítem ya existe en el pedido');
+  }
+
+  await prisma.pedidoItem.create({
+    data: {
+      pedidoId,
+      itemId: data.itemId,
+      cantidad: data.cantidad,
+      precioUnitario: dbItem.precio,
+    },
+  });
+
+  // Re-fetch con relaciones
+  const updated = await findPedidoActivo(pedidoId);
+  return formatPedido(updated);
+}
+
+/** PATCH /pedidos/:pedidoId/items/:itemId */
+export async function actualizarCantidadItem(
+  pedidoId: string,
+  itemId: string,
+  cantidad: number
+) {
+  const pedido = await prisma.pedido.findUnique({ where: { id: pedidoId } });
+
+  if (!pedido) {
+    throw ApiError.notFound('Pedido no encontrado');
+  }
+
+  if (pedido.estado !== 'PENDIENTE' && pedido.estado !== 'EN_RUTA') {
+    throw ApiError.conflict('Solo se pueden modificar pedidos en estado pendiente o en ruta');
+  }
+
+  const pedidoItem = await prisma.pedidoItem.findFirst({
+    where: { id: itemId, pedidoId },
+  });
+  if (!pedidoItem) {
+    throw ApiError.notFound('El ítem no existe en el pedido');
+  }
+
+  await prisma.pedidoItem.update({
+    where: { id: itemId },
+    data: { cantidad },
+  });
+
+  const updated = await findPedidoActivo(pedidoId);
+  return formatPedido(updated);
+}
+
+/** DELETE /pedidos/:pedidoId/items/:itemId */
+export async function quitarItem(pedidoId: string, itemId: string) {
+  const pedido = await prisma.pedido.findUnique({ where: { id: pedidoId } });
+
+  if (!pedido) {
+    throw ApiError.notFound('Pedido no encontrado');
+  }
+
+  if (pedido.estado !== 'PENDIENTE' && pedido.estado !== 'EN_RUTA') {
+    throw ApiError.conflict('Solo se pueden modificar pedidos en estado pendiente o en ruta');
+  }
+
+  const pedidoItem = await prisma.pedidoItem.findFirst({
+    where: { id: itemId, pedidoId },
+  });
+  if (!pedidoItem) {
+    throw ApiError.notFound('El ítem no existe en el pedido');
+  }
+
+  const itemsCount = await prisma.pedidoItem.count({ where: { pedidoId } });
+  if (itemsCount <= 1) {
+    throw ApiError.conflict('El pedido debe tener al menos un item');
+  }
+
+  await prisma.pedidoItem.delete({ where: { id: itemId } });
+
+  const updated = await findPedidoActivo(pedidoId);
+  return formatPedido(updated);
 }
