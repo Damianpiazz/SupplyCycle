@@ -8,7 +8,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useAuthStore } from '@/stores/authStore';
 import { getToken } from '@/features/auth/services/authStorage';
-import { LoadingSpinner } from '@/components/ui';
+import { LoadingSpinner, Toast } from '@/components/ui';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -82,6 +82,7 @@ export default function RootLayout() {
           />
         </Stack>
         <StatusBar style="auto" />
+        <Toast />
       </QueryClientProvider>
     </ThemeProvider>
   );

@@ -45,7 +45,7 @@ describe('Mock Data - Pedidos', () => {
   });
 
   it('each pedido should have valid estado', () => {
-    const validEstados = ['PENDIENTE', 'ENTREGADO', 'NO_ENTREGADO'];
+    const validEstados: string[] = ['PENDIENTE', 'EN_RUTA', 'ENTREGADO', 'NO_ENTREGADO', 'CANCELADO'];
     MOCK_PEDIDOS.forEach((pedido) => {
       expect(validEstados).toContain(pedido.estado);
       expect(pedido.cliente).toBeDefined();
@@ -57,8 +57,10 @@ describe('Mock Data - Pedidos', () => {
   it('should have mixed estados for testing', () => {
     const estados = MOCK_PEDIDOS.map((p) => p.estado);
     expect(estados).toContain('PENDIENTE');
+    expect(estados).toContain('EN_RUTA');
     expect(estados).toContain('ENTREGADO');
     expect(estados).toContain('NO_ENTREGADO');
+    expect(estados).toContain('CANCELADO');
   });
 });
 
@@ -79,9 +81,13 @@ describe('Mock Data - Reparto', () => {
     const resumen = MOCK_REPARTO.resumen!;
     expect(resumen.totalPedidos).toBe(MOCK_REPARTO.pedidos!.length);
     const actualCompletados = MOCK_REPARTO.pedidos!.filter(
-      (p) => p.estado !== 'PENDIENTE'
+      (p) => p.estado === 'ENTREGADO' || p.estado === 'NO_ENTREGADO'
+    ).length;
+    const actualPendientes = MOCK_REPARTO.pedidos!.filter(
+      (p) => p.estado === 'PENDIENTE' || p.estado === 'EN_RUTA'
     ).length;
     expect(resumen.completados).toBe(actualCompletados);
+    expect(resumen.pendientes).toBe(actualPendientes);
   });
 });
 

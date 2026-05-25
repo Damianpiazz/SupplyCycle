@@ -6,6 +6,10 @@ import {
   getPedidosRequest,
   confirmarEntregaRequest,
   cancelarPedidoRequest,
+  crearPedidoRequest,
+  agregarItemRequest,
+  actualizarCantidadItemRequest,
+  quitarItemRequest,
 } from '@/features/pedidos/services/pedidoService';
 import {
   mockGetPedidosDelDiaRequest,
@@ -67,6 +71,23 @@ export function useBuscarPedidos(params?: {
   });
 }
 
+// Crear pedido (admin)
+export function useCrearPedido() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: {
+      clienteId: string;
+      repartoId?: string;
+      items: Array<{ itemId: string; cantidad: number }>;
+    }) => crearPedidoRequest(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pedidos'] });
+      queryClient.invalidateQueries({ queryKey: ['reparto'] });
+    },
+  });
+}
+
 // Confirmar entrega exitosa
 export function useConfirmarEntrega() {
   const queryClient = useQueryClient();
@@ -104,6 +125,44 @@ export function useCancelarPedido() {
       });
       queryClient.invalidateQueries({ queryKey: ['pedidos'] });
       queryClient.invalidateQueries({ queryKey: ['reparto'] });
+    },
+  });
+}
+
+// Agregar item a un pedido
+export function useAgregarItem(pedidoId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: { itemId: string; cantidad: number }) =>
+      agregarItemRequest(pedidoId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pedido', pedidoId] });
+    },
+  });
+}
+
+// Actualizar cantidad de un item en un pedido
+export function useActualizarCantidadItem(pedidoId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ itemId, cantidad }: { itemId: string; cantidad: number }) =>
+      actualizarCantidadItemRequest(pedidoId, itemId, cantidad),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pedido', pedidoId] });
+    },
+  });
+}
+
+// Quitar item de un pedido
+export function useQuitarItem(pedidoId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (itemId: string) => quitarItemRequest(pedidoId, itemId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pedido', pedidoId] });
     },
   });
 }

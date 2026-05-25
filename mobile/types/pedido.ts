@@ -3,7 +3,7 @@
 import type { Cliente } from './cliente';
 import type { PedidoItem } from './item';
 
-export type EstadoPedido = 'PENDIENTE' | 'ENTREGADO' | 'NO_ENTREGADO';
+export type EstadoPedido = 'PENDIENTE' | 'EN_RUTA' | 'ENTREGADO' | 'NO_ENTREGADO' | 'CANCELADO';
 
 export type MotivoCancelacion =
   | 'CLIENTE_AUSENTE'
@@ -17,6 +17,8 @@ export interface Pedido {
   estado: EstadoPedido;
   fecha: string;
   motivoFalla?: string;
+  total?: number;
+  itemsCount?: number;
   cliente: Cliente;
   items: PedidoItem[];
 }

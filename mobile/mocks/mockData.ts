@@ -110,6 +110,7 @@ export const MOCK_ITEMS: Item[] = [
     nombre: 'Bidón 20L',
     descripcion: 'Bidón de agua de 20 litros',
     unidad: 'unidad',
+    precio: 1500,
     activo: true,
   },
   {
@@ -117,6 +118,7 @@ export const MOCK_ITEMS: Item[] = [
     nombre: 'Bidón 12L',
     descripcion: 'Bidón de agua de 12 litros',
     unidad: 'unidad',
+    precio: 900,
     activo: true,
   },
   {
@@ -124,15 +126,27 @@ export const MOCK_ITEMS: Item[] = [
     nombre: 'Bidón 6L',
     descripcion: 'Bidón de agua de 6 litros',
     unidad: 'unidad',
+    precio: 600,
     activo: true,
   },
 ];
 
+let pedidoItemCounter = 0;
 function getPedidoItem(item: Item, cantidad: number): PedidoItem {
-  return { item, cantidad };
+  pedidoItemCounter++;
+  return {
+    id: `mock-pi-${String(pedidoItemCounter).padStart(3, '0')}`,
+    item,
+    cantidad,
+    precioUnitario: item.precio,
+  };
 }
 
 const today = new Date().toISOString();
+
+function calcularTotal(items: PedidoItem[]): number {
+  return items.reduce((sum, pi) => sum + (pi.precioUnitario ?? 0) * pi.cantidad, 0);
+}
 
 export const MOCK_PEDIDOS: Pedido[] = [
   {
@@ -146,7 +160,7 @@ export const MOCK_PEDIDOS: Pedido[] = [
   {
     id: 'pedido-002',
     orden: 2,
-    estado: 'PENDIENTE',
+    estado: 'EN_RUTA',
     fecha: today,
     cliente: MOCK_CLIENTES[1],
     items: [getPedidoItem(MOCK_ITEMS[0], 1), getPedidoItem(MOCK_ITEMS[1], 1)],
@@ -162,7 +176,7 @@ export const MOCK_PEDIDOS: Pedido[] = [
   {
     id: 'pedido-004',
     orden: 4,
-    estado: 'PENDIENTE',
+    estado: 'CANCELADO',
     fecha: today,
     cliente: MOCK_CLIENTES[3],
     items: [getPedidoItem(MOCK_ITEMS[1], 2)],
@@ -186,6 +200,12 @@ export const MOCK_PEDIDOS: Pedido[] = [
   },
 ];
 
+// Calcular total después de crear items
+for (const p of MOCK_PEDIDOS) {
+  p.total = calcularTotal(p.items);
+  p.itemsCount = p.items.length;
+}
+
 export const MOCK_REPARTO: Reparto = {
   id: 'reparto-001',
   repartidorId: 'mock-user-001',
@@ -196,7 +216,7 @@ export const MOCK_REPARTO: Reparto = {
   resumen: {
     totalPedidos: 6,
     completados: 2,
-    pendientes: 4,
+    pendientes: 3,
   },
 };
 

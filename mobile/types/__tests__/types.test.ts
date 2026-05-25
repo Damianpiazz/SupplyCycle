@@ -89,9 +89,9 @@ describe('Types - Cliente', () => {
 
 describe('Types - Pedido', () => {
   it('should accept valid estado values', () => {
-    const estados = ['PENDIENTE', 'ENTREGADO', 'NO_ENTREGADO'] as const;
+    const estados = ['PENDIENTE', 'EN_RUTA', 'ENTREGADO', 'NO_ENTREGADO', 'CANCELADO'] as const;
     estados.forEach((estado) => {
-      expect(['PENDIENTE', 'ENTREGADO', 'NO_ENTREGADO']).toContain(estado);
+      expect(['PENDIENTE', 'EN_RUTA', 'ENTREGADO', 'NO_ENTREGADO', 'CANCELADO']).toContain(estado);
     });
   });
 
@@ -107,12 +107,15 @@ describe('Types - Pedido', () => {
     });
   });
 
-  it('should have items array with cantidad > 0', () => {
+  it('should have items array with cantidad > 0 and precioUnitario', () => {
     const pedidoItem = {
-      item: { id: '1', nombre: 'Bidón 20L', unidad: 'unidad', activo: true },
+      id: 'item-ped-001',
+      item: { id: '1', nombre: 'Bidón 20L', unidad: 'unidad', activo: true, precio: 1500 },
       cantidad: 2,
+      precioUnitario: 1500,
     };
     expect(pedidoItem.cantidad).toBeGreaterThan(0);
+    expect(pedidoItem.precioUnitario).toBeGreaterThan(0);
   });
 });
 

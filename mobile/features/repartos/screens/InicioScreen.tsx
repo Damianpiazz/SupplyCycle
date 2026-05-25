@@ -10,12 +10,33 @@ function getEstadoColor(estado: string, theme: typeof Colors.light): string {
   switch (estado) {
     case 'PENDIENTE':
       return theme.pendiente;
+    case 'EN_RUTA':
+      return theme.tint;
     case 'ENTREGADO':
       return theme.entregado;
     case 'NO_ENTREGADO':
       return theme.noEntregado;
+    case 'CANCELADO':
+      return theme.muted;
     default:
       return theme.text;
+  }
+}
+
+function getEstadoLabel(estado: string): string {
+  switch (estado) {
+    case 'PENDIENTE':
+      return 'Pendiente';
+    case 'EN_RUTA':
+      return 'En ruta';
+    case 'ENTREGADO':
+      return 'Entregado';
+    case 'NO_ENTREGADO':
+      return 'No entregado';
+    case 'CANCELADO':
+      return 'Cancelado';
+    default:
+      return estado;
   }
 }
 
@@ -55,11 +76,7 @@ function ProximaEntregaCard({
               { color: getEstadoColor(pedido.estado, theme) },
             ]}
           >
-            {pedido.estado === 'PENDIENTE'
-              ? 'Pendiente'
-              : pedido.estado === 'ENTREGADO'
-              ? 'Entregado'
-              : 'No entregado'}
+            {getEstadoLabel(pedido.estado)}
           </Text>
         </View>
         <Text style={[styles.ordenText, { color: theme.muted }]}>
@@ -182,8 +199,12 @@ export default function InicioScreen() {
     );
   }
 
-  const pendientes = reparto.pedidos.filter((p) => p.estado === 'PENDIENTE');
-  const completados = reparto.pedidos.filter((p) => p.estado !== 'PENDIENTE');
+  const pendientes = reparto.pedidos.filter(
+    (p) => p.estado === 'PENDIENTE' || p.estado === 'EN_RUTA'
+  );
+  const completados = reparto.pedidos.filter(
+    (p) => p.estado === 'ENTREGADO' || p.estado === 'NO_ENTREGADO'
+  );
   const proximaEntrega = pendientes[0];
 
   return (

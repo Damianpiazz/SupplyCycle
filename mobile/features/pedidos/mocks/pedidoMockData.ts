@@ -2,6 +2,16 @@ import type { Pedido } from '@/types';
 
 const hoy = new Date().toISOString();
 
+function mockItem(base: { id: string; nombre: string; unidad: string; precio?: number }): Item {
+  return { id: base.id, nombre: base.nombre, descripcion: undefined, unidad: base.unidad, precio: base.precio, activo: true };
+}
+
+let piCounter = 0;
+function mockPedidoItem(item: Item, cantidad: number): PedidoItem {
+  piCounter++;
+  return { id: `mock-pi-${String(piCounter).padStart(3, '0')}`, item, cantidad, precioUnitario: item.precio };
+}
+
 export const MOCK_PEDIDOS_HOY: Pedido[] = [
   {
     id: 'pedido-001',
@@ -26,14 +36,13 @@ export const MOCK_PEDIDOS_HOY: Pedido[] = [
       observaciones: 'Timbre: 3A',
     },
     items: [
-      { item: { id: 'item-001', nombre: 'Leche Entera', unidad: 'Litro', activo: true }, cantidad: 2 },
-      { item: { id: 'item-002', nombre: 'Yogur Natural', unidad: 'Unidad', activo: true }, cantidad: 6 },
+      mockPedidoItem(mockItem({ id: 'item-001', nombre: 'Bidón 20L', unidad: 'unidad', precio: 1500 }), 2),
     ],
   },
   {
     id: 'pedido-002',
     orden: 2,
-    estado: 'ENTREGADO',
+    estado: 'EN_RUTA',
     fecha: hoy,
     cliente: {
       id: 'cli-002',
@@ -52,14 +61,14 @@ export const MOCK_PEDIDOS_HOY: Pedido[] = [
       horarioHasta: '13:00',
     },
     items: [
-      { item: { id: 'item-003', nombre: 'Queso Cremoso', unidad: 'Kg', activo: true }, cantidad: 1 },
-      { item: { id: 'item-004', nombre: 'Manteca', unidad: 'Unidad', activo: true }, cantidad: 2 },
+      mockPedidoItem(mockItem({ id: 'item-001', nombre: 'Bidón 20L', unidad: 'unidad', precio: 1500 }), 1),
+      mockPedidoItem(mockItem({ id: 'item-002', nombre: 'Bidón 12L', unidad: 'unidad', precio: 900 }), 1),
     ],
   },
   {
     id: 'pedido-003',
     orden: 3,
-    estado: 'PENDIENTE',
+    estado: 'ENTREGADO',
     fecha: hoy,
     cliente: {
       id: 'cli-003',
@@ -78,8 +87,7 @@ export const MOCK_PEDIDOS_HOY: Pedido[] = [
       horarioHasta: '14:00',
     },
     items: [
-      { item: { id: 'item-005', nombre: 'Huevos', unidad: 'Docena', activo: true }, cantidad: 1 },
-      { item: { id: 'item-006', nombre: 'Pan Lactal', unidad: 'Unidad', activo: true }, cantidad: 2 },
+      mockPedidoItem(mockItem({ id: 'item-001', nombre: 'Bidón 20L', unidad: 'unidad', precio: 1500 }), 3),
     ],
   },
   {
@@ -104,14 +112,13 @@ export const MOCK_PEDIDOS_HOY: Pedido[] = [
       horarioHasta: '15:00',
     },
     items: [
-      { item: { id: 'item-007', nombre: 'Gaseosa Cola', unidad: 'Botella', activo: true }, cantidad: 3 },
-      { item: { id: 'item-008', nombre: 'Jugo de Naranja', unidad: 'Botella', activo: true }, cantidad: 1 },
+      mockPedidoItem(mockItem({ id: 'item-002', nombre: 'Bidón 12L', unidad: 'unidad', precio: 900 }), 2),
     ],
   },
   {
     id: 'pedido-005',
     orden: 5,
-    estado: 'PENDIENTE',
+    estado: 'NO_ENTREGADO',
     fecha: hoy,
     cliente: {
       id: 'cli-005',
@@ -131,8 +138,34 @@ export const MOCK_PEDIDOS_HOY: Pedido[] = [
       observaciones: 'Dejar en recepción',
     },
     items: [
-      { item: { id: 'item-009', nombre: 'Agua Mineral', unidad: 'Botella', activo: true }, cantidad: 6 },
-      { item: { id: 'item-010', nombre: 'Galletitas Dulces', unidad: 'Unidad', activo: true }, cantidad: 4 },
+      mockPedidoItem(mockItem({ id: 'item-001', nombre: 'Bidón 20L', unidad: 'unidad', precio: 1500 }), 1),
+    ],
+    motivoFalla: 'CLIENTE_AUSENTE',
+  },
+  {
+    id: 'pedido-006',
+    orden: 6,
+    estado: 'PENDIENTE',
+    fecha: hoy,
+    cliente: {
+      id: 'cli-006',
+      nombre: 'Roberto',
+      apellido: 'Díaz',
+      telefono: '1155550106',
+      domicilio: {
+        calle: 'Av. Pueyrredón',
+        numero: '890',
+        localidad: 'CABA',
+        latitud: -34.5985,
+        longitud: -58.3886,
+      },
+      diaEntrega: 'LUNES',
+      horarioDesde: '08:00',
+      horarioHasta: '10:00',
+    },
+    items: [
+      mockPedidoItem(mockItem({ id: 'item-001', nombre: 'Bidón 20L', unidad: 'unidad', precio: 1500 }), 2),
+      mockPedidoItem(mockItem({ id: 'item-003', nombre: 'Bidón 6L', unidad: 'unidad', precio: 600 }), 1),
     ],
   },
 ];

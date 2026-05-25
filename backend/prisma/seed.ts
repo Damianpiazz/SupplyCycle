@@ -34,13 +34,13 @@ async function main() {
 
   // --- Items ---
   const item20l = await prisma.item.create({
-    data: { nombre: 'Bidón 20L', descripcion: 'Bidón de agua de 20 litros', unidad: 'unidad', activo: true },
+    data: { nombre: 'Bidón 20L', descripcion: 'Bidón de agua de 20 litros', unidad: 'unidad', precio: 1500, activo: true },
   });
   const item12l = await prisma.item.create({
-    data: { nombre: 'Bidón 12L', descripcion: 'Bidón de agua de 12 litros', unidad: 'unidad', activo: true },
+    data: { nombre: 'Bidón 12L', descripcion: 'Bidón de agua de 12 litros', unidad: 'unidad', precio: 900, activo: true },
   });
   const item6l = await prisma.item.create({
-    data: { nombre: 'Bidón 6L', descripcion: 'Bidón de agua de 6 litros', unidad: 'unidad', activo: true },
+    data: { nombre: 'Bidón 6L', descripcion: 'Bidón de agua de 6 litros', unidad: 'unidad', precio: 600, activo: true },
   });
   console.log('  ✅ Items creados');
 
@@ -85,6 +85,13 @@ async function main() {
     { orden: 6, clienteIdx: 0, items: [{ itemId: item20l.id, cantidad: 2 }, { itemId: item6l.id, cantidad: 1 }] },
   ];
 
+  // Map item IDs to prices for PedidoItem creation
+  const itemPrices: Record<string, number> = {
+    [item20l.id]: item20l.precio!,
+    [item12l.id]: item12l.precio!,
+    [item6l.id]: item6l.precio!,
+  };
+
   for (const pd of pedidosData) {
     await prisma.pedido.create({
       data: {
@@ -98,6 +105,7 @@ async function main() {
           create: pd.items.map((i) => ({
             itemId: i.itemId,
             cantidad: i.cantidad,
+            precioUnitario: itemPrices[i.itemId],
           })),
         },
       },

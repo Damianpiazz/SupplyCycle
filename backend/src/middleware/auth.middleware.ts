@@ -39,3 +39,17 @@ export function authenticate(
     throw ApiError.unauthorized('Token inválido');
   }
 }
+
+/** Middleware que verifica que el usuario tenga uno de los roles indicados.
+ *  Debe usarse después de `authenticate`. */
+export function requireRole(...roles: Array<'REPARTIDOR' | 'ADMIN'>) {
+  return (req: Request, _res: Response, next: NextFunction): void => {
+    if (!req.user) {
+      throw ApiError.unauthorized('No autenticado');
+    }
+    if (!roles.includes(req.user.rol)) {
+      throw ApiError.forbidden('No tiene permisos para esta acción');
+    }
+    next();
+  };
+}

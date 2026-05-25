@@ -37,6 +37,15 @@ export async function confirmarEntregaRequest(
   return response.data;
 }
 
+export async function crearPedidoRequest(data: {
+  clienteId: string;
+  repartoId?: string;
+  items: Array<{ itemId: string; cantidad: number }>;
+}): Promise<Pedido> {
+  const response = await apiClient.post<{ data: Pedido }>('/pedidos', data);
+  return response.data.data;
+}
+
 export async function cancelarPedidoRequest(
   id: string,
   motivo: MotivoCancelacion
@@ -47,5 +56,33 @@ export async function cancelarPedidoRequest(
     motivoFalla: string;
     actualizadoEn: string;
   }>(`/pedidos/${id}/cancelar`, { motivo });
+  return response.data;
+}
+
+export async function agregarItemRequest(
+  pedidoId: string,
+  data: { itemId: string; cantidad: number }
+): Promise<Pedido> {
+  const response = await apiClient.post<Pedido>(`/pedidos/${pedidoId}/items`, data);
+  return response.data;
+}
+
+export async function actualizarCantidadItemRequest(
+  pedidoId: string,
+  itemId: string,
+  cantidad: number
+): Promise<Pedido> {
+  const response = await apiClient.patch<Pedido>(
+    `/pedidos/${pedidoId}/items/${itemId}`,
+    { cantidad }
+  );
+  return response.data;
+}
+
+export async function quitarItemRequest(
+  pedidoId: string,
+  itemId: string
+): Promise<Pedido> {
+  const response = await apiClient.delete<Pedido>(`/pedidos/${pedidoId}/items/${itemId}`);
   return response.data;
 }

@@ -19,10 +19,14 @@ function getEstadoColor(estado: EstadoPedido, theme: typeof Colors.light): strin
   switch (estado) {
     case 'PENDIENTE':
       return theme.pendiente;
+    case 'EN_RUTA':
+      return theme.tint;
     case 'ENTREGADO':
       return theme.entregado;
     case 'NO_ENTREGADO':
       return theme.noEntregado;
+    case 'CANCELADO':
+      return theme.muted;
   }
 }
 
@@ -30,10 +34,14 @@ function getEstadoLabel(estado: EstadoPedido): string {
   switch (estado) {
     case 'PENDIENTE':
       return 'Pendiente';
+    case 'EN_RUTA':
+      return 'En ruta';
     case 'ENTREGADO':
       return 'Entregado';
     case 'NO_ENTREGADO':
       return 'No entregado';
+    case 'CANCELADO':
+      return 'Cancelado';
   }
 }
 
@@ -70,6 +78,7 @@ export default function PedidosListScreen() {
               backgroundColor: theme.inputBackground,
               borderColor: theme.border,
               color: theme.text,
+              flex: 1,
             },
           ]}
           placeholder="Buscar por nombre de cliente..."
@@ -77,10 +86,16 @@ export default function PedidosListScreen() {
           value={search}
           onChangeText={setSearch}
         />
+        <TouchableOpacity
+          style={[styles.addButton, { backgroundColor: theme.tint }]}
+          onPress={() => router.push('/pedidos/alta')}
+        >
+          <Text style={styles.addButtonText}>+</Text>
+        </TouchableOpacity>
       </View>
 
       <View style={styles.filtrosContainer}>
-        {(['PENDIENTE', 'ENTREGADO', 'NO_ENTREGADO'] as EstadoPedido[]).map(
+        {(['PENDIENTE', 'EN_RUTA', 'ENTREGADO', 'NO_ENTREGADO', 'CANCELADO'] as EstadoPedido[]).map(
           (estado) => (
             <TouchableOpacity
               key={estado}
@@ -186,6 +201,9 @@ const styles = StyleSheet.create({
   searchContainer: {
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
   },
   searchInput: {
     borderWidth: 1,
@@ -193,6 +211,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.md,
     fontSize: FontSizes.md,
+  },
+  addButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  addButtonText: {
+    color: '#FFFFFF',
+    fontSize: 24,
+    fontWeight: '700',
+    lineHeight: 28,
   },
   filtrosContainer: {
     flexDirection: 'row',

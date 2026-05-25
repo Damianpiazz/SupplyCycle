@@ -1,0 +1,62 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen, fireEvent } from '@testing-library/react-native';
+
+vi.mock('@/features/pedidos/hooks/usePedidos', () => ({
+  usePedidosDelDia: vi.fn(),
+}));
+
+import { usePedidosDelDia } from '@/features/pedidos/hooks/usePedidos';
+import RepartosListScreen from '@/features/repartos/screens/RepartosListScreen';
+
+const mockPedido = {
+  id: 'pedido-1',
+  orden: 1,
+  estado: 'PENDIENTE',
+  fecha: new Date().toISOString(),
+  cliente: {
+    id: 'cli-1', nombre: 'María', apellido: 'González',
+    telefono: '1155550101',
+    domicilio: { calle: 'Av. Corrientes', numero: '1234', localidad: 'CABA', latitud: -34.6037, longitud: -58.3816 },
+    diaEntrega: 'LUNES', horarioDesde: '09:00', horarioHasta: '12:00',
+  },
+  items: [{ id: 'pi-1', item: { id: 'item-001', nombre: 'Bidón 20L', unidad: 'unidad', activo: true }, cantidad: 2 }],
+};
+
+describe('RepartosListScreen', () => {
+  beforeEach(() => { vi.clearAllMocks(); });
+
+  it('should show loading state', () => {
+    vi.mocked(usePedidosDelDia).mockReturnValue({ data: undefined, isLoading: true } as any);
+    render(<RepartosListScreen />);
+    expect(screen.getByText('Cargando entregas...')).toBeTruthy();
+  });
+
+  it('should show error state with retry', () => {
+    vi.mocked(usePedidosDelDia).mockReturnValue({ data: undefined, isLoading: false, isError: true, error: { message: 'Error al cargar las entregas' } } as any);
+    render(<RepartosListScreen />);
+    expect(screen.getByText('Error al cargar las entregas')).toBeTruthy();
+  });
+
+  it('should render list of pedidos', () => {
+    vi.mocked(usePedidosDelDia).mockReturnValue({ data: [mockPedido], isLoading: false, isError: false } as any);
+    render(<RepartosListScreen />);
+    expect(screen.getByText('María González')).toBeTruthy();
+  });
+
+  it('should show empty state when no pedidos', () => {
+    vi.mocked(usePedidosDelDia).mockReturnValue({ data: [], isLoading: false, isError: false } as any);
+    render(<RepartosListScreen />);
+    expect(screen.getByText('No hay entregas para mostrar')).toBeTruthy();
+  });
+
+  it('should filter list when pressing a filter button', () => {
+    vi.mocked(usePedidosDelDia).mockReturnValue({
+      data: [mockPedido, { ...mockPedido, id: 'pedido-2', estado: 'ENTREGADO' }],
+      isLoading: false, isError: false,
+    } as any);
+    render(<RepartosListScreen />);
+    expect(screen.getAllByText('María González').length).toBe(2);
+    fireEvent.press(screen.getByText('Entregados'));
+    expect(screen.getAllByText('María González').length).toBe(1);
+  });
+});
