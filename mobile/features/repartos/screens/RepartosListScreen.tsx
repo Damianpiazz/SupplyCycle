@@ -8,23 +8,29 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { usePedidosDelDia } from '@/features/pedidos/hooks/usePedidos';
 import type { Pedido, EstadoPedido } from '@/types';
 
-type FiltroEstado = 'TODAS' | 'PENDIENTE' | 'ENTREGADO' | 'NO_ENTREGADO';
+type FiltroEstado = 'TODAS' | 'PENDIENTE' | 'EN_RUTA' | 'ENTREGADO' | 'NO_ENTREGADO' | 'CANCELADO';
 
 const FILTROS: { key: FiltroEstado; label: string }[] = [
   { key: 'TODAS', label: 'Todo' },
   { key: 'PENDIENTE', label: 'Pendientes' },
+  { key: 'EN_RUTA', label: 'En ruta' },
   { key: 'ENTREGADO', label: 'Entregados' },
   { key: 'NO_ENTREGADO', label: 'No entregados' },
+  { key: 'CANCELADO', label: 'Cancelados' },
 ];
 
 function getEstadoColor(estado: EstadoPedido, theme: typeof Colors.light): string {
   switch (estado) {
     case 'PENDIENTE':
       return theme.pendiente;
+    case 'EN_RUTA':
+      return theme.tint;
     case 'ENTREGADO':
       return theme.entregado;
     case 'NO_ENTREGADO':
       return theme.noEntregado;
+    case 'CANCELADO':
+      return theme.muted;
   }
 }
 
@@ -32,10 +38,14 @@ function getEstadoLabel(estado: EstadoPedido): string {
   switch (estado) {
     case 'PENDIENTE':
       return 'Pendiente';
+    case 'EN_RUTA':
+      return 'En ruta';
     case 'ENTREGADO':
       return 'Entregado';
     case 'NO_ENTREGADO':
       return 'No entregado';
+    case 'CANCELADO':
+      return 'Cancelado';
   }
 }
 
