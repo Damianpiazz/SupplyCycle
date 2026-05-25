@@ -7,6 +7,13 @@ export default defineConfig({
     environment: 'node',
     include: ['**/*.test.{ts,tsx}'],
     exclude: ['node_modules', 'app-example'],
+    setupFiles: ['./test-setup.ts'],
+    execArgv: ['--require', './scripts/rn-mock-hook.js'],
+  },
+  server: {
+    deps: {
+      inline: ['@testing-library/react-native'],
+    },
   },
   resolve: {
     alias: {
