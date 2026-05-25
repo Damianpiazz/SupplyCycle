@@ -23,8 +23,10 @@ enum DiaSemana {
 
 enum EstadoPedido {
   PENDIENTE
+  EN_RUTA
   ENTREGADO
   NO_ENTREGADO
+  CANCELADO
 }
 
 enum EstadoReparto {
@@ -70,6 +72,7 @@ model Item {
   nombre      String       @db.VarChar(100)
   descripcion String?
   unidad      String
+  precio      Float?
   activo      Boolean      @default(true)
   creadoEn    DateTime     @default(now())
   pedidoItems PedidoItem[]
@@ -78,27 +81,28 @@ model Item {
 model Pedido {
   id            String        @id @default(uuid())
   clienteId     String
-  repartoId     String
+  repartoId     String?
   fecha         DateTime
   estado        EstadoPedido  @default(PENDIENTE)
   motivoFalla   String?
   orden         Int
   creadoEn      DateTime      @default(now())
   actualizadoEn DateTime      @updatedAt
+  deletedAt     DateTime?
   cliente       Cliente       @relation(fields: [clienteId], references: [id])
-  reparto       Reparto       @relation(fields: [repartoId], references: [id])
+  reparto       Reparto?      @relation(fields: [repartoId], references: [id])
   items         PedidoItem[]
 
-  @@unique([clienteId, fecha])
 }
 
 model PedidoItem {
-  id       String @id @default(uuid())
-  pedidoId String
-  itemId   String
-  cantidad Int
-  pedido   Pedido @relation(fields: [pedidoId], references: [id])
-  item     Item   @relation(fields: [itemId], references: [id])
+  id            String @id @default(uuid())
+  pedidoId      String
+  itemId        String
+  cantidad      Int
+  precioUnitario Float?
+  pedido        Pedido @relation(fields: [pedidoId], references: [id])
+  item          Item   @relation(fields: [itemId], references: [id])
 }
 
 model Reparto {
