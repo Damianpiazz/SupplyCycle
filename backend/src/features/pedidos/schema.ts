@@ -2,8 +2,7 @@ import { z } from 'zod';
 
 export const crearPedidoSchema = z.object({
   clienteId: z.string().uuid(),
-  repartoId: z.string().uuid().optional(),
-  fecha: z.string().datetime().optional(),
+  fecha: z.string().optional(),
   orden: z.number().int().min(1).optional(),
   items: z
     .array(

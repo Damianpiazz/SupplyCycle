@@ -2,6 +2,20 @@ import { prisma } from '../../lib/prisma.js';
 import { ApiError } from '../../utils/api-error.js';
 import type { Prisma } from '../../../generated/prisma/client.js';
 
+/** Create a Date from YYYY-MM-DD string without timezone conversion */
+function dateFromISODate(dateStr: string): Date {
+  const [y, m, d] = dateStr.slice(0, 10).split('-');
+  return new Date(Number(y), Number(m) - 1, Number(d));
+}
+
+/** Format a calendar-date Date to YYYY-MM-DD without timezone shift */
+function fmtDate(d: Date): string {
+  const y = String(d.getFullYear());
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
 // ─── Tipos ──────────────────────────────────────────────────────────────────
 
 type PedidoConRelaciones = Prisma.PedidoGetPayload<{
@@ -44,7 +58,7 @@ function formatPedido(pedido: PedidoConRelaciones) {
     id: pedido.id,
     orden: pedido.orden,
     estado: pedido.estado,
-    fecha: pedido.fecha.toISOString(),
+    fecha: fmtDate(pedido.fecha),
     motivoFalla: pedido.motivoFalla ?? undefined,
     total,
     itemsCount: pedido.items.length,
@@ -79,6 +93,27 @@ function formatPedido(pedido: PedidoConRelaciones) {
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
+
+/** GET /pedidos/disponibles?fecha= — Pedidos PENDIENTE sin reparto asignado */
+export async function obtenerPedidosDisponiblesParaReparto(fechaParam: string) {
+  const fecha = dateFromISODate(fechaParam);
+
+  const pedidos = await prisma.pedido.findMany({
+    where: {
+      fecha,
+      estado: 'PENDIENTE',
+      repartoId: null,
+      deletedAt: null,
+    },
+    include: {
+      cliente: true,
+      items: { include: { item: true } },
+    },
+    orderBy: { orden: 'asc' },
+  });
+
+  return pedidos.map(formatPedido);
+}
 
 async function findPedidoActivo(
   id: string
@@ -249,7 +284,6 @@ export async function cancelarPedidoRepartidor(id: string, motivo: string) {
 /** POST /pedidos */
 export async function crearPedido(data: {
   clienteId: string;
-  repartoId?: string;
   fecha?: string;
   orden?: number;
   items: Array<{ itemId: string; cantidad: number }>;
@@ -258,14 +292,6 @@ export async function crearPedido(data: {
   const cliente = await prisma.cliente.findUnique({ where: { id: data.clienteId } });
   if (!cliente) {
     throw ApiError.notFound('Cliente no encontrado');
-  }
-
-  // Verificar reparto (si se provee)
-  if (data.repartoId) {
-    const reparto = await prisma.reparto.findUnique({ where: { id: data.repartoId } });
-    if (!reparto) {
-      throw ApiError.notFound('Reparto no encontrado');
-    }
   }
 
   // Verificar items
@@ -281,9 +307,15 @@ export async function crearPedido(data: {
     itemsValidos.push({ id: dbItem.id, nombre: dbItem.nombre, precio: dbItem.precio });
   }
 
-  // Auto-asignar fecha si no se provee
-  const fechaDate = data.fecha ? new Date(data.fecha) : new Date();
-  fechaDate.setHours(0, 0, 0, 0);
+  // Resolver fecha
+  const hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
+  const fechaDate = data.fecha ? dateFromISODate(data.fecha) : hoy;
+
+  // Validar que la fecha no sea anterior a hoy
+  if (fechaDate < hoy) {
+    throw ApiError.badRequest('La fecha no puede ser anterior a hoy');
+  }
 
   // Auto-asignar orden si no se provee
   let orden = data.orden;
@@ -298,7 +330,6 @@ export async function crearPedido(data: {
   const pedido = await prisma.pedido.create({
     data: {
       clienteId: data.clienteId,
-      repartoId: data.repartoId ?? undefined,
       fecha: fechaDate,
       orden,
       items: {
