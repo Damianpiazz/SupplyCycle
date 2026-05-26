@@ -114,7 +114,7 @@ export default function UsuariosListScreen() {
           onChangeText={setSearch}
         />
         <TouchableOpacity
-          style={[styles.addButton, { backgroundColor: theme.tint }]}
+          style={[styles.addButton, { backgroundColor: theme.buttonPrimary }]}
           onPress={() => router.push('/usuarios/alta')}
         >
           <Text style={styles.addButtonText}>+</Text>
@@ -135,7 +135,7 @@ export default function UsuariosListScreen() {
               styles.filtroButton,
               {
                 backgroundColor:
-                  filtroActivo === filtro.key ? theme.tint : theme.surface,
+                  filtroActivo === filtro.key ? theme.buttonPrimary : theme.surface,
               },
             ]}
             onPress={() => setFiltroActivo(filtro.key)}
@@ -166,7 +166,7 @@ export default function UsuariosListScreen() {
               styles.filtroButton,
               {
                 backgroundColor:
-                  filtroRol === filtro.key ? theme.tint : theme.surface,
+                  filtroRol === filtro.key ? theme.buttonPrimary : theme.surface,
               },
             ]}
             onPress={() => setFiltroRol(filtro.key)}
@@ -204,8 +204,8 @@ export default function UsuariosListScreen() {
                       styles.estadoBadge,
                       {
                         backgroundColor: item.activo
-                          ? theme.entregado + '20'
-                          : theme.muted + '30',
+                          ? theme.entregado + (colorScheme === 'dark' ? '40' : '20')
+                          : theme.muted + (colorScheme === 'dark' ? '60' : '30'),
                       },
                     ]}
                   >
@@ -227,7 +227,7 @@ export default function UsuariosListScreen() {
                 </Text>
               </TouchableOpacity>
 
-              <View style={styles.cardActions}>
+              <View style={[styles.cardActions, { borderTopColor: theme.border }]}>
                 <TouchableOpacity
                   onPress={() => router.push(`/usuarios/${item.id}`)}
                   style={styles.actionLink}
@@ -336,7 +336,6 @@ const styles = StyleSheet.create({
     marginTop: Spacing.md,
     paddingTop: Spacing.sm,
     borderTopWidth: 1,
-    borderTopColor: '#E2E8F0',
   },
   actionLink: { paddingVertical: Spacing.xs },
   actionText: { fontSize: FontSizes.sm, fontWeight: '600' },

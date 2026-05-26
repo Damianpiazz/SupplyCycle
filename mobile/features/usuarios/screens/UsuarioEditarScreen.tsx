@@ -113,7 +113,7 @@ export default function UsuarioEditarScreen() {
   if (isLoading) {
     return (
       <ThemedView style={styles.container}>
-        <Header title="Editar usuario" />
+        <Header title="Editar usuario" onBack={() => router.back()} />
         <LoadingSpinner message="Cargando usuario..." />
       </ThemedView>
     );
@@ -122,7 +122,7 @@ export default function UsuarioEditarScreen() {
   if (isError || !usuario) {
     return (
       <ThemedView style={styles.container}>
-        <Header title="Editar usuario" />
+        <Header title="Editar usuario" onBack={() => router.back()} />
         <ErrorMessage message={error?.message || 'Usuario no encontrado'} />
       </ThemedView>
     );
@@ -130,7 +130,7 @@ export default function UsuarioEditarScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <Header title="Editar usuario" />
+      <Header title="Editar usuario" onBack={() => router.back()} />
       <ScrollView contentContainerStyle={styles.content}>
         {!usuario.activo ? (
           <View style={[styles.inactiveBanner, { backgroundColor: theme.muted + '30' }]}>
@@ -157,7 +157,7 @@ export default function UsuarioEditarScreen() {
               key={r}
               style={[
                 styles.rolChip,
-                { backgroundColor: rol === r ? theme.tint : theme.surface },
+                { backgroundColor: rol === r ? theme.buttonPrimary : theme.surface },
               ]}
               onPress={() => setRol(r)}
             >

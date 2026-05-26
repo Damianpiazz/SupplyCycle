@@ -43,7 +43,7 @@ export default function UsuarioAltaScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <Header title="Nuevo usuario" />
+      <Header title="Nuevo usuario" onBack={() => router.back()} />
       <ScrollView contentContainerStyle={styles.content}>
         <Input label="Nombre" value={nombre} onChangeText={setNombre} autoCapitalize="words" />
         <Input label="Apellido" value={apellido} onChangeText={setApellido} autoCapitalize="words" />
@@ -69,7 +69,7 @@ export default function UsuarioAltaScreen() {
               key={r}
               style={[
                 styles.rolChip,
-                { backgroundColor: rol === r ? theme.tint : theme.surface },
+                { backgroundColor: rol === r ? theme.buttonPrimary : theme.surface },
               ]}
               onPress={() => setRol(r)}
             >
