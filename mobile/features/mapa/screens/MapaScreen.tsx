@@ -46,7 +46,7 @@ function MarkerPunto({
 
   return (
     <TouchableOpacity
-      style={[styles.markerContainer, isSelected && styles.markerSelected]}
+      style={[styles.markerContainer, isSelected && { backgroundColor: theme.tint + '26', borderWidth: 1, borderColor: theme.tint }]}
       onPress={onPress}
     >
       <View style={[styles.markerDot, { backgroundColor: color }]} />
@@ -131,10 +131,10 @@ export default function MapaScreen() {
               {selectedPedido.cliente.domicilio.numero}
             </Text>
             <TouchableOpacity
-              style={[styles.verDetalleButton, { backgroundColor: theme.tint }]}
+              style={[styles.verDetalleButton, { backgroundColor: theme.buttonPrimary }]}
               onPress={() => router.push(`/mapa/${selectedPedido.id}`)}
             >
-              <Text style={styles.verDetalleText}>Ver detalle</Text>
+              <Text style={[styles.verDetalleText, { color: theme.headerText }]}>Ver detalle</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -183,11 +183,6 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.xl,
     backgroundColor: 'rgba(0,0,0,0.05)',
     gap: Spacing.sm,
-  },
-  markerSelected: {
-    backgroundColor: 'rgba(10,126,164,0.15)',
-    borderWidth: 1,
-    borderColor: '#0a7ea4',
   },
   markerDot: {
     width: 12,
@@ -241,7 +236,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   verDetalleText: {
-    color: '#FFFFFF',
     fontWeight: '600',
     fontSize: FontSizes.sm,
   },

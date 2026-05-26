@@ -4,6 +4,7 @@ import { Platform } from 'react-native';
 
 import { HapticTab } from '@/components/haptic-tab';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { ConnectivityBanner } from '@/components/ui';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useAuthStore } from '@/stores/authStore';
@@ -18,7 +19,9 @@ export default function TabLayout() {
   }
 
   return (
-    <Tabs
+    <>
+      <ConnectivityBanner isConnected={true} />
+      <Tabs
       screenOptions={{
         tabBarActiveTintColor: Colors[colorScheme].tint,
         headerShown: false,
@@ -85,5 +88,6 @@ export default function TabLayout() {
         }}
       />
     </Tabs>
+    </>
   );
 }

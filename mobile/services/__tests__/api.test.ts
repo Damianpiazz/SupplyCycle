@@ -38,7 +38,6 @@ import { apiClient } from '@/services/api';
 import { useAuthStore } from '@/stores/authStore';
 import { clearToken } from '@/features/auth/services/authStorage';
 
-const MOCK_TOKEN = 'mock-jwt-token-supplycycle-2026';
 const REAL_TOKEN = 'real-jwt-token';
 
 // Capture handlers at module level — before any beforeEach/clearAllMocks runs
@@ -93,17 +92,6 @@ describe('apiClient interceptors', () => {
       expect(useAuthStore.getState().isAuthenticated).toBe(false);
     });
 
-    it('NO debe hacer logout al recibir 401 con mock token', async () => {
-      expect(responseErrorHandler).toBeDefined();
 
-      useAuthStore.getState().setAuth(MOCK_TOKEN, mockUsuario);
-
-      const error = { response: { status: 401 } };
-      await expect(responseErrorHandler(error)).rejects.toEqual(error);
-
-      expect(clearToken).not.toHaveBeenCalled();
-      expect(useAuthStore.getState().token).toBe(MOCK_TOKEN);
-      expect(useAuthStore.getState().isAuthenticated).toBe(true);
-    });
   });
 });

@@ -38,11 +38,8 @@ export default function PerfilScreen() {
       console.warn('Error al limpiar token:', e);
     }
 
-    // 3. Redirigir al login
-    // Usamos setTimeout por si React no ha procesado aún el cambio de estado
-    setTimeout(() => {
-      router.replace('/login');
-    }, 0);
+    // 3. Redirigir al login (Zustand es síncrono, el auth gate en _layout.tsx también redirige)
+    router.replace('/login');
   };
 
   const startEditing = () => {
@@ -100,8 +97,8 @@ export default function PerfilScreen() {
       <Header />
       <View style={styles.content}>
         {/* Avatar placeholder */}
-        <View style={[styles.avatarContainer, { backgroundColor: theme.tint }]}>
-          <Text style={styles.avatarText}>
+        <View style={[styles.avatarContainer, { backgroundColor: theme.buttonPrimary }]}>
+          <Text style={[styles.avatarText, { color: theme.headerText }]}>
             {usuario.nombre.charAt(0)}
             {usuario.apellido.charAt(0)}
           </Text>
@@ -119,7 +116,7 @@ export default function PerfilScreen() {
                 </Text>
               </View>
 
-              <View style={styles.divider} />
+              <View style={[styles.divider, { backgroundColor: theme.border }]} />
 
               <View style={styles.infoRow}>
                 <Text style={[styles.infoLabel, { color: theme.muted }]}>
@@ -162,7 +159,7 @@ export default function PerfilScreen() {
             </>
           )}
 
-          <View style={styles.divider} />
+          <View style={[styles.divider, { backgroundColor: theme.border }]} />
 
           <View style={styles.infoRow}>
             <Text style={[styles.infoLabel, { color: theme.muted }]}>
@@ -228,7 +225,6 @@ const styles = StyleSheet.create({
     marginTop: Spacing.lg,
   },
   avatarText: {
-    color: '#FFFFFF',
     fontSize: FontSizes.title,
     fontWeight: 'bold',
   },
@@ -245,7 +241,6 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    backgroundColor: '#E2E8F0',
     marginVertical: Spacing.xs,
   },
   editButton: {

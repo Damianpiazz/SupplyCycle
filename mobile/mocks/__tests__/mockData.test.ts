@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { MOCK_CLIENTES, MOCK_PEDIDOS, MOCK_REPARTO, MOCK_ITEMS, MOCK_MOTIVOS } from '@/mocks/mockData';
+import { MOCK_CLIENTES, MOCK_PEDIDOS, MOCK_REPARTO, MOCK_ITEMS } from '@/mocks/mockData';
+import { MOTIVOS_CANCELACION } from '@/constants/motivosCancelacion';
 
 describe('Mock Data - Clientes', () => {
   it('should have at least one cliente', () => {
@@ -91,9 +92,9 @@ describe('Mock Data - Reparto', () => {
   });
 });
 
-describe('Mock Data - Motivos', () => {
+describe('Motivos de Cancelación', () => {
   it('should have all cancelacion motivos', () => {
-    const values = MOCK_MOTIVOS.map((m) => m.value);
+    const values = MOTIVOS_CANCELACION.map((m) => m.value);
     expect(values).toContain('CLIENTE_AUSENTE');
     expect(values).toContain('DIRECCION_INCORRECTA');
     expect(values).toContain('ACCESO_DENEGADO');
@@ -101,7 +102,7 @@ describe('Mock Data - Motivos', () => {
   });
 
   it('each motivo should have label in Spanish', () => {
-    MOCK_MOTIVOS.forEach((motivo) => {
+    MOTIVOS_CANCELACION.forEach((motivo) => {
       expect(motivo.label).toBeTruthy();
       expect(typeof motivo.label).toBe('string');
     });

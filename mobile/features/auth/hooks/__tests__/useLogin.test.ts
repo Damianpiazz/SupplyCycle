@@ -12,11 +12,6 @@ vi.mock('@/features/auth/services/authService', () => ({
   loginRequest: mockLoginRequest,
 }));
 
-const mockMockLoginRequest = vi.hoisted(() => vi.fn());
-vi.mock('@/features/auth/services/mockAuthService', () => ({
-  mockLoginRequest: mockMockLoginRequest,
-}));
-
 const mockSetAuth = vi.hoisted(() => vi.fn());
 vi.mock('@/stores/authStore', () => ({
   useAuthStore: (selector: any) => selector({ setAuth: mockSetAuth }),
@@ -53,17 +48,6 @@ describe('useLogin', () => {
     const config = vi.mocked(useMutation).mock.calls[0][0];
     const result = await config.mutationFn(credentials);
     expect(mockLoginRequest).toHaveBeenCalledWith(credentials);
-    expect(result).toEqual(authResponse);
-  });
-
-  it('hace fallback a mockLoginRequest cuando loginRequest falla', async () => {
-    mockLoginRequest.mockRejectedValue(new Error('Network error'));
-    mockMockLoginRequest.mockResolvedValue(authResponse);
-    useLogin();
-    const config = vi.mocked(useMutation).mock.calls[0][0];
-    const result = await config.mutationFn(credentials);
-    expect(mockLoginRequest).toHaveBeenCalledWith(credentials);
-    expect(mockMockLoginRequest).toHaveBeenCalledWith(credentials);
     expect(result).toEqual(authResponse);
   });
 

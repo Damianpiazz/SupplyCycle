@@ -154,6 +154,7 @@ export const MOCK_PEDIDOS: Pedido[] = [
     orden: 1,
     estado: 'PENDIENTE',
     fecha: today,
+    motivoFalla: null,
     cliente: MOCK_CLIENTES[5],
     items: [getPedidoItem(MOCK_ITEMS[0], 2)],
   },
@@ -162,6 +163,7 @@ export const MOCK_PEDIDOS: Pedido[] = [
     orden: 2,
     estado: 'EN_RUTA',
     fecha: today,
+    motivoFalla: null,
     cliente: MOCK_CLIENTES[1],
     items: [getPedidoItem(MOCK_ITEMS[0], 1), getPedidoItem(MOCK_ITEMS[1], 1)],
   },
@@ -170,6 +172,7 @@ export const MOCK_PEDIDOS: Pedido[] = [
     orden: 3,
     estado: 'ENTREGADO',
     fecha: today,
+    motivoFalla: null,
     cliente: MOCK_CLIENTES[2],
     items: [getPedidoItem(MOCK_ITEMS[0], 3)],
   },
@@ -178,6 +181,7 @@ export const MOCK_PEDIDOS: Pedido[] = [
     orden: 4,
     estado: 'CANCELADO',
     fecha: today,
+    motivoFalla: null,
     cliente: MOCK_CLIENTES[3],
     items: [getPedidoItem(MOCK_ITEMS[1], 2)],
   },
@@ -195,6 +199,7 @@ export const MOCK_PEDIDOS: Pedido[] = [
     orden: 6,
     estado: 'PENDIENTE',
     fecha: today,
+    motivoFalla: null,
     cliente: MOCK_CLIENTES[0],
     items: [getPedidoItem(MOCK_ITEMS[0], 2), getPedidoItem(MOCK_ITEMS[2], 1)],
   },
@@ -220,9 +225,4 @@ export const MOCK_REPARTO: Reparto = {
   },
 };
 
-export const MOCK_MOTIVOS = [
-  { value: 'CLIENTE_AUSENTE', label: 'Cliente ausente' },
-  { value: 'DIRECCION_INCORRECTA', label: 'Dirección incorrecta' },
-  { value: 'ACCESO_DENEGADO', label: 'Acceso denegado' },
-  { value: 'OTRO', label: 'Otro' },
-] as const;
+

@@ -12,6 +12,7 @@ interface ButtonProps extends TouchableOpacityProps {
 
 export default function Button({
   title,
+  variant = 'primary',
   loading = false,
   style,
   disabled,
@@ -20,14 +21,33 @@ export default function Button({
   const colorScheme = useColorScheme() ?? 'light';
   const theme = Colors[colorScheme];
 
-  const backgroundColor = disabled ? theme.muted : theme.surface;
-  const textColor = disabled ? '#FFFFFF' : theme.text;
+  const variantColors: Record<ButtonVariant, string> = {
+    primary: theme.buttonPrimary,
+    secondary: theme.surface,
+    danger: theme.noEntregado,
+    ghost: 'transparent',
+    success: theme.entregado,
+    warning: theme.warning,
+  };
+
+  const isGhost = variant === 'ghost';
+  const backgroundColor = disabled
+    ? theme.muted
+    : isGhost
+      ? 'transparent'
+      : variantColors[variant];
+  const textColor = disabled
+    ? '#FFFFFF'
+    : isGhost
+      ? theme.text
+      : '#FFFFFF';
 
   return (
     <TouchableOpacity
       style={[
         styles.button,
         { backgroundColor },
+        isGhost && { borderWidth: 1, borderColor: theme.border },
         style,
       ]}
       disabled={disabled || loading}

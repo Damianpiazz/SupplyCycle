@@ -26,6 +26,7 @@ const mockPedido: Pedido = {
   orden: 1,
   estado: 'PENDIENTE',
   fecha: '2026-05-25',
+  motivoFalla: null,
   cliente: {
     id: 'cliente-1',
     nombre: 'Juan',

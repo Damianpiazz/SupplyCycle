@@ -5,3 +5,5 @@ export { default as LoadingSpinner } from './loading-spinner';
 export { default as ErrorMessage } from './error-message';
 export { default as Header } from './header';
 export { default as Toast } from './Toast';
+export { default as ConnectivityBanner } from './connectivity-banner';
+export { default as ConfirmModal } from './confirm-modal';
