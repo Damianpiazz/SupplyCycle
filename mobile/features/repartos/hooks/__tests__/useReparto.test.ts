@@ -17,14 +17,6 @@ vi.mock('@/features/repartos/services/repartoService', () => ({
   getRepartoByIdRequest: (...args: unknown[]) => mockGetRepartoById(...args),
 }));
 
-const mockMockRepartos = vi.fn();
-const mockMockRepartoById = vi.fn();
-
-vi.mock('@/features/repartos/mocks/repartoMockData', () => ({
-  mockGetRepartosRequest: (...args: unknown[]) => mockMockRepartos(...args),
-  mockGetRepartoByIdRequest: (...args: unknown[]) => mockMockRepartoById(...args),
-}));
-
 vi.mock('@/stores/authStore', () => ({
   useAuthStore: {
     getState: () => ({ usuario: { id: 'user-1' } }),
@@ -78,19 +70,6 @@ describe('useReparto hooks', () => {
       expect(result).toEqual({ id: 'r1' });
     });
 
-    it('queryFn should fallback to mock when service fails', async () => {
-      mockGetRepartos.mockRejectedValueOnce(new Error('fail'));
-      mockMockRepartos.mockResolvedValueOnce([{ id: 'mock-r1' }]);
-
-      useReparto();
-      const opts = getQueryOptions();
-      const result = await opts.queryFn();
-
-      expect(mockGetRepartos).toHaveBeenCalledWith('user-1');
-      expect(mockMockRepartos).toHaveBeenCalledWith();
-      expect(result).toEqual({ id: 'mock-r1' });
-    });
-
     it('queryFn should return undefined when result array is empty', async () => {
       mockGetRepartos.mockResolvedValueOnce([]);
 
@@ -139,17 +118,5 @@ describe('useReparto hooks', () => {
       expect(result).toEqual({ id: 'r1' });
     });
 
-    it('queryFn should fallback to mock when service fails', async () => {
-      mockGetRepartoById.mockRejectedValueOnce(new Error('fail'));
-      mockMockRepartoById.mockResolvedValueOnce({ id: 'mock-r1' });
-
-      useRepartoDetalle('r1');
-      const opts = getQueryOptions();
-      const result = await opts.queryFn();
-
-      expect(mockGetRepartoById).toHaveBeenCalledWith('r1');
-      expect(mockMockRepartoById).toHaveBeenCalledWith('r1');
-      expect(result).toEqual({ id: 'mock-r1' });
-    });
   });
 });

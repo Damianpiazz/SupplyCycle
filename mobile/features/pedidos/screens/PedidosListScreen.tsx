@@ -87,10 +87,10 @@ export default function PedidosListScreen() {
           onChangeText={setSearch}
         />
         <TouchableOpacity
-          style={[styles.addButton, { backgroundColor: theme.tint }]}
+          style={[styles.addButton, { backgroundColor: theme.buttonPrimary }]}
           onPress={() => router.push('/pedidos/alta')}
         >
-          <Text style={styles.addButtonText}>+</Text>
+          <Text style={[styles.addButtonText, { color: theme.headerText }]}>+</Text>
         </TouchableOpacity>
       </View>
 
@@ -114,7 +114,7 @@ export default function PedidosListScreen() {
                 style={[
                   styles.filtroText,
                   {
-                    color: filtroEstado === estado ? '#FFFFFF' : theme.text,
+                    color: filtroEstado === estado ? theme.headerText : theme.text,
                   },
                 ]}
               >
@@ -220,7 +220,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   addButtonText: {
-    color: '#FFFFFF',
     fontSize: 24,
     fontWeight: '700',
     lineHeight: 28,
