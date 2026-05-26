@@ -9,7 +9,7 @@ Proyecto monorepo que contiene:
 
 ## 👥 Integrantes
 
-* Nombre Apellido
+* Manuela Chanquía
 * Lucia Meza
 * Martina García Améndola
 * Tiago Solis

@@ -225,6 +225,46 @@ export async function listarPedidos(params?: {
 }
 
 // =============================================================================
+// AUTO-COMPLETAR REPARTO
+// =============================================================================
+
+/**
+ * Si el pedido pertenece a un reparto y todos los pedidos del mismo están en
+ * estados terminales (ENTREGADO, NO_ENTREGADO, CANCELADO), se completa
+ * automáticamente el reparto con estado COMPLETADO y horaFin.
+ */
+async function autoCompletarRepartoSiCorresponde(pedidoId: string): Promise<void> {
+  const pedido = await prisma.pedido.findUnique({
+    where: { id: pedidoId },
+    select: { repartoId: true },
+  });
+
+  if (!pedido?.repartoId) return;
+
+  const reparto = await prisma.reparto.findUnique({
+    where: { id: pedido.repartoId },
+    include: { pedidos: { select: { estado: true } } },
+  });
+
+  if (!reparto || reparto.estado === 'COMPLETADO') return;
+
+  const estadosFinales = new Set(['ENTREGADO', 'NO_ENTREGADO', 'CANCELADO']);
+  const todosFinales = reparto.pedidos.every((p) => estadosFinales.has(p.estado));
+
+  if (todosFinales) {
+    const horaFin = new Date().toLocaleTimeString('es-AR', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    });
+    await prisma.reparto.update({
+      where: { id: pedido.repartoId },
+      data: { estado: 'COMPLETADO', horaFin },
+    });
+  }
+}
+
+// =============================================================================
 // MUTACIONES — Repartidor
 // =============================================================================
 
@@ -244,6 +284,8 @@ export async function confirmarEntrega(id: string) {
     where: { id },
     data: { estado: 'ENTREGADO' },
   });
+
+  await autoCompletarRepartoSiCorresponde(id);
 
   return {
     id: updated.id,
@@ -268,6 +310,8 @@ export async function cancelarPedidoRepartidor(id: string, motivo: string) {
     where: { id },
     data: { estado: 'NO_ENTREGADO', motivoFalla: motivo },
   });
+
+  await autoCompletarRepartoSiCorresponde(id);
 
   return {
     id: updated.id,
@@ -389,6 +433,8 @@ export async function actualizarEstado(id: string, nuevoEstado: string) {
     where: { id },
     data: { estado: nuevoEstado as EstadoPedido },
   });
+
+  await autoCompletarRepartoSiCorresponde(id);
 
   return {
     id: updated.id,
