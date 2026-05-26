@@ -20,4 +20,22 @@ export interface Cliente {
   horarioDesde: string;
   horarioHasta: string;
   observaciones?: string;
+  activo?: boolean;
 }
+
+export interface CrearClienteInput {
+  nombre: string;
+  apellido: string;
+  telefono: string;
+  calle: string;
+  numero: string;
+  localidad: string;
+  latitud: number;
+  longitud: number;
+  diaEntrega: DiaSemana;
+  horarioDesde: string;
+  horarioHasta: string;
+  observaciones?: string;
+}
+
+export interface ActualizarClienteInput extends Partial<CrearClienteInput> {}
