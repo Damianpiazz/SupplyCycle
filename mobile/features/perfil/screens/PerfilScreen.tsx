@@ -1,16 +1,31 @@
+import { useMemo, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { ThemedView } from '@/components/themed-view';
-import { Card, Button, Header } from '@/components/ui';
+import { Card, Button, Header, Input } from '@/components/ui';
 import { Colors, Spacing, FontSizes, BorderRadius } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useAuthStore } from '@/stores/authStore';
 import { clearToken } from '@/features/auth/services/authStorage';
+import { updateMeRequest } from '@/features/auth/services/authService';
 
 export default function PerfilScreen() {
   const colorScheme = useColorScheme() ?? 'light';
   const theme = Colors[colorScheme];
-  const { usuario, logout } = useAuthStore();
+  const { usuario, logout, setUser } = useAuthStore();
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  const initialForm = useMemo(() => {
+    if (!usuario) return { nombre: '', apellido: '', email: '' };
+    return { nombre: usuario.nombre, apellido: usuario.apellido, email: usuario.email };
+  }, [usuario]);
+
+  const [nombre, setNombre] = useState('');
+  const [apellido, setApellido] = useState('');
+  const [email, setEmail] = useState('');
 
   const handleLogout = async () => {
     // 1. Actualizar store primero (el usuario queda deslogueado inmediatamente)
@@ -25,6 +40,43 @@ export default function PerfilScreen() {
 
     // 3. Redirigir al login (Zustand es síncrono, el auth gate en _layout.tsx también redirige)
     router.replace('/login');
+  };
+
+  const startEditing = () => {
+    setSaveError(null);
+    setNombre(initialForm.nombre);
+    setApellido(initialForm.apellido);
+    setEmail(initialForm.email);
+    setIsEditing(true);
+  };
+
+  const cancelEditing = () => {
+    setSaveError(null);
+    setIsEditing(false);
+  };
+
+  const handleSave = async () => {
+    if (!usuario) return;
+
+    setIsSaving(true);
+    setSaveError(null);
+    try {
+      const updated = await updateMeRequest({
+        nombre: nombre.trim(),
+        apellido: apellido.trim(),
+        email: email.trim(),
+      });
+      setUser(updated);
+      setIsEditing(false);
+    } catch (e: any) {
+      const message =
+        e?.response?.data?.message ||
+        e?.message ||
+        'No se pudo actualizar el perfil';
+      setSaveError(String(message));
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   if (!usuario) {
@@ -53,25 +105,59 @@ export default function PerfilScreen() {
         </View>
 
         <Card>
-          <View style={styles.infoRow}>
-            <Text style={[styles.infoLabel, { color: theme.muted }]}>
-              Nombre
-            </Text>
-            <Text style={[styles.infoValue, { color: theme.text }]}>
-              {usuario.nombre} {usuario.apellido}
-            </Text>
-          </View>
+          {!isEditing ? (
+            <>
+              <View style={styles.infoRow}>
+                <Text style={[styles.infoLabel, { color: theme.muted }]}>
+                  Nombre
+                </Text>
+                <Text style={[styles.infoValue, { color: theme.text }]}>
+                  {usuario.nombre} {usuario.apellido}
+                </Text>
+              </View>
 
-          <View style={[styles.divider, { backgroundColor: theme.border }]} />
+              <View style={[styles.divider, { backgroundColor: theme.border }]} />
 
-          <View style={styles.infoRow}>
-            <Text style={[styles.infoLabel, { color: theme.muted }]}>
-              Email
-            </Text>
-            <Text style={[styles.infoValue, { color: theme.text }]}>
-              {usuario.email}
-            </Text>
-          </View>
+              <View style={styles.infoRow}>
+                <Text style={[styles.infoLabel, { color: theme.muted }]}>
+                  Email
+                </Text>
+                <Text style={[styles.infoValue, { color: theme.text }]}>
+                  {usuario.email}
+                </Text>
+              </View>
+            </>
+          ) : (
+            <>
+              <Input
+                label="Nombre"
+                value={nombre}
+                onChangeText={setNombre}
+                autoCapitalize="words"
+                testID="perfil-input-nombre"
+              />
+              <Input
+                label="Apellido"
+                value={apellido}
+                onChangeText={setApellido}
+                autoCapitalize="words"
+                testID="perfil-input-apellido"
+              />
+              <Input
+                label="Email"
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                testID="perfil-input-email"
+              />
+              {saveError ? (
+                <Text style={[styles.saveError, { color: theme.error }]}>
+                  {saveError}
+                </Text>
+              ) : null}
+            </>
+          )}
 
           <View style={[styles.divider, { backgroundColor: theme.border }]} />
 
@@ -80,10 +166,34 @@ export default function PerfilScreen() {
               Rol
             </Text>
             <Text style={[styles.infoValue, { color: theme.text }]}>
-              Repartidor
+              {usuario.rol === 'ADMIN' ? 'Administrador' : 'Repartidor'}
             </Text>
           </View>
         </Card>
+
+        {!isEditing ? (
+          <Button
+            title="Modificar perfil"
+            onPress={startEditing}
+            style={styles.editButton}
+          />
+        ) : (
+          <View style={styles.editActions}>
+            <Button
+              title={isSaving ? 'Guardando...' : 'Guardar'}
+              onPress={handleSave}
+              disabled={isSaving}
+              style={styles.editActionButton}
+            />
+            <Button
+              title="Cancelar"
+              variant="secondary"
+              onPress={cancelEditing}
+              disabled={isSaving}
+              style={styles.editActionButton}
+            />
+          </View>
+        )}
 
         <Button
           title="Cerrar sesión"
@@ -132,6 +242,23 @@ const styles = StyleSheet.create({
   divider: {
     height: 1,
     marginVertical: Spacing.xs,
+  },
+  editButton: {
+    marginTop: Spacing.lg,
+    width: '100%',
+  },
+  editActions: {
+    marginTop: Spacing.lg,
+    width: '100%',
+    gap: Spacing.sm,
+  },
+  editActionButton: {
+    width: '100%',
+  },
+  saveError: {
+    marginTop: Spacing.xs,
+    fontSize: FontSizes.xs,
+    fontWeight: '600',
   },
   logoutButton: {
     marginTop: Spacing.xxl,

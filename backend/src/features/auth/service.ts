@@ -4,7 +4,7 @@ import { prisma } from '../../lib/prisma.js';
 import { env } from '../../config/env.js';
 import { ApiError } from '../../utils/api-error.js';
 import type { JwtPayload } from '../../middleware/auth.middleware.js';
-import type { AuthResponse, UsuarioResponse, LoginInput } from './types.js';
+import type { AuthResponse, UsuarioResponse, LoginInput, UpdateMeInput } from './types.js';
 
 function toUsuarioResponse(usuario: { id: string; email: string; nombre: string; apellido: string; rol: string; activo: boolean }): UsuarioResponse {
   return {
@@ -59,4 +59,40 @@ export async function getMe(userId: string): Promise<UsuarioResponse> {
   }
 
   return toUsuarioResponse(usuario);
+}
+
+export async function updateMe(
+  userId: string,
+  input: UpdateMeInput
+): Promise<UsuarioResponse> {
+  const existing = await prisma.usuario.findUnique({
+    where: { id: userId },
+  });
+
+  if (!existing) {
+    throw ApiError.notFound('Usuario no encontrado');
+  }
+
+  if (!existing.activo) {
+    throw ApiError.forbidden('Usuario inactivo');
+  }
+
+  try {
+    const updated = await prisma.usuario.update({
+      where: { id: userId },
+      data: {
+        ...(input.nombre !== undefined ? { nombre: input.nombre } : {}),
+        ...(input.apellido !== undefined ? { apellido: input.apellido } : {}),
+        ...(input.email !== undefined ? { email: input.email } : {}),
+      },
+    });
+
+    return toUsuarioResponse(updated);
+  } catch (err: any) {
+    // Prisma unique constraint for email
+    if (err?.code === 'P2002') {
+      throw ApiError.badRequest('El email ya está en uso');
+    }
+    throw err;
+  }
 }

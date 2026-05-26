@@ -1,24 +1,10 @@
-// TDD-0005: Usuario types
-
-export type Rol = 'REPARTIDOR' | 'ADMIN';
-
-export interface Usuario {
+export interface UsuarioResponse {
   id: string;
   email: string;
   nombre: string;
   apellido: string;
-  rol: Rol;
+  rol: 'REPARTIDOR' | 'ADMIN';
   activo: boolean;
-}
-
-export interface AuthResponse {
-  token: string;
-  usuario: Usuario;
-}
-
-export interface LoginCredentials {
-  email: string;
-  password: string;
 }
 
 export interface CrearUsuarioInput {
@@ -26,13 +12,13 @@ export interface CrearUsuarioInput {
   password: string;
   nombre: string;
   apellido: string;
-  rol?: Rol;
+  rol?: 'REPARTIDOR' | 'ADMIN';
 }
 
 export interface ActualizarUsuarioInput {
   email?: string;
   nombre?: string;
   apellido?: string;
-  rol?: Rol;
+  rol?: 'REPARTIDOR' | 'ADMIN';
   activo?: true;
 }

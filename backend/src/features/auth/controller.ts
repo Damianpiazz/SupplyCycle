@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction } from 'express';
-import { loginSchema } from './schema.js';
+import { loginSchema, actualizarMeSchema } from './schema.js';
 import * as authService from './service.js';
 
 /** POST /api/v1/auth/login — devuelve { token, usuario } */
@@ -26,6 +26,22 @@ export async function meController(
   try {
     const user = req.user!;
     const result = await authService.getMe(user.userId);
+    res.status(200).json(result);
+  } catch (err) {
+    next(err);
+  }
+}
+
+/** PATCH /api/v1/auth/me — actualiza { nombre, apellido, email } */
+export async function updateMeController(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const user = req.user!;
+    const input = actualizarMeSchema.parse(req.body);
+    const result = await authService.updateMe(user.userId, input);
     res.status(200).json(result);
   } catch (err) {
     next(err);

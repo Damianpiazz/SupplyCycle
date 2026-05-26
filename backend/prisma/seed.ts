@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import bcrypt from 'bcrypt';
 import { PrismaPg } from '@prisma/adapter-pg';
-import { PrismaClient } from '../generated/prisma/client.js';
+import { PrismaClient, type Cliente } from '../generated/prisma/client.js';
 
 const connectionString = `${process.env['DATABASE_URL']}`;
 const adapter = new PrismaPg({ connectionString });
@@ -18,19 +18,32 @@ async function main() {
   await prisma.cliente.deleteMany();
   await prisma.usuario.deleteMany();
 
-  // --- Usuario ---
-  const password = await bcrypt.hash('Repartidor123', 10);
+  // --- Usuarios ---
+  const repartidorPassword = await bcrypt.hash('Repartidor123', 10);
   const repartidor = await prisma.usuario.create({
     data: {
       email: 'repartidor@supplycycle.com',
-      password,
+      password: repartidorPassword,
       nombre: 'Juan',
       apellido: 'Pérez',
       rol: 'REPARTIDOR',
       activo: true,
     },
   });
-  console.log(`  ✅ Usuario: ${repartidor.email}`);
+  console.log(`  ✅ Usuario repartidor: ${repartidor.email}`);
+
+  const adminPassword = await bcrypt.hash('Admin1234', 10);
+  const admin = await prisma.usuario.create({
+    data: {
+      email: 'admin@supplycycle.com',
+      password: adminPassword,
+      nombre: 'Ana',
+      apellido: 'Administradora',
+      rol: 'ADMIN',
+      activo: true,
+    },
+  });
+  console.log(`  ✅ Usuario admin: ${admin.email}`);
 
   // --- Items ---
   const item20l = await prisma.item.create({
@@ -54,7 +67,7 @@ async function main() {
     { nombre: 'Roberto', apellido: 'Díaz', telefono: '1190123456', calle: 'Av. Pueyrredón', numero: '890', localidad: 'CABA', latitud: -34.5985, longitud: -58.3886, diaEntrega: 'LUNES' as const, horarioDesde: '08:00', horarioHasta: '10:00' },
   ];
 
-  const clientes = [];
+  const clientes: Cliente[] = [];
   for (const c of clientesData) {
     const cliente = await prisma.cliente.create({ data: c });
     clientes.push(cliente);
