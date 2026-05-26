@@ -15,6 +15,7 @@ const MAPPING = {
   'clipboard.fill': 'list-alt',
   'map.fill': 'map',
   'person.fill': 'person',
+  'person.2.fill': 'people',
   'phone.fill': 'phone',
   'location.fill': 'location-on',
   'xmark': 'close',
