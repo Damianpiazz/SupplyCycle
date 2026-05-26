@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   FlatList,
   Modal,
-  Alert,
   ScrollView,
 } from 'react-native';
 import { router } from 'expo-router';
@@ -20,9 +19,7 @@ import { useCrearPedido } from '@/features/pedidos/hooks/usePedidos';
 import { getClientesRequest } from '@/services/clientes';
 import { getItemsRequest } from '@/services/items';
 import { getRepartosDisponiblesRequest } from '@/services/repartos';
-import { mockGetClientesRequest } from '@/mocks/services/clientes.mock';
-import { mockGetItemsRequest } from '@/mocks/services/items.mock';
-import { mockGetRepartosDisponiblesRequest } from '@/mocks/services/repartos.mock';
+
 import { handleApiError } from '@/services/handleApiError';
 import { useToast } from '@/hooks/useToast';
 import type { Cliente } from '@/types/cliente';
@@ -53,6 +50,7 @@ export default function PedidoAltaScreen() {
   const [selectedCliente, setSelectedCliente] = useState<Cliente | null>(null);
   const [selectedReparto, setSelectedReparto] = useState<Reparto | null>(null);
   const [selectedItems, setSelectedItems] = useState<ItemSeleccionado[]>([]);
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   // ─── Modal state ───────────────────────────────────────────────────────────
   const [showClienteModal, setShowClienteModal] = useState(false);
@@ -76,18 +74,9 @@ export default function PedidoAltaScreen() {
         setClientes(clientesData);
         setItems(itemsData);
       } catch {
-        try {
-          const [clientesData, itemsData] = await Promise.all([
-            mockGetClientesRequest(),
-            mockGetItemsRequest(),
-          ]);
-          setClientes(clientesData);
-          setItems(itemsData);
-        } catch {
-          setDataError('Error al cargar datos iniciales');
-          setLoadingData(false);
-          return;
-        }
+        setDataError('Error al cargar datos iniciales');
+        setLoadingData(false);
+        return;
       }
 
       // Repartos: carga separada para que un fallo no afecte clientes/items
@@ -95,12 +84,7 @@ export default function PedidoAltaScreen() {
         const repartosData = await getRepartosDisponiblesRequest(repartidorId);
         setRepartos(repartosData);
       } catch {
-        try {
-          const repartosData = await mockGetRepartosDisponiblesRequest();
-          setRepartos(repartosData);
-        } catch {
-          // Repartos no disponible — el formulario funciona igual
-        }
+        // Repartos no disponible — el formulario funciona igual
       }
 
       setLoadingData(false);
@@ -112,6 +96,7 @@ export default function PedidoAltaScreen() {
 
   const toggleItem = useCallback(
     (item: Item) => {
+      setValidationError(null);
       setSelectedItems((prev) => {
         const existing = prev.find((s) => s.item.id === item.id);
         if (existing) {
@@ -143,13 +128,17 @@ export default function PedidoAltaScreen() {
 
   const handleSubmit = useCallback(() => {
     if (!selectedCliente) {
-      Alert.alert('Faltan datos', 'Seleccioná un cliente para el pedido');
+      setValidationError('Debés seleccionar un cliente para el pedido');
+      showToast('Seleccioná un cliente', 'warning');
       return;
     }
     if (selectedItems.length === 0) {
-      Alert.alert('Faltan datos', 'Agregá al menos un ítem al pedido');
+      setValidationError('Agregá al menos un ítem al pedido');
+      showToast('Agregá al menos un ítem', 'warning');
       return;
     }
+
+    setValidationError(null);
 
     const payload = {
       clienteId: selectedCliente.id,
@@ -180,7 +169,7 @@ export default function PedidoAltaScreen() {
   if (loadingData) {
     return (
       <ThemedView style={styles.container}>
-        <Header />
+        <Header onBack={() => router.back()} />
         <LoadingSpinner message="Cargando datos..." />
       </ThemedView>
     );
@@ -189,7 +178,7 @@ export default function PedidoAltaScreen() {
   if (dataError) {
     return (
       <ThemedView style={styles.container}>
-        <Header />
+        <Header onBack={() => router.back()} />
         <ErrorMessage message={dataError} />
       </ThemedView>
     );
@@ -207,7 +196,7 @@ export default function PedidoAltaScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <Header />
+      <Header onBack={() => router.back()} />
 
       <ScrollView
         style={styles.scroll}
@@ -219,8 +208,14 @@ export default function PedidoAltaScreen() {
           Cliente
         </Text>
         <TouchableOpacity
-          style={[styles.selectField, { backgroundColor: theme.inputBackground, borderColor: theme.border }]}
-          onPress={() => setShowClienteModal(true)}
+          style={[
+            styles.selectField,
+            {
+              backgroundColor: theme.inputBackground,
+              borderColor: validationError && !selectedCliente ? theme.error : theme.border,
+            },
+          ]}
+          onPress={() => { setValidationError(null); setShowClienteModal(true); }}
         >
           <Text style={[styles.selectFieldText, { color: selectedCliente ? theme.text : theme.muted }]}>
             {selectedCliente
@@ -228,6 +223,11 @@ export default function PedidoAltaScreen() {
               : 'Seleccionar cliente...'}
           </Text>
         </TouchableOpacity>
+        {validationError && !selectedCliente && (
+          <Text style={[styles.errorText, { color: theme.error }]}>
+            {validationError}
+          </Text>
+        )}
 
         {/* ─── Items ────────────────────────────────────────────────────── */}
         <Text style={[styles.sectionTitle, { color: theme.text }]}>
@@ -279,10 +279,10 @@ export default function PedidoAltaScreen() {
                 </View>
               ) : (
                 <TouchableOpacity
-                  style={[styles.addItemBtn, { backgroundColor: theme.tint }]}
+                  style={[styles.addItemBtn, { backgroundColor: theme.buttonPrimary }]}
                   onPress={() => toggleItem(item)}
                 >
-                  <Text style={styles.addItemBtnText}>Agregar</Text>
+                  <Text style={[styles.addItemBtnText, { color: theme.headerText }]}>Agregar</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -312,7 +312,7 @@ export default function PedidoAltaScreen() {
         )}
 
         {/* ─── Total y submit ────────────────────────────────────────────── */}
-        <View style={styles.totalContainer}>
+        <View style={[styles.totalContainer, { borderTopColor: theme.border }]}>
           <Text style={[styles.totalLabel, { color: theme.text }]}>
             Total estimado
           </Text>
@@ -375,6 +375,7 @@ export default function PedidoAltaScreen() {
                   ]}
                   onPress={() => {
                     setSelectedCliente(item);
+                    setValidationError(null);
                     setShowClienteModal(false);
                     setSearchCliente('');
                   }}
@@ -545,7 +546,6 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.md,
   },
   addItemBtnText: {
-    color: '#FFFFFF',
     fontWeight: '600',
     fontSize: FontSizes.sm,
   },
@@ -562,7 +562,6 @@ const styles = StyleSheet.create({
     marginTop: Spacing.xl,
     paddingVertical: Spacing.md,
     borderTopWidth: 1,
-    borderTopColor: '#e0e0e0',
   },
   totalLabel: {
     fontSize: FontSizes.lg,
@@ -574,6 +573,12 @@ const styles = StyleSheet.create({
   },
   submitButton: {
     marginTop: Spacing.lg,
+  },
+
+  errorText: {
+    fontSize: FontSizes.sm,
+    marginTop: Spacing.xs,
+    fontWeight: '500',
   },
 
   // ─── Modal styles ────────────────────────────────────────────────────────

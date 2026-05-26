@@ -35,6 +35,7 @@ export const Colors = {
     inputBackground: '#F8FAFC',
     headerBackground: '#0a7ea4',
     headerText: '#FFFFFF',
+    buttonPrimary: '#0a7ea4',
   },
   dark: {
     text: '#ECEDEE',
@@ -63,6 +64,7 @@ export const Colors = {
     inputBackground: '#1E293B',
     headerBackground: '#0f172a',
     headerText: '#F8FAFC',
+    buttonPrimary: '#2563eb',
   },
 };
 

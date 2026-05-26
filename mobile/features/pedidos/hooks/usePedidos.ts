@@ -1,5 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuthStore } from '@/stores/authStore';
+import { useOfflineStore } from '@/stores/offlineStore';
 import {
   getPedidosDelDiaRequest,
   getPedidoByIdRequest,
@@ -11,26 +13,36 @@ import {
   actualizarCantidadItemRequest,
   quitarItemRequest,
 } from '@/features/pedidos/services/pedidoService';
-import {
-  mockGetPedidosDelDiaRequest,
-  mockGetPedidoByIdRequest,
-  mockGetPedidosRequest,
-} from '@/features/pedidos/mocks/pedidoMockData';
+
 import type { Pedido, EstadoPedido, MotivoCancelacion } from '@/types';
+
+const PEDIDOS_CACHE_KEY = '@supplycycle/pedidos_hoy';
 
 function getRepartidorId(): string {
   return useAuthStore.getState().usuario?.id ?? '';
 }
 
-// Fetch pedidos del día
+// Fetch pedidos del día (con caché offline en AsyncStorage)
 export function usePedidosDelDia() {
   return useQuery<Pedido[]>({
     queryKey: ['pedidos', 'hoy'],
     queryFn: async () => {
       try {
-        return await getPedidosDelDiaRequest(getRepartidorId());
+        const data = await getPedidosDelDiaRequest(getRepartidorId());
+        // Cachear en AsyncStorage para uso offline
+        await AsyncStorage.setItem(PEDIDOS_CACHE_KEY, JSON.stringify(data));
+        return data;
       } catch {
-        return await mockGetPedidosDelDiaRequest();
+        // Fallback: cache local si el backend no responde
+        const cached = await AsyncStorage.getItem(PEDIDOS_CACHE_KEY);
+        if (cached) {
+          try {
+            return JSON.parse(cached) as Pedido[];
+          } catch {
+            // Error de parsing del cache — ignorar
+          }
+        }
+        throw new Error('No se pudieron cargar los pedidos');
       }
     },
     staleTime: 5 * 60 * 1000,
@@ -41,13 +53,7 @@ export function usePedidosDelDia() {
 export function usePedidoDetalle(id: string) {
   return useQuery<Pedido>({
     queryKey: ['pedido', id],
-    queryFn: async () => {
-      try {
-        return await getPedidoByIdRequest(id);
-      } catch {
-        return await mockGetPedidoByIdRequest(id);
-      }
-    },
+    queryFn: () => getPedidoByIdRequest(id),
     enabled: !!id,
   });
 }
@@ -60,13 +66,7 @@ export function useBuscarPedidos(params?: {
 }) {
   return useQuery<{ data: Pedido[]; total: number }>({
     queryKey: ['pedidos', 'buscar', params],
-    queryFn: async () => {
-      try {
-        return await getPedidosRequest(params);
-      } catch {
-        return await mockGetPedidosRequest(params);
-      }
-    },
+    queryFn: () => getPedidosRequest(params),
     staleTime: 5 * 60 * 1000,
   });
 }
@@ -88,12 +88,25 @@ export function useCrearPedido() {
   });
 }
 
-// Confirmar entrega exitosa
+// Confirmar entrega exitosa (con soporte offline)
 export function useConfirmarEntrega() {
   const queryClient = useQueryClient();
+  const addToQueue = useOfflineStore((s) => s.addToQueue);
 
   return useMutation({
-    mutationFn: (pedidoId: string) => confirmarEntregaRequest(pedidoId),
+    mutationFn: async (pedidoId: string) => {
+      try {
+        return await confirmarEntregaRequest(pedidoId);
+      } catch {
+        // Modo offline: encolar y devolver respuesta optimista
+        addToQueue({ type: 'CONFIRMAR_ENTREGA', payload: { pedidoId } });
+        return {
+          id: pedidoId,
+          estado: 'ENTREGADO' as const,
+          actualizadoEn: new Date().toISOString(),
+        };
+      }
+    },
     onSuccess: (data) => {
       queryClient.setQueryData<Pedido>(['pedido', data.id], (old) => {
         if (old) return { ...old, estado: 'ENTREGADO' as const };
@@ -105,18 +118,32 @@ export function useConfirmarEntrega() {
   });
 }
 
-// Cancelar pedido (entrega fallida)
+// Cancelar pedido (entrega fallida, con soporte offline)
 export function useCancelarPedido() {
   const queryClient = useQueryClient();
+  const addToQueue = useOfflineStore((s) => s.addToQueue);
 
   return useMutation({
-    mutationFn: ({
+    mutationFn: async ({
       pedidoId,
       motivo,
     }: {
       pedidoId: string;
       motivo: MotivoCancelacion;
-    }) => cancelarPedidoRequest(pedidoId, motivo),
+    }) => {
+      try {
+        return await cancelarPedidoRequest(pedidoId, motivo);
+      } catch {
+        // Modo offline: encolar y devolver respuesta optimista
+        addToQueue({ type: 'CANCELAR_PEDIDO', payload: { pedidoId, motivo } });
+        return {
+          id: pedidoId,
+          estado: 'NO_ENTREGADO' as const,
+          motivoFalla: motivo,
+          actualizadoEn: new Date().toISOString(),
+        };
+      }
+    },
     onSuccess: (data) => {
       queryClient.setQueryData<Pedido>(['pedido', data.id], (old) => {
         if (old)
@@ -129,40 +156,79 @@ export function useCancelarPedido() {
   });
 }
 
-// Agregar item a un pedido
+// Agregar item a un pedido (con soporte offline)
 export function useAgregarItem(pedidoId: string) {
   const queryClient = useQueryClient();
+  const addToQueue = useOfflineStore((s) => s.addToQueue);
 
   return useMutation({
-    mutationFn: (data: { itemId: string; cantidad: number }) =>
-      agregarItemRequest(pedidoId, data),
+    mutationFn: async (data: { itemId: string; cantidad: number }) => {
+      try {
+        return await agregarItemRequest(pedidoId, data);
+      } catch {
+        addToQueue({ type: 'AGREGAR_ITEM', payload: { pedidoId, ...data } });
+        return data;
+      }
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['pedido', pedidoId] });
+      // No invalidar ['pedido', pedidoId] para no sobrescribir el cache
+      // que el screen ya actualizó con setQueryData (guardarCambios)
+      queryClient.invalidateQueries({ queryKey: ['pedidos'] });
+      queryClient.invalidateQueries({ queryKey: ['reparto'] });
     },
   });
 }
 
-// Actualizar cantidad de un item en un pedido
+// Actualizar cantidad de un item en un pedido (con soporte offline)
 export function useActualizarCantidadItem(pedidoId: string) {
   const queryClient = useQueryClient();
+  const addToQueue = useOfflineStore((s) => s.addToQueue);
 
   return useMutation({
-    mutationFn: ({ itemId, cantidad }: { itemId: string; cantidad: number }) =>
-      actualizarCantidadItemRequest(pedidoId, itemId, cantidad),
+    mutationFn: async ({
+      itemId,
+      cantidad,
+    }: {
+      itemId: string;
+      cantidad: number;
+    }) => {
+      try {
+        return await actualizarCantidadItemRequest(pedidoId, itemId, cantidad);
+      } catch {
+        addToQueue({
+          type: 'ACTUALIZAR_CANTIDAD_ITEM',
+          payload: { pedidoId, itemId, cantidad },
+        });
+        return { itemId, cantidad };
+      }
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['pedido', pedidoId] });
+      queryClient.invalidateQueries({ queryKey: ['pedidos'] });
+      queryClient.invalidateQueries({ queryKey: ['reparto'] });
     },
   });
 }
 
-// Quitar item de un pedido
+// Quitar item de un pedido (con soporte offline)
 export function useQuitarItem(pedidoId: string) {
   const queryClient = useQueryClient();
+  const addToQueue = useOfflineStore((s) => s.addToQueue);
 
   return useMutation({
-    mutationFn: (itemId: string) => quitarItemRequest(pedidoId, itemId),
+    mutationFn: async (itemId: string) => {
+      try {
+        return await quitarItemRequest(pedidoId, itemId);
+      } catch {
+        addToQueue({
+          type: 'QUITAR_ITEM',
+          payload: { pedidoId, itemId },
+        });
+        return { itemId };
+      }
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['pedido', pedidoId] });
+      queryClient.invalidateQueries({ queryKey: ['pedidos'] });
+      queryClient.invalidateQueries({ queryKey: ['reparto'] });
     },
   });
 }

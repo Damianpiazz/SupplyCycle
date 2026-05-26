@@ -14,6 +14,7 @@ const mockPedido = {
   orden: 1,
   estado: 'PENDIENTE',
   fecha: new Date().toISOString(),
+  motivoFalla: null,
   cliente: {
     id: 'cli-1', nombre: 'María', apellido: 'González',
     telefono: '1155550101',
