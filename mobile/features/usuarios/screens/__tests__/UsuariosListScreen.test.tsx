@@ -16,15 +16,23 @@ const mockUsuarios = [
     id: 'user-3',
     email: 'inactivo@supplycycle.com',
     nombre: 'Ana',
-    apellido: 'Admin',
+    apellido: 'Inactiva',
     rol: 'REPARTIDOR' as const,
     activo: false,
+  },
+  {
+    id: 'user-4',
+    email: 'otro-admin@supplycycle.com',
+    nombre: 'Pedro',
+    apellido: 'Admin',
+    rol: 'ADMIN' as const,
+    activo: true,
   },
 ];
 
 vi.mock('@/features/usuarios/hooks/useUsuarios', () => ({
   useUsuarios: vi.fn(() => ({
-    data: { data: mockUsuarios, total: 2 },
+    data: { data: mockUsuarios, total: 3 },
     isLoading: false,
     isError: false,
     error: null,
@@ -64,7 +72,7 @@ describe('UsuariosListScreen', () => {
   it('renderiza lista de usuarios sin el usuario autenticado', () => {
     render(<UsuariosListScreen />);
     expect(screen.getByText('Juan Pérez')).toBeTruthy();
-    expect(screen.queryByText('Ana Admin')).toBeNull();
+    expect(screen.getByText('Ana Inactiva')).toBeTruthy();
     expect(screen.getByText('Activo')).toBeTruthy();
     expect(screen.getByText('Inactivo')).toBeTruthy();
   });
@@ -74,15 +82,35 @@ describe('UsuariosListScreen', () => {
     expect(screen.getByText('Reactivar')).toBeTruthy();
   });
 
+  it('filtra por rol repartidores', async () => {
+    render(<UsuariosListScreen />);
+    fireEvent.press(screen.getByText('Repartidores'));
+
+    await waitFor(() => {
+      expect(screen.getByText('Juan Pérez')).toBeTruthy();
+      expect(screen.queryByText('Pedro Admin')).toBeNull();
+    });
+  });
+
+  it('filtra por rol administradores', async () => {
+    render(<UsuariosListScreen />);
+    fireEvent.press(screen.getByText('Administradores'));
+
+    await waitFor(() => {
+      expect(screen.getByText('Pedro Admin')).toBeTruthy();
+      expect(screen.queryByText('Juan Pérez')).toBeNull();
+    });
+  });
+
   it('filtra por búsqueda', async () => {
     render(<UsuariosListScreen />);
     fireEvent.changeText(
       screen.getByPlaceholderText('Buscar por nombre o email...'),
-      'Ana'
+      'Pedro'
     );
 
     await waitFor(() => {
-      expect(screen.getByText('Ana Admin')).toBeTruthy();
+      expect(screen.getByText('Pedro Admin')).toBeTruthy();
       expect(screen.queryByText('Juan Pérez')).toBeNull();
     });
   });

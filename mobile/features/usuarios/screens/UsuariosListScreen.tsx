@@ -24,6 +24,7 @@ import {
 import type { Usuario } from '@/types';
 
 type FiltroActivo = 'todos' | 'activos' | 'inactivos';
+type FiltroRol = 'todos' | 'repartidores' | 'administradores';
 
 function getRolLabel(rol: Usuario['rol']): string {
   return rol === 'ADMIN' ? 'Administrador' : 'Repartidor';
@@ -34,6 +35,7 @@ export default function UsuariosListScreen() {
   const theme = Colors[colorScheme];
   const [search, setSearch] = useState('');
   const [filtroActivo, setFiltroActivo] = useState<FiltroActivo>('todos');
+  const [filtroRol, setFiltroRol] = useState<FiltroRol>('todos');
   const { showToast } = useToast();
   const currentUserId = useAuthStore((state) => state.usuario?.id);
 
@@ -49,11 +51,13 @@ export default function UsuariosListScreen() {
       if (currentUserId && u.id === currentUserId) return false;
       if (filtroActivo === 'activos' && !u.activo) return false;
       if (filtroActivo === 'inactivos' && u.activo) return false;
+      if (filtroRol === 'repartidores' && u.rol !== 'REPARTIDOR') return false;
+      if (filtroRol === 'administradores' && u.rol !== 'ADMIN') return false;
       if (!term) return true;
       const fullName = `${u.nombre} ${u.apellido}`.toLowerCase();
       return fullName.includes(term) || u.email.toLowerCase().includes(term);
     });
-  }, [data?.data, search, filtroActivo, currentUserId]);
+  }, [data?.data, search, filtroActivo, filtroRol, currentUserId]);
 
   const handleReactivar = (usuario: Usuario) => {
     confirmAction(
@@ -140,6 +144,37 @@ export default function UsuariosListScreen() {
               style={[
                 styles.filtroText,
                 { color: filtroActivo === filtro.key ? '#FFFFFF' : theme.text },
+              ]}
+            >
+              {filtro.label}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      <View style={styles.filtrosContainer}>
+        {(
+          [
+            { key: 'todos', label: 'Todos los roles' },
+            { key: 'repartidores', label: 'Repartidores' },
+            { key: 'administradores', label: 'Administradores' },
+          ] as { key: FiltroRol; label: string }[]
+        ).map((filtro) => (
+          <TouchableOpacity
+            key={filtro.key}
+            style={[
+              styles.filtroButton,
+              {
+                backgroundColor:
+                  filtroRol === filtro.key ? theme.tint : theme.surface,
+              },
+            ]}
+            onPress={() => setFiltroRol(filtro.key)}
+          >
+            <Text
+              style={[
+                styles.filtroText,
+                { color: filtroRol === filtro.key ? '#FFFFFF' : theme.text },
               ]}
             >
               {filtro.label}
@@ -268,8 +303,9 @@ const styles = StyleSheet.create({
   },
   filtrosContainer: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     paddingHorizontal: Spacing.lg,
-    paddingBottom: Spacing.md,
+    paddingBottom: Spacing.sm,
     gap: Spacing.sm,
   },
   filtroButton: {
