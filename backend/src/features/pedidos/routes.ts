@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import {
   obtenerHoyController,
+  obtenerDisponiblesController,
   obtenerController,
   listarController,
   confirmarController,
@@ -18,6 +19,7 @@ const router = Router();
 
 // ─── Lectura — Admin y repartidor ─────────────────────────────────────────────
 router.get('/hoy', authenticate, obtenerHoyController);
+router.get('/disponibles', authenticate, requireRole('ADMIN'), obtenerDisponiblesController);
 router.get('/', authenticate, listarController);
 router.get('/:id', authenticate, obtenerController);
 

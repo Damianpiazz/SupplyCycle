@@ -5,8 +5,8 @@ vi.mock('@/features/pedidos/hooks/usePedidos', () => ({
   useCrearPedido: vi.fn(),
 }));
 
-vi.mock('@/services/clientes', () => ({
-  getClientesRequest: vi.fn(),
+vi.mock('@/features/clientes/services/clienteService', () => ({
+  listClientesRequest: vi.fn(),
 }));
 
 vi.mock('@/services/items', () => ({
@@ -23,7 +23,7 @@ vi.mock('@/hooks/useToast', () => ({
 }));
 
 import { useCrearPedido } from '@/features/pedidos/hooks/usePedidos';
-import { getClientesRequest } from '@/services/clientes';
+import { listClientesRequest } from '@/features/clientes/services/clienteService';
 import { getItemsRequest } from '@/services/items';
 import { getRepartosDisponiblesRequest } from '@/services/repartos';
 import PedidoAltaScreen from '@/features/pedidos/screens/PedidoAltaScreen';
@@ -45,7 +45,7 @@ const mockCrearPedidoMutate = vi.fn();
 
 async function loadData() {
   vi.mocked(useCrearPedido).mockReturnValue({ mutate: mockCrearPedidoMutate, isPending: false } as any);
-  (getClientesRequest as any).mockResolvedValue(mockClientes);
+  (listClientesRequest as any).mockResolvedValue(mockClientes);
   (getItemsRequest as any).mockResolvedValue(mockItems);
   (getRepartosDisponiblesRequest as any).mockResolvedValue(mockRepartos);
   render(<PedidoAltaScreen />);
@@ -59,7 +59,7 @@ describe('PedidoAltaScreen', () => {
 
   it('should show loading state while fetching data', () => {
     vi.mocked(useCrearPedido).mockReturnValue({ mutate: mockCrearPedidoMutate, isPending: false } as any);
-    (getClientesRequest as any).mockImplementation(() => new Promise(() => {}));
+    (listClientesRequest as any).mockImplementation(() => new Promise(() => {}));
     (getItemsRequest as any).mockImplementation(() => new Promise(() => {}));
     (getRepartosDisponiblesRequest as any).mockImplementation(() => new Promise(() => {}));
     render(<PedidoAltaScreen />);
@@ -68,7 +68,7 @@ describe('PedidoAltaScreen', () => {
 
   it('should show error state when data loading fails', async () => {
     vi.mocked(useCrearPedido).mockReturnValue({ mutate: mockCrearPedidoMutate, isPending: false } as any);
-    (getClientesRequest as any).mockRejectedValue(new Error('fail'));
+    (listClientesRequest as any).mockRejectedValue(new Error('fail'));
     (getItemsRequest as any).mockRejectedValue(new Error('fail'));
     (getRepartosDisponiblesRequest as any).mockRejectedValue(new Error('fail'));
     render(<PedidoAltaScreen />);
@@ -134,7 +134,7 @@ describe('PedidoAltaScreen', () => {
   it('should show error toast when crearPedido fails', async () => {
     const mockMutate = vi.fn((_payload, options) => options?.onError?.(new Error('Error del servidor')));
     vi.mocked(useCrearPedido).mockReturnValue({ mutate: mockMutate, isPending: false } as any);
-    (getClientesRequest as any).mockResolvedValue(mockClientes);
+    (listClientesRequest as any).mockResolvedValue(mockClientes);
     (getItemsRequest as any).mockResolvedValue(mockItems);
     (getRepartosDisponiblesRequest as any).mockResolvedValue(mockRepartos);
     render(<PedidoAltaScreen />);

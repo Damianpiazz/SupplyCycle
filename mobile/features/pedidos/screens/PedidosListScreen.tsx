@@ -101,23 +101,13 @@ export default function PedidosListScreen() {
               key={estado}
               style={[
                 styles.filtroButton,
-                {
-                  backgroundColor:
-                    filtroEstado === estado ? getEstadoColor(estado, theme) : theme.surface,
-                },
+                { backgroundColor: theme.surface },
               ]}
               onPress={() =>
                 setFiltroEstado(filtroEstado === estado ? undefined : estado)
               }
             >
-              <Text
-                style={[
-                  styles.filtroText,
-                  {
-                    color: filtroEstado === estado ? theme.headerText : theme.text,
-                  },
-                ]}
-              >
+              <Text style={[styles.filtroText, { color: theme.text }]}>              
                 {getEstadoLabel(estado)}
               </Text>
             </TouchableOpacity>
