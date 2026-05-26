@@ -12,19 +12,18 @@ import {
 import { router } from 'expo-router';
 import { ThemedView } from '@/components/themed-view';
 import { Button, Header, LoadingSpinner, ErrorMessage } from '@/components/ui';
+import DatePickerField from '@/components/ui/DatePickerField';
 import { Colors, Spacing, FontSizes, BorderRadius } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { useAuthStore } from '@/stores/authStore';
 import { useCrearPedido } from '@/features/pedidos/hooks/usePedidos';
-import { getClientesRequest } from '@/services/clientes';
+import { listClientesRequest } from '@/features/clientes/services/clienteService';
 import { getItemsRequest } from '@/services/items';
-import { getRepartosDisponiblesRequest } from '@/services/repartos';
 
 import { handleApiError } from '@/services/handleApiError';
 import { useToast } from '@/hooks/useToast';
+import { ddmmyyyyToISO } from '@/utils/date';
 import type { Cliente } from '@/types/cliente';
 import type { Item } from '@/types/item';
-import type { Reparto } from '@/types/reparto';
 
 interface ItemSeleccionado {
   item: Item;
@@ -42,19 +41,21 @@ export default function PedidoAltaScreen() {
   // ─── Data ──────────────────────────────────────────────────────────────────
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [items, setItems] = useState<Item[]>([]);
-  const [repartos, setRepartos] = useState<Reparto[]>([]);
   const [loadingData, setLoadingData] = useState(true);
   const [dataError, setDataError] = useState<string | null>(null);
 
   // ─── Form state ────────────────────────────────────────────────────────────
   const [selectedCliente, setSelectedCliente] = useState<Cliente | null>(null);
-  const [selectedReparto, setSelectedReparto] = useState<Reparto | null>(null);
   const [selectedItems, setSelectedItems] = useState<ItemSeleccionado[]>([]);
   const [validationError, setValidationError] = useState<string | null>(null);
+  const today = new Date();
+  const dd = String(today.getDate()).padStart(2, '0');
+  const mm = String(today.getMonth() + 1).padStart(2, '0');
+  const yyyy = today.getFullYear();
+  const [fecha, setFecha] = useState(`${dd}/${mm}/${yyyy}`);
 
   // ─── Modal state ───────────────────────────────────────────────────────────
   const [showClienteModal, setShowClienteModal] = useState(false);
-  const [showRepartoModal, setShowRepartoModal] = useState(false);
   const [searchCliente, setSearchCliente] = useState('');
 
   // ─── Submit ────────────────────────────────────────────────────────────────
@@ -63,30 +64,17 @@ export default function PedidoAltaScreen() {
 
   // ─── Fetch initial data ────────────────────────────────────────────────────
   useEffect(() => {
-    const repartidorId = useAuthStore.getState().usuario?.id ?? '';
-
     async function loadData() {
       try {
         const [clientesData, itemsData] = await Promise.all([
-          getClientesRequest(),
+          listClientesRequest(),
           getItemsRequest(),
         ]);
         setClientes(clientesData);
         setItems(itemsData);
       } catch {
         setDataError('Error al cargar datos iniciales');
-        setLoadingData(false);
-        return;
       }
-
-      // Repartos: carga separada para que un fallo no afecte clientes/items
-      try {
-        const repartosData = await getRepartosDisponiblesRequest(repartidorId);
-        setRepartos(repartosData);
-      } catch {
-        // Repartos no disponible — el formulario funciona igual
-      }
-
       setLoadingData(false);
     }
     loadData();
@@ -138,11 +126,27 @@ export default function PedidoAltaScreen() {
       return;
     }
 
+    // Validar fecha
+    const iso = ddmmyyyyToISO(fecha);
+    if (!iso) {
+      setValidationError('Formato de fecha inválido. Usá DD/MM/YYYY');
+      showToast('Formato de fecha inválido', 'warning');
+      return;
+    }
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+    const fechaDate = new Date(iso + 'T00:00:00');
+    if (fechaDate < hoy) {
+      setValidationError('La fecha no puede ser anterior a hoy');
+      showToast('La fecha no puede ser anterior a hoy', 'warning');
+      return;
+    }
+
     setValidationError(null);
 
     const payload = {
       clienteId: selectedCliente.id,
-      repartoId: selectedReparto?.id ?? undefined,
+      fecha: iso,
       items: selectedItems.map((s) => ({
         itemId: s.item.id,
         cantidad: s.cantidad,
@@ -162,7 +166,7 @@ export default function PedidoAltaScreen() {
         showToast(parsed.message, 'error');
       },
     });
-  }, [selectedCliente, selectedReparto, selectedItems, crearPedido, showToast]);
+  }, [selectedCliente, selectedItems, fecha, crearPedido, showToast]);
 
   // ─── Loading / Error ───────────────────────────────────────────────────────
 
@@ -229,6 +233,24 @@ export default function PedidoAltaScreen() {
           </Text>
         )}
 
+        {/* ─── Fecha del pedido ─────────────────────────────────────────── */}
+        <Text style={[styles.sectionTitle, { color: theme.text }]}>
+          Fecha del pedido
+        </Text>
+        <DatePickerField
+          value={fecha}
+          onChange={setFecha}
+          minimumDate={new Date()}
+          placeholder="DD/MM/YYYY"
+          error={
+            !!(
+              validationError &&
+              (!fecha || !ddmmyyyyToISO(fecha))
+            )
+          }
+          theme={theme}
+        />
+
         {/* ─── Items ────────────────────────────────────────────────────── */}
         <Text style={[styles.sectionTitle, { color: theme.text }]}>
           Items del pedido
@@ -288,28 +310,6 @@ export default function PedidoAltaScreen() {
             </View>
           );
         })}
-
-        {/* ─── Reparto (opcional) ────────────────────────────────────────── */}
-        <Text style={[styles.sectionTitle, { color: theme.text }]}>
-          Reparto (opcional)
-        </Text>
-        <TouchableOpacity
-          style={[styles.selectField, { backgroundColor: theme.inputBackground, borderColor: theme.border }]}
-          onPress={() => setShowRepartoModal(true)}
-        >
-          <Text style={[styles.selectFieldText, { color: selectedReparto ? theme.text : theme.muted }]}>
-            {selectedReparto
-              ? `Reparto #${selectedReparto.id.slice(0, 8)} — ${selectedReparto.fecha}`
-              : 'Sin reparto asignado'}
-          </Text>
-        </TouchableOpacity>
-        {selectedReparto && (
-          <TouchableOpacity onPress={() => setSelectedReparto(null)}>
-            <Text style={[styles.quitarLink, { color: theme.error }]}>
-              Quitar reparto
-            </Text>
-          </TouchableOpacity>
-        )}
 
         {/* ─── Total y submit ────────────────────────────────────────────── */}
         <View style={[styles.totalContainer, { borderTopColor: theme.border }]}>
@@ -399,72 +399,6 @@ export default function PedidoAltaScreen() {
         </View>
       </Modal>
 
-      {/* ─── Modal: Seleccionar Reparto ──────────────────────────────────── */}
-      <Modal visible={showRepartoModal} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { backgroundColor: theme.card }]}>
-            <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, { color: theme.text }]}>
-                Seleccionar Reparto
-              </Text>
-              <TouchableOpacity onPress={() => setShowRepartoModal(false)}>
-                <Text style={[styles.modalClose, { color: theme.tint }]}>
-                  Cerrar
-                </Text>
-              </TouchableOpacity>
-            </View>
-
-            <TouchableOpacity
-              style={[styles.modalItem, { backgroundColor: 'transparent' }]}
-              onPress={() => {
-                setSelectedReparto(null);
-                setShowRepartoModal(false);
-              }}
-            >
-              <Text style={[styles.modalItemText, { color: theme.text }]}>
-                Sin reparto
-              </Text>
-              <Text style={[styles.modalItemSub, { color: theme.muted }]}>
-                El pedido quedará sin asignar
-              </Text>
-            </TouchableOpacity>
-
-            <FlatList
-              data={repartos}
-              keyExtractor={(item) => item.id}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={[
-                    styles.modalItem,
-                    {
-                      backgroundColor:
-                        selectedReparto?.id === item.id
-                          ? theme.tint + '20'
-                          : 'transparent',
-                    },
-                  ]}
-                  onPress={() => {
-                    setSelectedReparto(item);
-                    setShowRepartoModal(false);
-                  }}
-                >
-                  <Text style={[styles.modalItemText, { color: theme.text }]}>
-                    Reparto #{item.id.slice(0, 8)}
-                  </Text>
-                  <Text style={[styles.modalItemSub, { color: theme.muted }]}>
-                    {item.fecha} — {item.estado}
-                  </Text>
-                </TouchableOpacity>
-              )}
-              ListEmptyComponent={
-                <Text style={[styles.modalEmpty, { color: theme.muted }]}>
-                  No hay repartos disponibles
-                </Text>
-              }
-            />
-          </View>
-        </View>
-      </Modal>
     </ThemedView>
   );
 }
@@ -548,12 +482,6 @@ const styles = StyleSheet.create({
   addItemBtnText: {
     fontWeight: '600',
     fontSize: FontSizes.sm,
-  },
-  quitarLink: {
-    fontSize: FontSizes.sm,
-    fontWeight: '500',
-    marginTop: Spacing.xs,
-    textAlign: 'right',
   },
   totalContainer: {
     flexDirection: 'row',

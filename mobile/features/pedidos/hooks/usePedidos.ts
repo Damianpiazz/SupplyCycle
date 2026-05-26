@@ -78,7 +78,7 @@ export function useCrearPedido() {
   return useMutation({
     mutationFn: (data: {
       clienteId: string;
-      repartoId?: string;
+      fecha?: string;
       items: Array<{ itemId: string; cantidad: number }>;
     }) => crearPedidoRequest(data),
     onSuccess: () => {
