@@ -5,7 +5,7 @@ import { ThemedView } from '@/components/themed-view';
 import { Card, LoadingSpinner, ErrorMessage, Header } from '@/components/ui';
 import { Colors, Spacing, FontSizes, BorderRadius } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { usePedidosDelDia } from '@/features/pedidos/hooks/usePedidos';
+import { useReparto } from '@/features/repartos/hooks/useReparto';
 import type { Pedido, EstadoPedido } from '@/types';
 
 type FiltroEstado = 'TODAS' | 'PENDIENTE' | 'EN_RUTA' | 'ENTREGADO' | 'NO_ENTREGADO' | 'CANCELADO';
@@ -92,7 +92,8 @@ export default function RepartosListScreen() {
   const colorScheme = useColorScheme() ?? 'light';
   const theme = Colors[colorScheme];
   const [filtro, setFiltro] = useState<FiltroEstado>('TODAS');
-  const { data: pedidos, isLoading, isError, error } = usePedidosDelDia();
+  const { data: reparto, isLoading, isError, error } = useReparto();
+  const pedidos = reparto?.pedidos ?? [];
 
   if (isLoading) {
     return (
@@ -114,7 +115,7 @@ export default function RepartosListScreen() {
     );
   }
 
-  const filteredPedidos = (pedidos ?? []).filter((p) => {
+  const filteredPedidos = pedidos.filter((p) => {
     if (filtro === 'TODAS') return true;
     return p.estado === filtro;
   });
@@ -159,7 +160,7 @@ export default function RepartosListScreen() {
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <Text style={[styles.emptyText, { color: theme.muted }]}>
-              No hay entregas para mostrar
+              {reparto === null ? 'No hay repartos para hoy' : 'No hay entregas para mostrar'}
             </Text>
           </View>
         }

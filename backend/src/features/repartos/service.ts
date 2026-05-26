@@ -1,6 +1,20 @@
 import { prisma } from '../../lib/prisma.js';
 import { ApiError } from '../../utils/api-error.js';
 
+/** Create a Date from YYYY-MM-DD string without timezone conversion */
+function dateFromISODate(dateStr: string): Date {
+  const [y, m, d] = dateStr.slice(0, 10).split('-');
+  return new Date(Number(y), Number(m) - 1, Number(d));
+}
+
+/** Format a calendar-date Date to YYYY-MM-DD without timezone shift */
+function fmtDate(d: Date): string {
+  const y = String(d.getFullYear());
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
 function formatReparto(reparto: {
   id: string;
   fecha: Date;
@@ -17,7 +31,7 @@ function formatReparto(reparto: {
 
   return {
     id: reparto.id,
-    fecha: reparto.fecha.toISOString(),
+    fecha: fmtDate(reparto.fecha),
     estado: reparto.estado,
     horaInicio: reparto.horaInicio ?? undefined,
     horaFin: reparto.horaFin ?? undefined,
@@ -110,7 +124,7 @@ export async function obtenerReparto(id: string) {
   return {
     id: reparto.id,
     repartidorId: reparto.repartidorId,
-    fecha: reparto.fecha.toISOString(),
+    fecha: fmtDate(reparto.fecha),
     estado: reparto.estado,
     horaInicio: reparto.horaInicio ?? undefined,
     horaFin: reparto.horaFin ?? undefined,
@@ -191,6 +205,300 @@ export async function obtenerResumenCarga(repartoId: string) {
   };
 }
 
+/** GET /repartos/admin — Lista todos los repartos (admin) */
+export async function listarRepartosAdmin(params?: { fecha?: string }) {
+  const where: Record<string, unknown> = {};
+
+  if (params?.fecha) {
+    where['fecha'] = dateFromISODate(params.fecha);
+  }
+
+  const repartos = await prisma.reparto.findMany({
+    where,
+    include: {
+      repartidor: { select: { id: true, nombre: true, apellido: true } },
+      pedidos: { select: { estado: true } },
+    },
+    orderBy: { fecha: 'desc' },
+  });
+
+  return repartos.map((r) => ({
+    id: r.id,
+    fecha: fmtDate(r.fecha),
+    estado: r.estado,
+    horaInicio: r.horaInicio ?? undefined,
+    horaFin: r.horaFin ?? undefined,
+    repartidor: {
+      id: r.repartidor.id,
+      nombre: r.repartidor.nombre,
+      apellido: r.repartidor.apellido,
+    },
+    pedidosCount: r.pedidos.length,
+    resumen: {
+      totalPedidos: r.pedidos.length,
+      completados: r.pedidos.filter((p) => p.estado !== 'PENDIENTE').length,
+      pendientes: r.pedidos.filter((p) => p.estado === 'PENDIENTE').length,
+    },
+  }));
+}
+
+/** GET /repartos/admin/:id — Detalle de reparto con repartidor y pedidos (admin) */
+export async function obtenerRepartoAdmin(id: string) {
+  const reparto = await prisma.reparto.findUnique({
+    where: { id },
+    include: {
+      repartidor: { select: { id: true, nombre: true, apellido: true, email: true } },
+      pedidos: {
+        include: {
+          cliente: true,
+          items: { include: { item: true } },
+        },
+        orderBy: { orden: 'asc' },
+      },
+    },
+  });
+
+  if (!reparto) {
+    throw ApiError.notFound('Reparto no encontrado');
+  }
+
+  const totalPedidos = reparto.pedidos.length;
+  const completados = reparto.pedidos.filter((p) => p.estado !== 'PENDIENTE').length;
+  const pendientes = totalPedidos - completados;
+
+  return {
+    id: reparto.id,
+    repartidorId: reparto.repartidorId,
+    fecha: fmtDate(reparto.fecha),
+    estado: reparto.estado,
+    horaInicio: reparto.horaInicio ?? undefined,
+    horaFin: reparto.horaFin ?? undefined,
+    repartidor: {
+      id: reparto.repartidor.id,
+      nombre: reparto.repartidor.nombre,
+      apellido: reparto.repartidor.apellido,
+      email: reparto.repartidor.email,
+    },
+    resumen: { totalPedidos, completados, pendientes },
+    pedidos: reparto.pedidos.map((p) => ({
+      id: p.id,
+      orden: p.orden,
+      estado: p.estado,
+      fecha: p.fecha.toISOString(),
+      motivoFalla: p.motivoFalla ?? undefined,
+      cliente: {
+        id: p.cliente.id,
+        nombre: p.cliente.nombre,
+        apellido: p.cliente.apellido,
+        telefono: p.cliente.telefono,
+        domicilio: {
+          calle: p.cliente.calle,
+          numero: p.cliente.numero,
+          localidad: p.cliente.localidad,
+          latitud: p.cliente.latitud,
+          longitud: p.cliente.longitud,
+        },
+        horarioDesde: p.cliente.horarioDesde,
+        horarioHasta: p.cliente.horarioHasta,
+      },
+      items: p.items.map((pi) => ({
+        item: {
+          id: pi.item.id,
+          nombre: pi.item.nombre,
+          descripcion: pi.item.descripcion ?? undefined,
+          unidad: pi.item.unidad,
+          activo: pi.item.activo,
+        },
+        cantidad: pi.cantidad,
+      })),
+    })),
+  };
+}
+
+/** GET /repartos/hoy — Reparto del día actual del repartidor autenticado */
+export async function obtenerRepartoDelDia(repartidorId: string) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const reparto = await prisma.reparto.findFirst({
+    where: { repartidorId, fecha: today },
+    include: {
+      pedidos: {
+        include: {
+          cliente: true,
+          items: { include: { item: true } },
+        },
+        orderBy: { orden: 'asc' },
+      },
+    },
+  });
+
+  if (!reparto) {
+    return null;
+  }
+
+  const totalPedidos = reparto.pedidos.length;
+  const completados = reparto.pedidos.filter(
+    (p) => p.estado !== 'PENDIENTE'
+  ).length;
+  const pendientes = totalPedidos - completados;
+
+  return {
+    id: reparto.id,
+    repartidorId: reparto.repartidorId,
+    fecha: fmtDate(reparto.fecha),
+    estado: reparto.estado,
+    horaInicio: reparto.horaInicio ?? undefined,
+    horaFin: reparto.horaFin ?? undefined,
+    resumen: { totalPedidos, completados, pendientes },
+    pedidos: reparto.pedidos.map((p) => ({
+      id: p.id,
+      orden: p.orden,
+      estado: p.estado,
+      fecha: p.fecha.toISOString(),
+      motivoFalla: p.motivoFalla ?? undefined,
+      cliente: {
+        id: p.cliente.id,
+        nombre: p.cliente.nombre,
+        apellido: p.cliente.apellido,
+        telefono: p.cliente.telefono,
+        domicilio: {
+          calle: p.cliente.calle,
+          numero: p.cliente.numero,
+          localidad: p.cliente.localidad,
+          latitud: p.cliente.latitud,
+          longitud: p.cliente.longitud,
+        },
+        horarioDesde: p.cliente.horarioDesde,
+        horarioHasta: p.cliente.horarioHasta,
+      },
+      items: p.items.map((pi) => ({
+        item: {
+          id: pi.item.id,
+          nombre: pi.item.nombre,
+          descripcion: pi.item.descripcion ?? undefined,
+          unidad: pi.item.unidad,
+          activo: pi.item.activo,
+        },
+        cantidad: pi.cantidad,
+      })),
+    })),
+  };
+}
+
+/** POST /repartos — Crear reparto (admin) */
+export async function crearReparto(data: {
+  repartidorId: string;
+  fecha: string;
+  pedidoIds: string[];
+}) {
+  const fechaDate = dateFromISODate(data.fecha);
+
+  // 1. Validar repartidor existe y es REPARTIDOR
+  const repartidor = await prisma.usuario.findUnique({ where: { id: data.repartidorId } });
+  if (!repartidor) {
+    throw ApiError.notFound('Repartidor no encontrado');
+  }
+  if (repartidor.rol !== 'REPARTIDOR') {
+    throw ApiError.badRequest('El usuario seleccionado no es un repartidor');
+  }
+
+  // 2. Validar que el repartidor no tenga ya un reparto para esta fecha
+  const repartoExistente = await prisma.reparto.findFirst({
+    where: { repartidorId: data.repartidorId, fecha: fechaDate },
+  });
+  if (repartoExistente) {
+    throw ApiError.conflict('El repartidor ya tiene un reparto asignado para esta fecha');
+  }
+
+  // 3. Validar pedidos
+  const pedidos = await prisma.pedido.findMany({
+    where: { id: { in: data.pedidoIds } },
+    select: { id: true, estado: true, repartoId: true, fecha: true },
+  });
+
+  // Verificar que todos los IDs existen
+  if (pedidos.length !== data.pedidoIds.length) {
+    const existentes = new Set(pedidos.map((p) => p.id));
+    const faltantes = data.pedidoIds.filter((id) => !existentes.has(id));
+    throw ApiError.notFound(`Pedidos no encontrados: ${faltantes.join(', ')}`);
+  }
+
+  for (const pedido of pedidos) {
+    if (pedido.estado !== 'PENDIENTE') {
+      throw ApiError.conflict(`El pedido ${pedido.id} no está pendiente`);
+    }
+    if (pedido.repartoId) {
+      throw ApiError.conflict(`El pedido ${pedido.id} ya está asignado a otro reparto`);
+    }
+    if (fmtDate(pedido.fecha) !== data.fecha.slice(0, 10)) {
+      throw ApiError.badRequest(`El pedido ${pedido.id} tiene una fecha diferente al reparto`);
+    }
+  }
+
+  // 4. Crear reparto
+  const reparto = await prisma.reparto.create({
+    data: {
+      repartidorId: data.repartidorId,
+      fecha: fechaDate,
+      estado: 'PENDIENTE',
+      pedidos: {
+        connect: data.pedidoIds.map((id) => ({ id })),
+      },
+    },
+    include: {
+      pedidos: {
+        include: {
+          cliente: true,
+          items: { include: { item: true } },
+        },
+        orderBy: { orden: 'asc' },
+      },
+    },
+  });
+
+  const totalPedidos = reparto.pedidos.length;
+
+  return {
+    id: reparto.id,
+    repartidorId: reparto.repartidorId,
+    fecha: fmtDate(reparto.fecha),
+    estado: reparto.estado,
+    resumen: { totalPedidos, completados: 0, pendientes: totalPedidos },
+    pedidos: reparto.pedidos.map((p) => ({
+      id: p.id,
+      orden: p.orden,
+      estado: p.estado,
+      fecha: p.fecha.toISOString(),
+      cliente: {
+        id: p.cliente.id,
+        nombre: p.cliente.nombre,
+        apellido: p.cliente.apellido,
+        telefono: p.cliente.telefono,
+        domicilio: {
+          calle: p.cliente.calle,
+          numero: p.cliente.numero,
+          localidad: p.cliente.localidad,
+          latitud: p.cliente.latitud,
+          longitud: p.cliente.longitud,
+        },
+        horarioDesde: p.cliente.horarioDesde,
+        horarioHasta: p.cliente.horarioHasta,
+      },
+      items: p.items.map((pi) => ({
+        item: {
+          id: pi.item.id,
+          nombre: pi.item.nombre,
+          descripcion: pi.item.descripcion ?? undefined,
+          unidad: pi.item.unidad,
+          activo: pi.item.activo,
+        },
+        cantidad: pi.cantidad,
+      })),
+    })),
+  };
+}
+
 /** PATCH /repartos/:id/estado */
 export async function actualizarEstado(repartoId: string, nuevoEstado: 'EN_CURSO' | 'COMPLETADO') {
   const reparto = await prisma.reparto.findUnique({
@@ -250,5 +558,122 @@ export async function actualizarEstado(repartoId: string, nuevoEstado: 'EN_CURSO
     id: updated.id,
     estado: updated.estado,
     actualizadoEn: updated.actualizadoEn.toISOString(),
+  };
+}
+
+// =============================================================================
+// ADMIN — Modificación de reparto (agregar/quitar pedidos)
+// =============================================================================
+
+/**
+ * Valida que un reparto sea editable:
+ * - Existe
+ * - Está PENDIENTE (no iniciado, no finalizado)
+ */
+async function validarRepartoEditable(id: string) {
+  const reparto = await prisma.reparto.findUnique({
+    where: { id },
+    include: { pedidos: { select: { id: true } } },
+  });
+
+  if (!reparto) {
+    throw ApiError.notFound('Reparto no encontrado');
+  }
+
+  if (reparto.estado !== 'PENDIENTE') {
+    if (reparto.estado === 'COMPLETADO') {
+      throw ApiError.conflict('No se puede modificar un reparto finalizado');
+    }
+    throw ApiError.conflict('No se puede modificar un reparto en curso');
+  }
+
+  return reparto;
+}
+
+/** POST /repartos/admin/:repartoId/pedidos — Agregar pedido a reparto */
+export async function agregarPedidoAReparto(repartoId: string, pedidoId: string) {
+  const reparto = await validarRepartoEditable(repartoId);
+  const fechaReparto = fmtDate(reparto.fecha);
+
+  // Validar pedido existe
+  const pedido = await prisma.pedido.findUnique({ where: { id: pedidoId } });
+  if (!pedido) {
+    throw ApiError.notFound('Pedido no encontrado');
+  }
+
+  // Validar pedido está pendiente
+  if (pedido.estado !== 'PENDIENTE') {
+    throw ApiError.conflict('Solo se pueden agregar pedidos en estado pendiente');
+  }
+
+  // Validar pedido no esté ya en otro reparto
+  if (pedido.repartoId) {
+    throw ApiError.conflict('El pedido ya está asignado a un reparto');
+  }
+
+  // Validar que la fecha del pedido coincida con la del reparto
+  if (fmtDate(pedido.fecha) !== fechaReparto) {
+    throw ApiError.badRequest('El pedido tiene una fecha diferente a la del reparto');
+  }
+
+  // Validar que el pedido no esté ya en este reparto
+  const yaAsignado = reparto.pedidos.some((p) => p.id === pedidoId);
+  if (yaAsignado) {
+    throw ApiError.conflict('El pedido ya está asignado a este reparto');
+  }
+
+  // Asignar pedido al reparto
+  await prisma.pedido.update({
+    where: { id: pedidoId },
+    data: { repartoId },
+  });
+
+  // Actualizar orden del pedido al final de la lista
+  const maxOrden = reparto.pedidos.length > 0
+    ? reparto.pedidos.length + 1
+    : 1;
+
+  await prisma.pedido.update({
+    where: { id: pedidoId },
+    data: { orden: maxOrden },
+  });
+
+  return {
+    repartoId,
+    pedidoId,
+    accion: 'agregado',
+  };
+}
+
+/** DELETE /repartos/admin/:repartoId/pedidos/:pedidoId — Quitar pedido de reparto */
+export async function quitarPedidoDeReparto(repartoId: string, pedidoId: string) {
+  await validarRepartoEditable(repartoId);
+
+  // Validar pedido existe
+  const pedido = await prisma.pedido.findUnique({ where: { id: pedidoId } });
+  if (!pedido) {
+    throw ApiError.notFound('Pedido no encontrado');
+  }
+
+  // Validar pedido pertenece a este reparto
+  if (pedido.repartoId !== repartoId) {
+    throw ApiError.conflict('El pedido no pertenece a este reparto');
+  }
+
+  // Validar pedido no esté en estado avanzado
+  if (pedido.estado !== 'PENDIENTE' && pedido.estado !== 'EN_RUTA') {
+    throw ApiError.conflict('Solo se pueden quitar pedidos pendientes o en ruta');
+  }
+
+  // Desvincular pedido del reparto
+  await prisma.pedido.update({
+    where: { id: pedidoId },
+    data: { repartoId: null },
+  });
+
+  return {
+    repartoId,
+    pedidoId,
+    accion: 'quitado',
   };
 }

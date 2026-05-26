@@ -62,6 +62,7 @@ model Cliente {
   horarioDesde  String
   horarioHasta  String
   observaciones String?
+  activo        Boolean   @default(true)
   creadoEn      DateTime  @default(now())
   actualizadoEn DateTime  @updatedAt
   pedidos       Pedido[]

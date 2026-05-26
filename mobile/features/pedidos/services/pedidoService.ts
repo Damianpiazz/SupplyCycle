@@ -39,7 +39,7 @@ export async function confirmarEntregaRequest(
 
 export async function crearPedidoRequest(data: {
   clienteId: string;
-  repartoId?: string;
+  fecha?: string;
   items: Array<{ itemId: string; cantidad: number }>;
 }): Promise<Pedido> {
   const response = await apiClient.post<{ data: Pedido }>('/pedidos', data);

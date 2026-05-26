@@ -1,5 +1,23 @@
 import { apiClient } from '@/services/api';
-import type { Reparto, ResumenCarga } from '@/types/reparto';
+import type { Reparto, RepartoAdminListItem, RepartoAdminDetalle, ResumenCarga } from '@/types/reparto';
+import type { Pedido } from '@/types/pedido';
+
+export async function getRepartosAdminRequest(fecha?: string): Promise<RepartoAdminListItem[]> {
+  const params: Record<string, string> = {};
+  if (fecha) params.fecha = fecha;
+  const response = await apiClient.get<{ data: RepartoAdminListItem[]; total: number }>('/repartos/admin', { params });
+  return response.data.data;
+}
+
+export async function getRepartoAdminByIdRequest(id: string): Promise<RepartoAdminDetalle> {
+  const response = await apiClient.get<{ data: RepartoAdminDetalle }>(`/repartos/admin/${id}`);
+  return response.data.data;
+}
+
+export async function getRepartoHoyRequest(): Promise<Reparto | null> {
+  const response = await apiClient.get<{ data: Reparto | null; message?: string }>('/repartos/hoy');
+  return response.data.data;
+}
 
 export async function getRepartosRequest(
   repartidorId: string,
@@ -27,6 +45,22 @@ export async function getResumenCargaRequest(
   return response.data;
 }
 
+export async function crearRepartoRequest(data: {
+  repartidorId: string;
+  fecha: string;
+  pedidoIds: string[];
+}): Promise<Reparto> {
+  const response = await apiClient.post<{ data: Reparto }>('/repartos', data);
+  return response.data.data;
+}
+
+export async function getPedidosDisponiblesRequest(fecha: string): Promise<Pedido[]> {
+  const response = await apiClient.get<{ data: Pedido[]; total: number }>('/pedidos/disponibles', {
+    params: { fecha },
+  });
+  return response.data.data;
+}
+
 export async function updateRepartoEstadoRequest(
   id: string,
   estado: 'EN_CURSO' | 'COMPLETADO'
@@ -36,4 +70,25 @@ export async function updateRepartoEstadoRequest(
     { estado }
   );
   return response.data;
+}
+
+export async function agregarPedidoARepartoRequest(
+  repartoId: string,
+  pedidoId: string
+): Promise<{ repartoId: string; pedidoId: string; accion: string }> {
+  const response = await apiClient.post<{ data: { repartoId: string; pedidoId: string; accion: string } }>(
+    `/repartos/admin/${repartoId}/pedidos`,
+    { pedidoId }
+  );
+  return response.data.data;
+}
+
+export async function quitarPedidoDeRepartoRequest(
+  repartoId: string,
+  pedidoId: string
+): Promise<{ repartoId: string; pedidoId: string; accion: string }> {
+  const response = await apiClient.delete<{ data: { repartoId: string; pedidoId: string; accion: string } }>(
+    `/repartos/admin/${repartoId}/pedidos/${pedidoId}`
+  );
+  return response.data.data;
 }
