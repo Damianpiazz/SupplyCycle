@@ -3,21 +3,14 @@ import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useAuthStore } from '@/stores/authStore';
 import { getToken } from '@/features/auth/services/authStorage';
 import { LoadingSpinner, Toast } from '@/components/ui';
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 5 * 60 * 1000,
-      retry: 2,
-    },
-  },
-});
+import { queryClient } from '@/lib/queryClient';
+import useOfflineSync from '@/hooks/useOfflineSync';
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -26,6 +19,9 @@ export const unstable_settings = {
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   const { isLoading, setAuth, setLoading } = useAuthStore();
+
+  // Inicializar sincronización offline
+  useOfflineSync();
 
   // Bootstrap: check if we have a stored token
   useEffect(() => {
@@ -44,14 +40,10 @@ export default function RootLayout() {
               return;
             }
           } catch {
-            // fallback a mock
+            // Error de red o backend caído -> ir a login
           }
-
-          const { mockGetMeRequest } = await import(
-            '@/features/auth/services/mockAuthService'
-          );
-          const usuario = await mockGetMeRequest();
-          setAuth(token, usuario);
+          // Token inválido, expirado o backend no disponible
+          setLoading(false);
         } else {
           setLoading(false);
         }
