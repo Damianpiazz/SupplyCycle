@@ -10,3 +10,10 @@ export async function getMeRequest(): Promise<Usuario> {
   const response = await apiClient.get<Usuario>('/auth/me');
   return response.data;
 }
+
+export type UpdateMeInput = Partial<Pick<Usuario, 'nombre' | 'apellido' | 'email'>>;
+
+export async function updateMeRequest(input: UpdateMeInput): Promise<Usuario> {
+  const response = await apiClient.patch<Usuario>('/auth/me', input);
+  return response.data;
+}

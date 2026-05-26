@@ -16,3 +16,13 @@ export const crearUsuarioSchema = z.object({
   apellido: z.string().min(2, 'El apellido debe tener al menos 2 caracteres').max(100),
   rol: z.enum(['REPARTIDOR', 'ADMIN']).default('REPARTIDOR'),
 });
+
+export const actualizarMeSchema = z
+  .object({
+    nombre: z.string().min(2, 'El nombre debe tener al menos 2 caracteres').max(100).optional(),
+    apellido: z.string().min(2, 'El apellido debe tener al menos 2 caracteres').max(100).optional(),
+    email: z.string().email('El email no tiene un formato válido').optional(),
+  })
+  .refine((data) => Object.keys(data).length > 0, {
+    message: 'Debe enviar al menos un campo a actualizar',
+  });
