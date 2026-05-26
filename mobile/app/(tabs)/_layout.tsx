@@ -35,7 +35,11 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          href: null,
+          title: 'Inicio',
+          href: isAdmin ? null : undefined,
+          tabBarIcon: ({ color }) => (
+            <IconSymbol size={28} name="house.fill" color={color} />
+          ),
         }}
       />
       <Tabs.Screen

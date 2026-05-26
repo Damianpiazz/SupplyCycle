@@ -1,5 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
-import { getRepartoHoyRequest, getRepartoByIdRequest } from '@/features/repartos/services/repartoService';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { getRepartoHoyRequest, getRepartoByIdRequest, updateRepartoEstadoRequest } from '@/features/repartos/services/repartoService';
 import type { Reparto } from '@/types';
 
 export function useReparto() {
@@ -15,5 +15,17 @@ export function useRepartoDetalle(id: string) {
     queryKey: ['reparto', id],
     queryFn: () => getRepartoByIdRequest(id),
     enabled: !!id,
+  });
+}
+
+export function useIniciarReparto() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (repartoId: string) =>
+      updateRepartoEstadoRequest(repartoId, 'EN_CURSO'),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['reparto', 'hoy'] });
+    },
   });
 }

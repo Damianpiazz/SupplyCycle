@@ -8,6 +8,7 @@ import {
   getPedidosRequest,
   confirmarEntregaRequest,
   cancelarPedidoRequest,
+  iniciarEntregaRequest,
   crearPedidoRequest,
   agregarItemRequest,
   actualizarCantidadItemRequest,
@@ -150,6 +151,19 @@ export function useCancelarPedido() {
           return { ...old, estado: 'NO_ENTREGADO' as const, motivoFalla: data.motivoFalla };
         return old;
       });
+      queryClient.invalidateQueries({ queryKey: ['pedidos'] });
+      queryClient.invalidateQueries({ queryKey: ['reparto'] });
+    },
+  });
+}
+
+// Iniciar entrega: PENDIENTE → EN_RUTA
+export function useIniciarEntrega() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (pedidoId: string) => iniciarEntregaRequest(pedidoId),
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pedidos'] });
       queryClient.invalidateQueries({ queryKey: ['reparto'] });
     },

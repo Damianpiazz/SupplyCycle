@@ -79,6 +79,17 @@ export async function actualizarCantidadItemRequest(
   return response.data;
 }
 
+export async function iniciarEntregaRequest(
+  id: string
+): Promise<{ id: string; estado: 'EN_RUTA'; actualizadoEn: string }> {
+  const response = await apiClient.patch<{
+    id: string;
+    estado: 'EN_RUTA';
+    actualizadoEn: string;
+  }>(`/pedidos/${id}/estado`, { estado: 'EN_RUTA' });
+  return response.data;
+}
+
 export async function quitarItemRequest(
   pedidoId: string,
   itemId: string
