@@ -16,6 +16,7 @@ const MAPPING = {
   'map.fill': 'map',
   'person.fill': 'person',
   'person.2.fill': 'people',
+  'person.crop.rectangle.stack.fill': 'contacts',
   'phone.fill': 'phone',
   'location.fill': 'location-on',
   'xmark': 'close',
