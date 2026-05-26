@@ -169,7 +169,7 @@ export default function PerfilScreen() {
               Rol
             </Text>
             <Text style={[styles.infoValue, { color: theme.text }]}>
-              Repartidor
+              {usuario.rol === 'ADMIN' ? 'Administrador' : 'Repartidor'}
             </Text>
           </View>
         </Card>

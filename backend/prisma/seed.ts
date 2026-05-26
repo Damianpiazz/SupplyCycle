@@ -18,19 +18,32 @@ async function main() {
   await prisma.cliente.deleteMany();
   await prisma.usuario.deleteMany();
 
-  // --- Usuario ---
-  const password = await bcrypt.hash('Repartidor123', 10);
+  // --- Usuarios ---
+  const repartidorPassword = await bcrypt.hash('Repartidor123', 10);
   const repartidor = await prisma.usuario.create({
     data: {
       email: 'repartidor@supplycycle.com',
-      password,
+      password: repartidorPassword,
       nombre: 'Juan',
       apellido: 'Pérez',
       rol: 'REPARTIDOR',
       activo: true,
     },
   });
-  console.log(`  ✅ Usuario: ${repartidor.email}`);
+  console.log(`  ✅ Usuario repartidor: ${repartidor.email}`);
+
+  const adminPassword = await bcrypt.hash('Admin1234', 10);
+  const admin = await prisma.usuario.create({
+    data: {
+      email: 'admin@supplycycle.com',
+      password: adminPassword,
+      nombre: 'Ana',
+      apellido: 'Administradora',
+      rol: 'ADMIN',
+      activo: true,
+    },
+  });
+  console.log(`  ✅ Usuario admin: ${admin.email}`);
 
   // --- Items ---
   const item20l = await prisma.item.create({

@@ -11,6 +11,7 @@ import { useAuthStore } from '@/stores/authStore';
 export default function TabLayout() {
   const colorScheme = useColorScheme() ?? 'light';
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const isAdmin = useAuthStore((state) => state.usuario?.rol === 'ADMIN');
 
   if (!isAuthenticated) {
     return <Redirect href="/login" />;
@@ -61,6 +62,16 @@ export default function TabLayout() {
           title: 'Mapa',
           tabBarIcon: ({ color }) => (
             <IconSymbol size={28} name="map.fill" color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="usuarios"
+        options={{
+          title: 'Usuarios',
+          href: isAdmin ? undefined : null,
+          tabBarIcon: ({ color }) => (
+            <IconSymbol size={28} name="person.2.fill" color={color} />
           ),
         }}
       />
