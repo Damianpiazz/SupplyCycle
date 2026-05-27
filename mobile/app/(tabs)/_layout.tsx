@@ -4,6 +4,7 @@ import { Platform } from 'react-native';
 
 import { HapticTab } from '@/components/haptic-tab';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { ConnectivityBanner } from '@/components/ui';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useAuthStore } from '@/stores/authStore';
@@ -11,13 +12,16 @@ import { useAuthStore } from '@/stores/authStore';
 export default function TabLayout() {
   const colorScheme = useColorScheme() ?? 'light';
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const isAdmin = useAuthStore((state) => state.usuario?.rol === 'ADMIN');
 
   if (!isAuthenticated) {
     return <Redirect href="/login" />;
   }
 
   return (
-    <Tabs
+    <>
+      <ConnectivityBanner isConnected={true} />
+      <Tabs
       screenOptions={{
         tabBarActiveTintColor: Colors[colorScheme].tint,
         headerShown: false,
@@ -32,8 +36,19 @@ export default function TabLayout() {
         name="index"
         options={{
           title: 'Inicio',
+          href: isAdmin ? null : undefined,
           tabBarIcon: ({ color }) => (
             <IconSymbol size={28} name="house.fill" color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="clientes"
+        options={{
+          title: 'Clientes',
+          href: isAdmin ? undefined : null,
+          tabBarIcon: ({ color }) => (
+            <IconSymbol size={28} name="person.crop.rectangle.stack.fill" color={color} />
           ),
         }}
       />
@@ -65,6 +80,16 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="usuarios"
+        options={{
+          title: 'Usuarios',
+          href: isAdmin ? undefined : null,
+          tabBarIcon: ({ color }) => (
+            <IconSymbol size={28} name="person.2.fill" color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="perfil"
         options={{
           title: 'Perfil',
@@ -74,5 +99,6 @@ export default function TabLayout() {
         }}
       />
     </Tabs>
+    </>
   );
 }

@@ -16,3 +16,9 @@ export interface LoginInput {
   email: string;
   password: string;
 }
+
+export interface UpdateMeInput {
+  nombre?: string;
+  apellido?: string;
+  email?: string;
+}

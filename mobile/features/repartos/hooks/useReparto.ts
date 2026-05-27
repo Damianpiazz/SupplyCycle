@@ -1,31 +1,11 @@
-import { useQuery } from '@tanstack/react-query';
-import { useAuthStore } from '@/stores/authStore';
-import {
-  getRepartosRequest,
-  getRepartoByIdRequest,
-} from '@/features/repartos/services/repartoService';
-import {
-  mockGetRepartosRequest,
-  mockGetRepartoByIdRequest,
-} from '@/features/repartos/mocks/repartoMockData';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { getRepartoHoyRequest, getRepartoByIdRequest, updateRepartoEstadoRequest } from '@/features/repartos/services/repartoService';
 import type { Reparto } from '@/types';
 
-function getRepartidorId(): string {
-  return useAuthStore.getState().usuario?.id ?? '';
-}
-
 export function useReparto() {
-  return useQuery<Reparto>({
+  return useQuery<Reparto | null>({
     queryKey: ['reparto', 'hoy'],
-    queryFn: async () => {
-      try {
-        const repartos = await getRepartosRequest(getRepartidorId());
-        return repartos[0];
-      } catch {
-        const repartos = await mockGetRepartosRequest();
-        return repartos[0];
-      }
-    },
+    queryFn: getRepartoHoyRequest,
     staleTime: 5 * 60 * 1000,
   });
 }
@@ -33,13 +13,19 @@ export function useReparto() {
 export function useRepartoDetalle(id: string) {
   return useQuery<Reparto>({
     queryKey: ['reparto', id],
-    queryFn: async () => {
-      try {
-        return await getRepartoByIdRequest(id);
-      } catch {
-        return await mockGetRepartoByIdRequest(id);
-      }
-    },
+    queryFn: () => getRepartoByIdRequest(id),
     enabled: !!id,
+  });
+}
+
+export function useIniciarReparto() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (repartoId: string) =>
+      updateRepartoEstadoRequest(repartoId, 'EN_CURSO'),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['reparto', 'hoy'] });
+    },
   });
 }

@@ -25,6 +25,9 @@ const mockGetPedidos = vi.fn();
 const mockConfirmarEntrega = vi.fn();
 const mockCancelarPedido = vi.fn();
 const mockCrearPedido = vi.fn();
+const mockAgregarItem = vi.fn();
+const mockQuitarItem = vi.fn();
+const mockActualizarCantidad = vi.fn();
 
 vi.mock('@/features/pedidos/services/pedidoService', () => ({
   getPedidosDelDiaRequest: (...args: unknown[]) => mockGetPedidosDelDia(...args),
@@ -33,16 +36,28 @@ vi.mock('@/features/pedidos/services/pedidoService', () => ({
   confirmarEntregaRequest: (...args: unknown[]) => mockConfirmarEntrega(...args),
   cancelarPedidoRequest: (...args: unknown[]) => mockCancelarPedido(...args),
   crearPedidoRequest: (...args: unknown[]) => mockCrearPedido(...args),
+  agregarItemRequest: (...args: unknown[]) => mockAgregarItem(...args),
+  quitarItemRequest: (...args: unknown[]) => mockQuitarItem(...args),
+  actualizarCantidadItemRequest: (...args: unknown[]) => mockActualizarCantidad(...args),
 }));
 
-const mockMockPedidosDelDia = vi.fn();
-const mockMockPedidoById = vi.fn();
-const mockMockPedidos = vi.fn();
+const mockAsyncStorageSet = vi.fn().mockResolvedValue(undefined);
+const mockAsyncStorageGet = vi.fn().mockResolvedValue(null);
 
-vi.mock('@/features/pedidos/mocks/pedidoMockData', () => ({
-  mockGetPedidosDelDiaRequest: (...args: unknown[]) => mockMockPedidosDelDia(...args),
-  mockGetPedidoByIdRequest: (...args: unknown[]) => mockMockPedidoById(...args),
-  mockGetPedidosRequest: (...args: unknown[]) => mockMockPedidos(...args),
+vi.mock('@react-native-async-storage/async-storage', () => ({
+  default: {
+    setItem: (...args: unknown[]) => mockAsyncStorageSet(...args),
+    getItem: (...args: unknown[]) => mockAsyncStorageGet(...args),
+  },
+}));
+
+const mockAddToQueue = vi.fn();
+
+vi.mock('@/stores/offlineStore', () => ({
+  useOfflineStore: vi.fn((selector) => {
+    const state = { addToQueue: mockAddToQueue, queue: [] };
+    return selector ? selector(state) : state;
+  }),
 }));
 
 vi.mock('@/stores/authStore', () => ({
@@ -58,6 +73,9 @@ import {
   useCrearPedido,
   useConfirmarEntrega,
   useCancelarPedido,
+  useAgregarItem,
+  useQuitarItem,
+  useActualizarCantidadItem,
 } from '@/features/pedidos/hooks/usePedidos';
 
 beforeEach(() => {
@@ -101,17 +119,14 @@ describe('usePedidos hooks', () => {
       expect(opts.staleTime).toBe(5 * 60 * 1000);
     });
 
-    it('queryFn should call service then fallback on error', async () => {
-      mockGetPedidosDelDia.mockRejectedValueOnce(new Error('fail'));
-      mockMockPedidosDelDia.mockResolvedValueOnce(['mock']);
+    it('should throw when service fails and no cache available', async () => {
+      mockGetPedidosDelDia.mockRejectedValueOnce(new Error('Network Error'));
 
       usePedidosDelDia();
       const opts = getQueryOptions();
-      const result = await opts.queryFn();
 
+      await expect(opts.queryFn()).rejects.toThrow('No se pudieron cargar los pedidos');
       expect(mockGetPedidosDelDia).toHaveBeenCalledWith('user-1');
-      expect(mockMockPedidosDelDia).toHaveBeenCalledWith();
-      expect(result).toEqual(['mock']);
     });
 
     it('queryFn should return service result when successful', async () => {
@@ -122,7 +137,6 @@ describe('usePedidos hooks', () => {
       const result = await opts.queryFn();
 
       expect(mockGetPedidosDelDia).toHaveBeenCalledWith('user-1');
-      expect(mockMockPedidosDelDia).not.toHaveBeenCalled();
       expect(result).toEqual(['real']);
     });
   });
@@ -153,17 +167,14 @@ describe('usePedidos hooks', () => {
       expect(opts.enabled).toBe(false);
     });
 
-    it('queryFn should call service then fallback on error', async () => {
-      mockGetPedidoById.mockRejectedValueOnce(new Error('fail'));
-      mockMockPedidoById.mockResolvedValueOnce({ id: 'mock' });
+    it('should throw when service fails', async () => {
+      mockGetPedidoById.mockRejectedValueOnce(new Error('Not found'));
 
       usePedidoDetalle('p1');
       const opts = getQueryOptions();
-      const result = await opts.queryFn();
 
+      await expect(opts.queryFn()).rejects.toThrow('Not found');
       expect(mockGetPedidoById).toHaveBeenCalledWith('p1');
-      expect(mockMockPedidoById).toHaveBeenCalledWith('p1');
-      expect(result).toEqual({ id: 'mock' });
     });
   });
 
@@ -187,18 +198,15 @@ describe('usePedidos hooks', () => {
       expect(opts.staleTime).toBe(5 * 60 * 1000);
     });
 
-    it('queryFn should call service with params then fallback', async () => {
+    it('queryFn should throw when service fails', async () => {
       const params = { estado: 'PENDIENTE' as const };
       mockGetPedidos.mockRejectedValueOnce(new Error('fail'));
-      mockMockPedidos.mockResolvedValueOnce({ data: [], total: 0 });
 
       useBuscarPedidos(params);
       const opts = getQueryOptions();
-      const result = await opts.queryFn();
 
+      await expect(opts.queryFn()).rejects.toThrow('fail');
       expect(mockGetPedidos).toHaveBeenCalledWith(params);
-      expect(mockMockPedidos).toHaveBeenCalledWith(params);
-      expect(result).toEqual({ data: [], total: 0 });
     });
 
     it('queryFn should return service result when successful', async () => {
@@ -210,7 +218,6 @@ describe('usePedidos hooks', () => {
       const result = await opts.queryFn();
 
       expect(mockGetPedidos).toHaveBeenCalledWith(params);
-      expect(mockMockPedidos).not.toHaveBeenCalled();
       expect(result).toEqual({ data: [{ id: '1' }], total: 1 });
     });
   });
@@ -311,6 +318,27 @@ describe('usePedidos hooks', () => {
       expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: ['pedidos'] });
       expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: ['reparto'] });
     });
+
+    it('encola mutación en offlineStore cuando confirmarEntrega falla (offline)', async () => {
+      mockConfirmarEntrega.mockRejectedValueOnce(new Error('Network Error'));
+      vi.mocked(useMutation).mockImplementation((options: any) => ({
+        mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false, isError: false,
+        error: null, isSuccess: false, reset: vi.fn(), data: undefined,
+      } as never));
+
+      useConfirmarEntrega();
+      const opts = getMutationOptions();
+      const result = await opts.mutationFn('p1');
+
+      expect(mockAddToQueue).toHaveBeenCalledWith({
+        type: 'CONFIRMAR_ENTREGA',
+        payload: { pedidoId: 'p1' },
+      });
+      expect(result).toMatchObject({
+        id: 'p1',
+        estado: 'ENTREGADO',
+      });
+    });
   });
 
   describe('useCancelarPedido', () => {
@@ -370,6 +398,109 @@ describe('usePedidos hooks', () => {
 
       expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: ['pedidos'] });
       expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: ['reparto'] });
+    });
+
+    it('encola mutación en offlineStore cuando cancelarPedido falla (offline)', async () => {
+      mockCancelarPedido.mockRejectedValueOnce(new Error('Network Error'));
+      vi.mocked(useMutation).mockImplementation((options: any) => ({
+        mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false, isError: false,
+        error: null, isSuccess: false, reset: vi.fn(), data: undefined,
+      } as never));
+
+      useCancelarPedido();
+      const opts = getMutationOptions();
+      const payload = { pedidoId: 'p1', motivo: 'CLIENTE_AUSENTE' as const };
+      const result = await opts.mutationFn(payload);
+
+      expect(mockAddToQueue).toHaveBeenCalledWith({
+        type: 'CANCELAR_PEDIDO',
+        payload: { pedidoId: 'p1', motivo: 'CLIENTE_AUSENTE' },
+      });
+      expect(result).toMatchObject({
+        id: 'p1',
+        estado: 'NO_ENTREGADO',
+        motivoFalla: 'CLIENTE_AUSENTE',
+      });
+    });
+  });
+
+  describe('hooks de items con soporte offline', () => {
+    describe('useAgregarItem', () => {
+      it('encola en offlineStore cuando agregarItem falla', async () => {
+        mockAgregarItem.mockRejectedValueOnce(new Error('Network Error'));
+        vi.mocked(useMutation).mockImplementation((_options: unknown) => ({
+          mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false, isError: false,
+          error: null, isSuccess: false, reset: vi.fn(), data: undefined,
+        } as never));
+
+        useAgregarItem('p1');
+        const opts = getMutationOptions();
+        const payload = { itemId: 'item-1', cantidad: 3 };
+        const result = await opts.mutationFn(payload);
+
+        expect(mockAddToQueue).toHaveBeenCalledWith({
+          type: 'AGREGAR_ITEM',
+          payload: { pedidoId: 'p1', itemId: 'item-1', cantidad: 3 },
+        });
+        expect(result).toEqual({ itemId: 'item-1', cantidad: 3 });
+      });
+
+      it('llama a agregarItemRequest directamente cuando hay conexión', async () => {
+        const responseData = { id: 'new-item', itemId: 'item-1', cantidad: 3 };
+        mockAgregarItem.mockResolvedValueOnce(responseData);
+        vi.mocked(useMutation).mockImplementation((_options: unknown) => ({
+          mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false, isError: false,
+          error: null, isSuccess: false, reset: vi.fn(), data: undefined,
+        } as never));
+
+        useAgregarItem('p1');
+        const opts = getMutationOptions();
+        const payload = { itemId: 'item-1', cantidad: 3 };
+        const result = await opts.mutationFn(payload);
+
+        expect(mockAddToQueue).not.toHaveBeenCalled();
+        expect(result).toEqual(responseData);
+      });
+    });
+
+    describe('useQuitarItem', () => {
+      it('encola en offlineStore cuando quitarItem falla', async () => {
+        mockQuitarItem.mockRejectedValueOnce(new Error('Network Error'));
+        vi.mocked(useMutation).mockImplementation((_options: unknown) => ({
+          mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false, isError: false,
+          error: null, isSuccess: false, reset: vi.fn(), data: undefined,
+        } as never));
+
+        useQuitarItem('p1');
+        const opts = getMutationOptions();
+        const result = await opts.mutationFn('item-1');
+
+        expect(mockAddToQueue).toHaveBeenCalledWith({
+          type: 'QUITAR_ITEM',
+          payload: { pedidoId: 'p1', itemId: 'item-1' },
+        });
+        expect(result).toEqual({ itemId: 'item-1' });
+      });
+    });
+
+    describe('useActualizarCantidadItem', () => {
+      it('encola en offlineStore cuando actualizarCantidad falla', async () => {
+        mockActualizarCantidad.mockRejectedValueOnce(new Error('Network Error'));
+        vi.mocked(useMutation).mockImplementation((_options: unknown) => ({
+          mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false, isError: false,
+          error: null, isSuccess: false, reset: vi.fn(), data: undefined,
+        } as never));
+
+        useActualizarCantidadItem('p1');
+        const opts = getMutationOptions();
+        const result = await opts.mutationFn({ itemId: 'item-1', cantidad: 5 });
+
+        expect(mockAddToQueue).toHaveBeenCalledWith({
+          type: 'ACTUALIZAR_CANTIDAD_ITEM',
+          payload: { pedidoId: 'p1', itemId: 'item-1', cantidad: 5 },
+        });
+        expect(result).toEqual({ itemId: 'item-1', cantidad: 5 });
+      });
     });
   });
 });

@@ -5,8 +5,8 @@ vi.mock('@/features/pedidos/hooks/usePedidos', () => ({
   useCrearPedido: vi.fn(),
 }));
 
-vi.mock('@/services/clientes', () => ({
-  getClientesRequest: vi.fn(),
+vi.mock('@/features/clientes/services/clienteService', () => ({
+  listClientesRequest: vi.fn(),
 }));
 
 vi.mock('@/services/items', () => ({
@@ -17,19 +17,13 @@ vi.mock('@/services/repartos', () => ({
   getRepartosDisponiblesRequest: vi.fn(),
 }));
 
-// Mock fallback services to reject so the error path is hit
-vi.mock('@/mocks/services/clientes.mock', () => ({
-  mockGetClientesRequest: vi.fn(() => Promise.reject(new Error('mock fail'))),
-}));
-vi.mock('@/mocks/services/items.mock', () => ({
-  mockGetItemsRequest: vi.fn(() => Promise.reject(new Error('mock fail'))),
-}));
-vi.mock('@/mocks/services/repartos.mock', () => ({
-  mockGetRepartosDisponiblesRequest: vi.fn(() => Promise.reject(new Error('mock fail'))),
+const mockShowToast = vi.fn();
+vi.mock('@/hooks/useToast', () => ({
+  useToast: () => ({ showToast: mockShowToast }),
 }));
 
 import { useCrearPedido } from '@/features/pedidos/hooks/usePedidos';
-import { getClientesRequest } from '@/services/clientes';
+import { listClientesRequest } from '@/features/clientes/services/clienteService';
 import { getItemsRequest } from '@/services/items';
 import { getRepartosDisponiblesRequest } from '@/services/repartos';
 import PedidoAltaScreen from '@/features/pedidos/screens/PedidoAltaScreen';
@@ -49,12 +43,23 @@ const mockRepartos = [
 
 const mockCrearPedidoMutate = vi.fn();
 
+async function loadData() {
+  vi.mocked(useCrearPedido).mockReturnValue({ mutate: mockCrearPedidoMutate, isPending: false } as any);
+  (listClientesRequest as any).mockResolvedValue(mockClientes);
+  (getItemsRequest as any).mockResolvedValue(mockItems);
+  (getRepartosDisponiblesRequest as any).mockResolvedValue(mockRepartos);
+  render(<PedidoAltaScreen />);
+  await waitFor(() => {
+    expect(screen.getByText('Items del pedido')).toBeTruthy();
+  });
+}
+
 describe('PedidoAltaScreen', () => {
   beforeEach(() => { vi.clearAllMocks(); });
 
   it('should show loading state while fetching data', () => {
     vi.mocked(useCrearPedido).mockReturnValue({ mutate: mockCrearPedidoMutate, isPending: false } as any);
-    (getClientesRequest as any).mockImplementation(() => new Promise(() => {}));
+    (listClientesRequest as any).mockImplementation(() => new Promise(() => {}));
     (getItemsRequest as any).mockImplementation(() => new Promise(() => {}));
     (getRepartosDisponiblesRequest as any).mockImplementation(() => new Promise(() => {}));
     render(<PedidoAltaScreen />);
@@ -63,7 +68,7 @@ describe('PedidoAltaScreen', () => {
 
   it('should show error state when data loading fails', async () => {
     vi.mocked(useCrearPedido).mockReturnValue({ mutate: mockCrearPedidoMutate, isPending: false } as any);
-    (getClientesRequest as any).mockRejectedValue(new Error('fail'));
+    (listClientesRequest as any).mockRejectedValue(new Error('fail'));
     (getItemsRequest as any).mockRejectedValue(new Error('fail'));
     (getRepartosDisponiblesRequest as any).mockRejectedValue(new Error('fail'));
     render(<PedidoAltaScreen />);
@@ -73,27 +78,14 @@ describe('PedidoAltaScreen', () => {
   });
 
   it('should render form with items when data loads', async () => {
-    vi.mocked(useCrearPedido).mockReturnValue({ mutate: mockCrearPedidoMutate, isPending: false } as any);
-    (getClientesRequest as any).mockResolvedValue(mockClientes);
-    (getItemsRequest as any).mockResolvedValue(mockItems);
-    (getRepartosDisponiblesRequest as any).mockResolvedValue(mockRepartos);
-    render(<PedidoAltaScreen />);
-    await waitFor(() => {
-      expect(screen.getByText('Items del pedido')).toBeTruthy();
-      expect(screen.getByText('Bidón 20L')).toBeTruthy();
-      expect(screen.getByText('Bidón 12L')).toBeTruthy();
-    });
+    await loadData();
+    expect(screen.getByText('Bidón 20L')).toBeTruthy();
+    expect(screen.getByText('Bidón 12L')).toBeTruthy();
   });
 
   it('should select cliente via modal', async () => {
-    vi.mocked(useCrearPedido).mockReturnValue({ mutate: mockCrearPedidoMutate, isPending: false } as any);
-    (getClientesRequest as any).mockResolvedValue(mockClientes);
-    (getItemsRequest as any).mockResolvedValue(mockItems);
-    (getRepartosDisponiblesRequest as any).mockResolvedValue(mockRepartos);
-    render(<PedidoAltaScreen />);
-    await waitFor(() => {
-      expect(screen.getByText('Seleccionar cliente...')).toBeTruthy();
-    });
+    await loadData();
+    expect(screen.getByText('Seleccionar cliente...')).toBeTruthy();
     fireEvent.press(screen.getByText('Seleccionar cliente...'));
     expect(screen.getByText('Seleccionar Cliente')).toBeTruthy();
     fireEvent.press(screen.getByText('María González'));
@@ -101,13 +93,57 @@ describe('PedidoAltaScreen', () => {
   });
 
   it('should show total estimado and create button', async () => {
-    vi.mocked(useCrearPedido).mockReturnValue({ mutate: mockCrearPedidoMutate, isPending: false } as any);
-    (getClientesRequest as any).mockResolvedValue(mockClientes);
+    await loadData();
+    expect(screen.getByText('Crear Pedido')).toBeTruthy();
+  });
+
+  it('should show validation error when no cliente selected on submit', async () => {
+    await loadData();
+    fireEvent.press(screen.getByText('Crear Pedido'));
+    expect(screen.getByText('Debés seleccionar un cliente para el pedido')).toBeTruthy();
+    expect(mockShowToast).toHaveBeenCalledWith('Seleccioná un cliente', 'warning');
+  });
+
+  it('should toggle item selection and calculate total estimado', async () => {
+    await loadData();
+    const agregarButtons = screen.getAllByText('Agregar');
+    fireEvent.press(agregarButtons[0]);
+    expect(screen.getByText('$1.500')).toBeTruthy();
+    const stepperMinus = screen.getAllByText('−');
+    const stepperPlus = screen.getAllByText('+');
+    expect(stepperMinus.length).toBeGreaterThan(0);
+    expect(stepperPlus.length).toBeGreaterThan(0);
+  });
+
+  it('should call crearPedido mutate with correct payload on submit', async () => {
+    await loadData();
+    fireEvent.press(screen.getByText('Seleccionar cliente...'));
+    fireEvent.press(screen.getByText('María González'));
+    const agregarButtons = screen.getAllByText('Agregar');
+    fireEvent.press(agregarButtons[0]);
+    fireEvent.press(screen.getByText('Crear Pedido'));
+    expect(mockCrearPedidoMutate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        clienteId: 'cli-1',
+        items: [{ itemId: 'item-001', cantidad: 1 }],
+      }),
+      expect.any(Object)
+    );
+  });
+
+  it('should show error toast when crearPedido fails', async () => {
+    const mockMutate = vi.fn((_payload, options) => options?.onError?.(new Error('Error del servidor')));
+    vi.mocked(useCrearPedido).mockReturnValue({ mutate: mockMutate, isPending: false } as any);
+    (listClientesRequest as any).mockResolvedValue(mockClientes);
     (getItemsRequest as any).mockResolvedValue(mockItems);
     (getRepartosDisponiblesRequest as any).mockResolvedValue(mockRepartos);
     render(<PedidoAltaScreen />);
-    await waitFor(() => {
-      expect(screen.getByText('Crear Pedido')).toBeTruthy();
-    });
+    await waitFor(() => expect(screen.getByText('Seleccionar cliente...')).toBeTruthy());
+    fireEvent.press(screen.getByText('Seleccionar cliente...'));
+    fireEvent.press(screen.getByText('María González'));
+    const agregarButtons = screen.getAllByText('Agregar');
+    fireEvent.press(agregarButtons[0]);
+    fireEvent.press(screen.getByText('Crear Pedido'));
+    expect(mockShowToast).toHaveBeenCalledWith('Error del servidor', 'error');
   });
 });

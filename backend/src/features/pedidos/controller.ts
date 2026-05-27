@@ -181,6 +181,30 @@ export async function eliminarPedidoController(
   }
 }
 
+export async function obtenerDisponiblesController(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const fecha = req.query.fecha as string;
+    if (!fecha) {
+      res.status(400).json({
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'fecha es requerida (YYYY-MM-DD)',
+          timestamp: new Date().toISOString(),
+        },
+      });
+      return;
+    }
+    const result = await pedidosService.obtenerPedidosDisponiblesParaReparto(fecha);
+    sendList(res, result);
+  } catch (err) {
+    next(err);
+  }
+}
+
 export async function crearController(
   req: Request,
   res: Response,

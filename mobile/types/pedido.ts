@@ -16,7 +16,7 @@ export interface Pedido {
   orden: number;
   estado: EstadoPedido;
   fecha: string;
-  motivoFalla?: string;
+  motivoFalla: string | null;
   total?: number;
   itemsCount?: number;
   cliente: Cliente;

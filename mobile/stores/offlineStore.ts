@@ -2,7 +2,7 @@ import { create } from 'zustand';
 
 export interface OfflineMutation {
   id: string;
-  type: 'CONFIRMAR_ENTREGA' | 'CANCELAR_PEDIDO';
+  type: 'CONFIRMAR_ENTREGA' | 'CANCELAR_PEDIDO' | 'AGREGAR_ITEM' | 'QUITAR_ITEM' | 'ACTUALIZAR_CANTIDAD_ITEM';
   payload: Record<string, unknown>;
   createdAt: string;
   retryCount: number;

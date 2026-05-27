@@ -12,7 +12,7 @@ services:
 
     # Expone Postgres al host (para herramientas externas como DBeaver o Prisma Studio)
     ports:
-      - "5432:5432"
+      - "5433:5432"
 
     # Persistencia de datos en volumen Docker
     volumes:

@@ -20,3 +20,19 @@ export interface LoginCredentials {
   email: string;
   password: string;
 }
+
+export interface CrearUsuarioInput {
+  email: string;
+  password: string;
+  nombre: string;
+  apellido: string;
+  rol?: Rol;
+}
+
+export interface ActualizarUsuarioInput {
+  email?: string;
+  nombre?: string;
+  apellido?: string;
+  rol?: Rol;
+  activo?: true;
+}

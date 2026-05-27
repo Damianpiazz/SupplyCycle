@@ -39,7 +39,7 @@ export async function confirmarEntregaRequest(
 
 export async function crearPedidoRequest(data: {
   clienteId: string;
-  repartoId?: string;
+  fecha?: string;
   items: Array<{ itemId: string; cantidad: number }>;
 }): Promise<Pedido> {
   const response = await apiClient.post<{ data: Pedido }>('/pedidos', data);
@@ -76,6 +76,17 @@ export async function actualizarCantidadItemRequest(
     `/pedidos/${pedidoId}/items/${itemId}`,
     { cantidad }
   );
+  return response.data;
+}
+
+export async function iniciarEntregaRequest(
+  id: string
+): Promise<{ id: string; estado: 'EN_RUTA'; actualizadoEn: string }> {
+  const response = await apiClient.patch<{
+    id: string;
+    estado: 'EN_RUTA';
+    actualizadoEn: string;
+  }>(`/pedidos/${id}/estado`, { estado: 'EN_RUTA' });
   return response.data;
 }
 

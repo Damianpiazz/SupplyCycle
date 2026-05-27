@@ -1,7 +1,67 @@
 import type { Request, Response, NextFunction } from 'express';
-import { actualizarEstadoSchema } from './schema.js';
+import { crearRepartoSchema, actualizarEstadoSchema, agregarPedidoRepartoSchema } from './schema.js';
 import * as repartosService from './service.js';
 import { sendSuccess, sendList } from '../../utils/response.js';
+
+export async function crearController(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const data = crearRepartoSchema.parse(req.body);
+    const result = await repartosService.crearReparto(data);
+    sendSuccess(res, result, 201);
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function listarAdminController(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const fecha = typeof req.query.fecha === 'string' ? req.query.fecha : undefined;
+    const result = await repartosService.listarRepartosAdmin({ fecha });
+    sendList(res, result);
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function obtenerAdminController(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const id = req.params['id'] as string;
+    const result = await repartosService.obtenerRepartoAdmin(id);
+    sendSuccess(res, result);
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function obtenerHoyController(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const repartidorId = req.user!.userId;
+    const result = await repartosService.obtenerRepartoDelDia(repartidorId);
+    if (!result) {
+      res.status(200).json({ data: null, message: 'No hay repartos para hoy' });
+      return;
+    }
+    sendSuccess(res, result);
+  } catch (err) {
+    next(err);
+  }
+}
 
 export async function listarController(
   req: Request,
@@ -67,6 +127,36 @@ export async function estadoController(
     const { estado } = actualizarEstadoSchema.parse(req.body);
     const result = await repartosService.actualizarEstado(id, estado);
     res.status(200).json(result);
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function agregarPedidoController(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const repartoId = req.params['repartoId'] as string;
+    const { pedidoId } = agregarPedidoRepartoSchema.parse(req.body);
+    const result = await repartosService.agregarPedidoAReparto(repartoId, pedidoId);
+    sendSuccess(res, result, 201);
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function quitarPedidoController(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const repartoId = req.params['repartoId'] as string;
+    const pedidoId = req.params['pedidoId'] as string;
+    const result = await repartosService.quitarPedidoDeReparto(repartoId, pedidoId);
+    sendSuccess(res, result);
   } catch (err) {
     next(err);
   }

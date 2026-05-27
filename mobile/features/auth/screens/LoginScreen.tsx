@@ -40,8 +40,17 @@ export default function LoginScreen() {
   const serverError =
     loginMutation.error && typeof loginMutation.error === 'object'
       ? (() => {
-          const err = loginMutation.error as { response?: { data?: { error?: { message?: string } } } };
-          return err?.response?.data?.error?.message;
+          const err = loginMutation.error as { response?: { data?: { error?: { message?: string } } }; code?: string; message?: string };
+          // Mensaje del backend (ej: "Credenciales inválidas")
+          if (err?.response?.data?.error?.message) {
+            return err.response.data.error.message;
+          }
+          // Error de red (backend caído)
+          if (err?.code === 'ERR_NETWORK' || !err?.response) {
+            return 'No se pudo conectar con el servidor';
+          }
+          // Otro error
+          return err?.message || 'Error al iniciar sesión';
         })()
       : null;
 
