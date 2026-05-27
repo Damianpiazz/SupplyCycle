@@ -51,7 +51,8 @@
           "locationAlwaysAndWhenInUsePermission": "SupplyCycle necesita acceso a tu ubicación para mostrarte en el mapa.",
           "locationWhenInUsePermission": "SupplyCycle necesita tu ubicación para mostrarte en el mapa."
         }
-      ]
+      ],
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true,
