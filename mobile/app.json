@@ -9,14 +9,9 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.supplycycle.mobile",
-      "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "SupplyCycle necesita tu ubicación para mostrarte en el mapa."
-      }
+      "supportsTablet": true
     },
     "android": {
-      "package": "com.supplycycle.mobile",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -44,15 +39,6 @@
           }
         }
       ],
-      "@rnmapbox/maps",
-      [
-        "expo-location",
-        {
-          "locationAlwaysAndWhenInUsePermission": "SupplyCycle necesita acceso a tu ubicación para mostrarte en el mapa.",
-          "locationWhenInUsePermission": "SupplyCycle necesita tu ubicación para mostrarte en el mapa."
-        }
-      ],
-      "expo-secure-store"
       "@react-native-community/datetimepicker",
       "expo-secure-store",
       "expo-web-browser"

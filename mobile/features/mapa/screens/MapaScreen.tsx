@@ -1,17 +1,48 @@
-import { useEffect, useState } from 'react';
-import { Platform, StyleSheet, View } from 'react-native';
-import * as Location from 'expo-location';
-import Mapbox, { MapView, Camera, UserLocation } from '@rnmapbox/maps';
+import { useState } from 'react';
+import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { router } from 'expo-router';
 import { ThemedView } from '@/components/themed-view';
 import { LoadingSpinner, ErrorMessage, Header } from '@/components/ui';
+import { Colors, Spacing, FontSizes, BorderRadius } from '@/constants/theme';
+import { useColorScheme } from '@/hooks/use-color-scheme';
+import { usePedidosDelDia } from '@/features/pedidos/hooks/usePedidos';
+import type { Pedido, EstadoPedido } from '@/types';
 
-Mapbox.setAccessToken(process.env.EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN ?? '');
+function getEstadoColor(estado: EstadoPedido, theme: typeof Colors.light): string {
+  switch (estado) {
+    case 'PENDIENTE':
+      return theme.pendiente;
+    case 'ENTREGADO':
+      return theme.entregado;
+    case 'NO_ENTREGADO':
+      return theme.noEntregado;
+  }
+}
 
-const BUENOS_AIRES_COORDS: [number, number] = [-58.3816, -34.6037];
+function getEstadoLabel(estado: EstadoPedido): string {
+  switch (estado) {
+    case 'PENDIENTE':
+      return 'Pendiente';
+    case 'ENTREGADO':
+      return 'Entregado';
+    case 'NO_ENTREGADO':
+      return 'No entregado';
+  }
+}
 
-export default function MapaScreen() {
-  const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null);
-  const [permissionStatus, setPermissionStatus] = useState<'loading' | 'denied' | 'granted'>('loading');
+// Simple marker rendered as a colored dot with a label
+function MarkerPunto({
+  pedido,
+  theme,
+  isSelected,
+  onPress,
+}: {
+  pedido: Pedido;
+  theme: typeof Colors.light;
+  isSelected: boolean;
+  onPress: () => void;
+}) {
+  const color = getEstadoColor(pedido.estado, theme);
 
   return (
     <TouchableOpacity
@@ -26,67 +57,31 @@ export default function MapaScreen() {
   );
 }
 
-    (async () => {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        setPermissionStatus('denied');
-        return;
-      }
-      setPermissionStatus('granted');
-      const loc = await Location.getCurrentPositionAsync({});
-      setLocation({
-        latitude: loc.coords.latitude,
-        longitude: loc.coords.longitude,
-      });
-    })();
-  }, []);
+export default function MapaScreen() {
+  const colorScheme = useColorScheme() ?? 'light';
+  const theme = Colors[colorScheme];
+  const [selectedPedidoId, setSelectedPedidoId] = useState<string | null>(null);
+  const { data: pedidos, isLoading, isError, error } = usePedidosDelDia();
 
-  // --- WEB fallback ---
-  if (Platform.OS === 'web') {
+  if (isLoading) {
     return (
       <ThemedView style={styles.container}>
         <Header />
-        <View style={styles.center}>
-          <ErrorMessage message="El mapa no está disponible en la versión web." />
-        </View>
+        <LoadingSpinner message="Cargando mapa..." />
       </ThemedView>
     );
   }
 
-  // --- Loading ---
-  if (permissionStatus === 'loading' || (permissionStatus === 'granted' && !location)) {
+  if (isError) {
     return (
       <ThemedView style={styles.container}>
         <Header />
-        <LoadingSpinner message="Obteniendo ubicación..." />
+        <ErrorMessage message={error?.message || 'Error al cargar el mapa'} />
       </ThemedView>
     );
   }
 
-  // --- Permission denied ---
-  if (permissionStatus === 'denied') {
-    const fallbackCoords = BUENOS_AIRES_COORDS;
-    return (
-      <ThemedView style={styles.container}>
-        <Header />
-        <View style={styles.mapWrapper}>
-          <MapView style={styles.map}>
-            <Camera
-              defaultSettings={{
-                centerCoordinate: fallbackCoords,
-                zoomLevel: 10,
-              }}
-            />
-          </MapView>
-        </View>
-      </ThemedView>
-    );
-  }
-
-  // --- Map with GPS ---
-  const coords: [number, number] = location
-    ? [location.longitude, location.latitude]
-    : BUENOS_AIRES_COORDS;
+  const selectedPedido = pedidos?.find((p) => p.id === selectedPedidoId) ?? null;
 
   return (
     <ThemedView style={styles.container}>
@@ -148,11 +143,13 @@ export default function MapaScreen() {
   );
 }
 
+const { width } = Dimensions.get('window');
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  mapWrapper: {
+  mapContainer: {
     flex: 1,
     position: 'relative',
   },
@@ -196,12 +193,46 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.xs,
     fontWeight: '500',
   },
-  map: {
-    flex: 1,
+  // Info card at bottom
+  infoCard: {
+    position: 'absolute',
+    bottom: Spacing.lg,
+    left: Spacing.lg,
+    right: Spacing.lg,
+    borderWidth: 1,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.lg,
   },
-  center: {
-    flex: 1,
-    justifyContent: 'center',
+  infoCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: Spacing.sm,
+  },
+  estadoBadge: {
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 2,
+    borderRadius: BorderRadius.sm,
+  },
+  estadoBadgeText: {
+    fontSize: FontSizes.xs,
+    fontWeight: '600',
+  },
+  ordenText: {
+    fontSize: FontSizes.xs,
+  },
+  infoCardNombre: {
+    fontSize: FontSizes.md,
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  infoCardDireccion: {
+    fontSize: FontSizes.sm,
+    marginBottom: Spacing.md,
+  },
+  verDetalleButton: {
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.md,
     alignItems: 'center',
   },
   verDetalleText: {
