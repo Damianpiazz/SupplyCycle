@@ -3,16 +3,8 @@ import { Card } from '@/components/ui';
 import { LucideIcon } from '@/components/ui/lucide-icon';
 import { Colors, Spacing, FontSizes, BorderRadius } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { formatFechaLarga } from '@/utils/date';
 import type { Cliente } from '@/types';
-
-function formatFecha(iso: string): string {
-  const date = new Date(iso);
-  return date.toLocaleDateString('es-AR', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  });
-}
 
 interface InfoClienteProps {
   cliente: Cliente;
@@ -84,7 +76,7 @@ export default function InfoCliente({ cliente, fecha }: InfoClienteProps) {
 
       <View style={styles.infoRow}>
         <Text style={[styles.infoLabel, { color: theme.muted }]}>Fecha</Text>
-        <Text style={[styles.infoValue, { color: theme.text }]}>{formatFecha(fecha)}</Text>
+        <Text style={[styles.infoValue, { color: theme.text }]}>{formatFechaLarga(fecha)}</Text>
       </View>
     </Card>
   );

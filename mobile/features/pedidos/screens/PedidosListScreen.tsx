@@ -13,6 +13,7 @@ import { Card, LoadingSpinner, ErrorMessage, Header } from '@/components/ui';
 import { Colors, FontFamily, Spacing, FontSizes, BorderRadius } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useBuscarPedidos } from '@/features/pedidos/hooks/usePedidos';
+import { parseISODate } from '@/utils/date';
 import type { EstadoPedido } from '@/types';
 
 function getEstadoColor(estado: EstadoPedido, theme: typeof Colors.light): string {
@@ -46,7 +47,8 @@ function getEstadoLabel(estado: EstadoPedido): string {
 }
 
 function formatFecha(iso: string): string {
-  const date = new Date(iso);
+  const { year, month, day } = parseISODate(iso);
+  const date = new Date(Number(year), Number(month) - 1, Number(day));
   return date.toLocaleDateString('es-AR', {
     day: 'numeric',
     month: 'short',
