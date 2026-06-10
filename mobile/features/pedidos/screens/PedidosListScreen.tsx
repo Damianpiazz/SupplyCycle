@@ -13,37 +13,7 @@ import { Card, LoadingSpinner, ErrorMessage, Header } from '@/components/ui';
 import { Colors, Spacing, FontSizes, BorderRadius } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useBuscarPedidos } from '@/features/pedidos/hooks/usePedidos';
-import type { EstadoPedido } from '@/types';
-
-function getEstadoColor(estado: EstadoPedido, theme: typeof Colors.light): string {
-  switch (estado) {
-    case 'PENDIENTE':
-      return theme.pendiente;
-    case 'EN_RUTA':
-      return theme.tint;
-    case 'ENTREGADO':
-      return theme.entregado;
-    case 'NO_ENTREGADO':
-      return theme.noEntregado;
-    case 'CANCELADO':
-      return theme.muted;
-  }
-}
-
-function getEstadoLabel(estado: EstadoPedido): string {
-  switch (estado) {
-    case 'PENDIENTE':
-      return 'Pendiente';
-    case 'EN_RUTA':
-      return 'En ruta';
-    case 'ENTREGADO':
-      return 'Entregado';
-    case 'NO_ENTREGADO':
-      return 'No entregado';
-    case 'CANCELADO':
-      return 'Cancelado';
-  }
-}
+import { getEstadoColor, getEstadoLabel } from '@/features/pedidos/utils/estadoPedido';
 
 function formatFecha(iso: string): string {
   const date = new Date(iso);
