@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, Modal, StyleSheet } from 'react-native';
-import { Spacing, FontSizes, BorderRadius } from '@/constants/theme';
+import { Spacing, FontSizes, BorderRadius, FontFamily } from '@/constants/theme';
 
 interface CalendarModalProps {
   visible: boolean;
@@ -290,6 +290,7 @@ const styles = StyleSheet.create({
   },
   monthTitle: {
     fontSize: FontSizes.lg,
+    fontFamily: FontFamily.interBold,
     fontWeight: '700',
   },
   weekRow: {
@@ -303,11 +304,13 @@ const styles = StyleSheet.create({
   },
   dayHeaderText: {
     fontSize: FontSizes.xs,
+    fontFamily: FontFamily.interSemiBold,
     fontWeight: '600',
     textTransform: 'uppercase',
   },
   dayText: {
     fontSize: FontSizes.md,
+    fontFamily: FontFamily.inter,
   },
   actions: {
     flexDirection: 'row',
@@ -322,6 +325,7 @@ const styles = StyleSheet.create({
   },
   actionText: {
     fontSize: FontSizes.md,
+    fontFamily: FontFamily.interSemiBold,
     fontWeight: '600',
   },
 });

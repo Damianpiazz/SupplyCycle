@@ -1,5 +1,5 @@
 import { StyleSheet, Text, View } from 'react-native';
-import { Colors, Spacing, FontSizes } from '@/constants/theme';
+import { Colors, Spacing, FontSizes, FontFamily } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
 interface ConnectivityBannerProps {
@@ -18,10 +18,10 @@ export default function ConnectivityBanner({
     <View
       style={[
         styles.banner,
-        { backgroundColor: theme.error },
+        { backgroundColor: theme.errorBg },
       ]}
     >
-      <Text style={styles.text}>
+      <Text style={[styles.text, { color: theme.error }]}>
         Sin conexión — los datos pueden no estar actualizados
       </Text>
     </View>
@@ -35,8 +35,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   text: {
-    color: '#FFFFFF',
     fontSize: FontSizes.sm,
+    fontFamily: FontFamily.interSemiBold,
     fontWeight: '600',
     textAlign: 'center',
   },

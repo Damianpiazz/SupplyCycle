@@ -1,6 +1,6 @@
 import { Modal, StyleSheet, Text, View } from 'react-native';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { Colors, BorderRadius, Spacing, FontSizes } from '@/constants/theme';
+import { Colors, BorderRadius, Spacing, FontSizes, FontFamily } from '@/constants/theme';
 import Button from './button';
 
 interface ConfirmModalProps {
@@ -86,12 +86,14 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: FontSizes.lg,
+    fontFamily: FontFamily.interBold,
     fontWeight: 'bold',
     marginBottom: Spacing.sm,
     textAlign: 'center',
   },
   message: {
     fontSize: FontSizes.md,
+    fontFamily: FontFamily.inter,
     marginBottom: Spacing.xxl,
     textAlign: 'center',
     lineHeight: 22,

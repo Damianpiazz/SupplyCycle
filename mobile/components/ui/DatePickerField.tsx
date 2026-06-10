@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { Platform, View, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Spacing, FontSizes, BorderRadius } from '@/constants/theme';
+import { Spacing, FontSizes, BorderRadius, FontFamily } from '@/constants/theme';
 import CalendarModal from '@/components/ui/CalendarModal';
 
 interface DatePickerFieldProps {
@@ -151,6 +151,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.md,
     fontSize: FontSizes.md,
+    fontFamily: FontFamily.inter,
   },
   calendarBtn: {
     width: 44,
