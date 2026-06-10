@@ -18,7 +18,6 @@
     "backend": {
       "mode": "primary",
       "description": "Desarrolla en backend (Express + Prisma + PostgreSQL)",
-      "model": "anthropic/claude-sonnet-4-20250514",
       "color": "#68A063",
       "prompt": "{file:.opencode/agents/backend.md}",
       "permission": {
@@ -48,7 +47,6 @@
     "mobile": {
       "mode": "primary",
       "description": "Desarrolla en mobile (React Native / Expo)",
-      "model": "anthropic/claude-sonnet-4-20250514",
       "color": "#61DAFB",
       "prompt": "{file:.opencode/agents/mobile.md}",
       "permission": {
@@ -74,7 +72,6 @@
     "whatsapp-bot": {
       "mode": "primary",
       "description": "Desarrolla en whatsapp-bot (BuilderBot + Meta API)",
-      "model": "anthropic/claude-sonnet-4-20250514",
       "color": "#25D366",
       "prompt": "{file:.opencode/agents/whatsapp-bot.md}",
       "permission": {
@@ -95,7 +92,6 @@
     "plan": {
       "mode": "primary",
       "description": "Planifica tareas y analiza requerimientos antes de implementar",
-      "model": "anthropic/claude-sonnet-4-20250514",
       "color": "#8B5CF6",
       "prompt": "Eres un arquitecto de software. Tu rol es analizar requerimientos, proponer soluciones y planificar la implementacion antes de escribir codigo. Nunca generes codigo directamente. Debes entregar planes claros con estimaciones y riesgos.",
       "permission": {
