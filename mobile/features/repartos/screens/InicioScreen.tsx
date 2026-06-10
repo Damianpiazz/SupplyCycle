@@ -11,31 +11,8 @@ import ConfirmarAccionButtons from '@/features/pedidos/components/ConfirmarAccio
 import CancelModal from '@/features/pedidos/components/CancelModal';
 import { useToast } from '@/hooks/useToast';
 import { handleApiError } from '@/services/handleApiError';
+import { getEstadoColor, getEstadoLabel } from '@/features/pedidos/utils/estadoPedido';
 import type { Pedido, MotivoCancelacion } from '@/types';
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function getEstadoColor(estado: string, theme: typeof Colors.light): string {
-  switch (estado) {
-    case 'PENDIENTE': return theme.pendiente;
-    case 'EN_RUTA': return theme.tint;
-    case 'ENTREGADO': return theme.entregado;
-    case 'NO_ENTREGADO': return theme.noEntregado;
-    case 'CANCELADO': return theme.muted;
-    default: return theme.text;
-  }
-}
-
-function getEstadoLabel(estado: string): string {
-  switch (estado) {
-    case 'PENDIENTE': return 'Pendiente';
-    case 'EN_RUTA': return 'En ruta';
-    case 'ENTREGADO': return 'Entregado';
-    case 'NO_ENTREGADO': return 'No entregado';
-    case 'CANCELADO': return 'Cancelado';
-    default: return estado;
-  }
-}
 
 // ─── EmptyState ───────────────────────────────────────────────────────────────
 
