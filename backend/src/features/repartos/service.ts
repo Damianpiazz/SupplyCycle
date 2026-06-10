@@ -4,6 +4,7 @@ import { dateFromISODate, fmtDate } from '../../utils/dates.js';
 
 function formatReparto(reparto: {
   id: string;
+  repartidorId: string;
   fecha: Date;
   estado: string;
   horaInicio: string | null;
@@ -18,6 +19,7 @@ function formatReparto(reparto: {
 
   return {
     id: reparto.id,
+    repartidorId: reparto.repartidorId,
     fecha: fmtDate(reparto.fecha),
     estado: reparto.estado,
     horaInicio: reparto.horaInicio ?? undefined,
@@ -121,7 +123,7 @@ export async function obtenerReparto(id: string) {
       orden: p.orden,
       estado: p.estado,
       fecha: p.fecha.toISOString(),
-      motivoFalla: p.motivoFalla ?? undefined,
+      motivoFalla: p.motivoFalla ?? null,
       cliente: {
         id: p.cliente.id,
         nombre: p.cliente.nombre,
@@ -136,8 +138,12 @@ export async function obtenerReparto(id: string) {
         },
         horarioDesde: p.cliente.horarioDesde,
         horarioHasta: p.cliente.horarioHasta,
+        diaEntrega: p.cliente.diaEntrega,
+        observaciones: p.cliente.observaciones ?? undefined,
+        activo: p.cliente.activo,
       },
       items: p.items.map((pi) => ({
+        id: pi.id,
         item: {
           id: pi.item.id,
           nombre: pi.item.nombre,
@@ -146,6 +152,7 @@ export async function obtenerReparto(id: string) {
           activo: pi.item.activo,
         },
         cantidad: pi.cantidad,
+        precioUnitario: pi.precioUnitario,
       })),
     })),
   };
@@ -272,7 +279,7 @@ export async function obtenerRepartoAdmin(id: string) {
       orden: p.orden,
       estado: p.estado,
       fecha: p.fecha.toISOString(),
-      motivoFalla: p.motivoFalla ?? undefined,
+      motivoFalla: p.motivoFalla ?? null,
       cliente: {
         id: p.cliente.id,
         nombre: p.cliente.nombre,
@@ -287,8 +294,12 @@ export async function obtenerRepartoAdmin(id: string) {
         },
         horarioDesde: p.cliente.horarioDesde,
         horarioHasta: p.cliente.horarioHasta,
+        diaEntrega: p.cliente.diaEntrega,
+        observaciones: p.cliente.observaciones ?? undefined,
+        activo: p.cliente.activo,
       },
       items: p.items.map((pi) => ({
+        id: pi.id,
         item: {
           id: pi.item.id,
           nombre: pi.item.nombre,
@@ -297,6 +308,7 @@ export async function obtenerRepartoAdmin(id: string) {
           activo: pi.item.activo,
         },
         cantidad: pi.cantidad,
+        precioUnitario: pi.precioUnitario,
       })),
     })),
   };
@@ -343,7 +355,7 @@ export async function obtenerRepartoDelDia(repartidorId: string) {
       orden: p.orden,
       estado: p.estado,
       fecha: p.fecha.toISOString(),
-      motivoFalla: p.motivoFalla ?? undefined,
+      motivoFalla: p.motivoFalla ?? null,
       cliente: {
         id: p.cliente.id,
         nombre: p.cliente.nombre,
@@ -358,8 +370,12 @@ export async function obtenerRepartoDelDia(repartidorId: string) {
         },
         horarioDesde: p.cliente.horarioDesde,
         horarioHasta: p.cliente.horarioHasta,
+        diaEntrega: p.cliente.diaEntrega,
+        observaciones: p.cliente.observaciones ?? undefined,
+        activo: p.cliente.activo,
       },
       items: p.items.map((pi) => ({
+        id: pi.id,
         item: {
           id: pi.item.id,
           nombre: pi.item.nombre,
@@ -368,6 +384,7 @@ export async function obtenerRepartoDelDia(repartidorId: string) {
           activo: pi.item.activo,
         },
         cantidad: pi.cantidad,
+        precioUnitario: pi.precioUnitario,
       })),
     })),
   };
@@ -471,8 +488,12 @@ export async function crearReparto(data: {
         },
         horarioDesde: p.cliente.horarioDesde,
         horarioHasta: p.cliente.horarioHasta,
+        diaEntrega: p.cliente.diaEntrega,
+        observaciones: p.cliente.observaciones ?? undefined,
+        activo: p.cliente.activo,
       },
       items: p.items.map((pi) => ({
+        id: pi.id,
         item: {
           id: pi.item.id,
           nombre: pi.item.nombre,
@@ -481,6 +502,7 @@ export async function crearReparto(data: {
           activo: pi.item.activo,
         },
         cantidad: pi.cantidad,
+        precioUnitario: pi.precioUnitario,
       })),
     })),
   };
