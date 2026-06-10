@@ -9,6 +9,8 @@ vi.mock('@/services/api', () => ({
     put: vi.fn(),
     delete: vi.fn(),
   },
+  unwrapResponse: vi.fn((response) => response.data.data),
+  unwrapList: vi.fn((response) => response.data),
 }));
 
 import {
@@ -62,7 +64,7 @@ describe('repartoService', () => {
         repartoId: 'reparto-1',
         items: [{ producto: 'Producto 1', cantidadTotal: 10, unidad: 'kg' }],
       };
-      (apiClient.get as any).mockResolvedValue({ data: expected });
+      (apiClient.get as any).mockResolvedValue({ data: { data: expected } });
 
       const result = await getResumenCargaRequest('reparto-1');
 
@@ -78,7 +80,7 @@ describe('repartoService', () => {
         estado: 'EN_CURSO',
         actualizadoEn: '2026-05-25T10:00:00Z',
       };
-      (apiClient.patch as any).mockResolvedValue({ data: expected });
+      (apiClient.patch as any).mockResolvedValue({ data: { data: expected } });
 
       const result = await updateRepartoEstadoRequest('reparto-1', 'EN_CURSO');
 
