@@ -13,7 +13,8 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "db:seed": "npx prisma db seed",
-    "db:studio": "npx prisma studio"
+    "db:studio": "npx prisma studio",
+    "scripts:limpiar-repartos": "npx tsx scripts/limpiar-repartos-colgados.ts"
   },
   "keywords": [],
   "author": "",

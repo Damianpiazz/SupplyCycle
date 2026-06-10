@@ -1,13 +1,17 @@
 import { Redirect, Tabs } from 'expo-router';
 import React from 'react';
-import { Platform } from 'react-native';
+import { StyleSheet } from 'react-native';
+import { LucideIcon } from '@/components/ui/lucide-icon';
 
 import { HapticTab } from '@/components/haptic-tab';
-import { IconSymbol } from '@/components/ui/icon-symbol';
 import { ConnectivityBanner } from '@/components/ui';
-import { Colors } from '@/constants/theme';
+import { Colors, FontFamily, FontSizes } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useAuthStore } from '@/stores/authStore';
+
+const TAB_ICON_SIZE = 22;
+const TAB_ICON_STROKE = 1.5;
+const INACTIVE_COLOR = '#9E9E9E';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme() ?? 'light';
@@ -24,10 +28,12 @@ export default function TabLayout() {
       <Tabs
       screenOptions={{
         tabBarActiveTintColor: Colors[colorScheme].tint,
+        tabBarInactiveTintColor: INACTIVE_COLOR,
         headerShown: false,
         tabBarButton: HapticTab,
+        tabBarLabelStyle: styles.tabLabel,
         tabBarStyle: {
-          backgroundColor: Colors[colorScheme].background,
+          backgroundColor: Colors[colorScheme].card,
           borderTopColor: Colors[colorScheme].border,
         },
       }}
@@ -38,7 +44,7 @@ export default function TabLayout() {
           title: 'Inicio',
           href: isAdmin ? null : undefined,
           tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="house.fill" color={color} />
+            <LucideIcon name="house" size={TAB_ICON_SIZE} strokeWidth={TAB_ICON_STROKE} color={color} />
           ),
         }}
       />
@@ -48,7 +54,7 @@ export default function TabLayout() {
           title: 'Clientes',
           href: isAdmin ? undefined : null,
           tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="person.crop.rectangle.stack.fill" color={color} />
+            <LucideIcon name="users" size={TAB_ICON_SIZE} strokeWidth={TAB_ICON_STROKE} color={color} />
           ),
         }}
       />
@@ -57,7 +63,7 @@ export default function TabLayout() {
         options={{
           title: 'Repartos',
           tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="shippingbox.fill" color={color} />
+            <LucideIcon name="truck" size={TAB_ICON_SIZE} strokeWidth={TAB_ICON_STROKE} color={color} />
           ),
         }}
       />
@@ -66,7 +72,7 @@ export default function TabLayout() {
         options={{
           title: 'Pedidos',
           tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="clipboard.fill" color={color} />
+            <LucideIcon name="clipboard-list" size={TAB_ICON_SIZE} strokeWidth={TAB_ICON_STROKE} color={color} />
           ),
         }}
       />
@@ -74,8 +80,9 @@ export default function TabLayout() {
         name="mapa"
         options={{
           title: 'Mapa',
+          href: isAdmin ? null : undefined,
           tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="map.fill" color={color} />
+            <LucideIcon name="map" size={TAB_ICON_SIZE} strokeWidth={TAB_ICON_STROKE} color={color} />
           ),
         }}
       />
@@ -85,7 +92,7 @@ export default function TabLayout() {
           title: 'Usuarios',
           href: isAdmin ? undefined : null,
           tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="person.2.fill" color={color} />
+            <LucideIcon name="user-cog" size={TAB_ICON_SIZE} strokeWidth={TAB_ICON_STROKE} color={color} />
           ),
         }}
       />
@@ -94,7 +101,7 @@ export default function TabLayout() {
         options={{
           title: 'Perfil',
           tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="person.fill" color={color} />
+            <LucideIcon name="circle-user" size={TAB_ICON_SIZE} strokeWidth={TAB_ICON_STROKE} color={color} />
           ),
         }}
       />
@@ -102,3 +109,11 @@ export default function TabLayout() {
     </>
   );
 }
+
+const styles = StyleSheet.create({
+  tabLabel: {
+    fontSize: FontSizes.tabLabel,
+    fontWeight: '500',
+    fontFamily: FontFamily.interMedium,
+  },
+});
