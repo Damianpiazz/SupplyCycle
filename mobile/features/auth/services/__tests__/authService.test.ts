@@ -9,6 +9,8 @@ vi.mock('@/services/api', () => ({
     put: vi.fn(),
     delete: vi.fn(),
   },
+  unwrapResponse: vi.fn((response) => response.data.data),
+  unwrapList: vi.fn((response) => response.data),
 }));
 
 import { loginRequest, getMeRequest } from '../authService';
@@ -35,7 +37,7 @@ describe('authService', () => {
         password: '12345678',
       };
       const authResponse: AuthResponse = { token: 'jwt-token', usuario: mockUsuario };
-      (apiClient.post as any).mockResolvedValue({ data: authResponse });
+      (apiClient.post as any).mockResolvedValue({ data: { data: authResponse } });
 
       const result = await loginRequest(credentials);
 
@@ -46,7 +48,7 @@ describe('authService', () => {
 
   describe('getMeRequest', () => {
     it('debe obtener el usuario autenticado desde el token actual', async () => {
-      (apiClient.get as any).mockResolvedValue({ data: mockUsuario });
+      (apiClient.get as any).mockResolvedValue({ data: { data: mockUsuario } });
 
       const result = await getMeRequest();
 
