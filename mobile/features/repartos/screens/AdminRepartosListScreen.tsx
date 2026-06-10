@@ -7,29 +7,7 @@ import { Colors, Spacing, FontSizes, BorderRadius } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useRepartosAdmin } from '@/features/repartos/hooks/useRepartoAdmin';
 import { formatFechaDisplay } from '@/utils/date';
-import type { EstadoReparto } from '@/types';
-
-function getEstadoColor(estado: EstadoReparto, theme: typeof Colors.light): string {
-  switch (estado) {
-    case 'PENDIENTE':
-      return theme.pendiente;
-    case 'EN_CURSO':
-      return theme.enCurso;
-    case 'COMPLETADO':
-      return theme.completado;
-  }
-}
-
-function getEstadoLabel(estado: EstadoReparto): string {
-  switch (estado) {
-    case 'PENDIENTE':
-      return 'Pendiente';
-    case 'EN_CURSO':
-      return 'En curso';
-    case 'COMPLETADO':
-      return 'Completado';
-  }
-}
+import { getEstadoColorReparto, getEstadoLabelReparto } from '@/features/pedidos/utils/estadoPedido';
 
 /** Formatted date for filter matching (DD/MM/YYYY) */
 function formatFechaFilter(iso: string): string {
@@ -103,16 +81,16 @@ export default function AdminRepartosListScreen() {
                 <View
                   style={[
                     styles.estadoBadge,
-                    { backgroundColor: getEstadoColor(item.estado, theme) + '20' },
+                    { backgroundColor: getEstadoColorReparto(item.estado, theme) + '20' },
                   ]}
                 >
                   <Text
                     style={[
                       styles.estadoText,
-                      { color: getEstadoColor(item.estado, theme) },
+                      { color: getEstadoColorReparto(item.estado, theme) },
                     ]}
                   >
-                    {getEstadoLabel(item.estado)}
+                    {getEstadoLabelReparto(item.estado)}
                   </Text>
                 </View>
               </View>
