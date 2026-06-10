@@ -4,6 +4,32 @@ import { render, screen, fireEvent } from '@testing-library/react-native';
 // Mock hooks
 vi.mock('@/features/repartos/hooks/useReparto', () => ({
   useReparto: vi.fn(),
+  useIniciarReparto: vi.fn(() => ({
+    mutate: vi.fn(),
+    isPending: false,
+  })),
+}));
+
+vi.mock('@/features/pedidos/hooks/usePedidos', () => ({
+  useConfirmarEntrega: vi.fn(() => ({
+    mutate: vi.fn(),
+    isPending: false,
+  })),
+  useIniciarEntrega: vi.fn(() => ({
+    mutate: vi.fn(),
+    isPending: false,
+  })),
+  useCancelarPedido: vi.fn(() => ({
+    mutate: vi.fn(),
+    isPending: false,
+  })),
+  usePedidosDelDia: vi.fn(),
+  usePedidoDetalle: vi.fn(),
+  useBuscarPedidos: vi.fn(),
+  useCrearPedido: vi.fn(),
+  useAgregarItem: vi.fn(),
+  useQuitarItem: vi.fn(),
+  useActualizarCantidadItem: vi.fn(),
 }));
 
 import { useReparto } from '@/features/repartos/hooks/useReparto';
