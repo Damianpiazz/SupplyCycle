@@ -1,18 +1,21 @@
-import { apiClient } from '@/services/api';
+import { apiClient, unwrapResponse, unwrapList } from '@/services/api';
 import type { Pedido, EstadoPedido, MotivoCancelacion } from '@/types/pedido';
+import type { ApiResponse, ApiListResponse } from '@/types/api';
 
 export async function getPedidosDelDiaRequest(
   repartidorId: string
 ): Promise<Pedido[]> {
-  const response = await apiClient.get<{ data: Pedido[] }>('/pedidos/hoy', {
-    params: { repartidorId },
-  });
-  return response.data.data;
+  return unwrapResponse(
+    await apiClient.get<ApiResponse<Pedido[]>>('/pedidos/hoy', {
+      params: { repartidorId },
+    }),
+  );
 }
 
 export async function getPedidoByIdRequest(id: string): Promise<Pedido> {
-  const response = await apiClient.get<{ data: Pedido }>(`/pedidos/${id}`);
-  return response.data.data;
+  return unwrapResponse(
+    await apiClient.get<ApiResponse<Pedido>>(`/pedidos/${id}`),
+  );
 }
 
 export async function getPedidosRequest(params?: {
@@ -20,21 +23,21 @@ export async function getPedidosRequest(params?: {
   fecha?: string;
   estado?: EstadoPedido;
 }): Promise<{ data: Pedido[]; total: number }> {
-  const response = await apiClient.get<{ data: Pedido[]; total: number }>('/pedidos', {
-    params,
-  });
-  return response.data;
+  return unwrapList(
+    await apiClient.get<ApiListResponse<Pedido>>('/pedidos', { params }),
+  );
 }
 
 export async function confirmarEntregaRequest(
   id: string
 ): Promise<{ id: string; estado: 'ENTREGADO'; actualizadoEn: string }> {
-  const response = await apiClient.patch<{
-    id: string;
-    estado: 'ENTREGADO';
-    actualizadoEn: string;
-  }>(`/pedidos/${id}/confirmar`);
-  return response.data;
+  return unwrapResponse(
+    await apiClient.patch<ApiResponse<{
+      id: string;
+      estado: 'ENTREGADO';
+      actualizadoEn: string;
+    }>>(`/pedidos/${id}/confirmar`),
+  );
 }
 
 export async function crearPedidoRequest(data: {
@@ -42,29 +45,32 @@ export async function crearPedidoRequest(data: {
   fecha?: string;
   items: Array<{ itemId: string; cantidad: number }>;
 }): Promise<Pedido> {
-  const response = await apiClient.post<{ data: Pedido }>('/pedidos', data);
-  return response.data.data;
+  return unwrapResponse(
+    await apiClient.post<ApiResponse<Pedido>>('/pedidos', data),
+  );
 }
 
 export async function cancelarPedidoRequest(
   id: string,
   motivo: MotivoCancelacion
 ): Promise<{ id: string; estado: 'NO_ENTREGADO'; motivoFalla: string; actualizadoEn: string }> {
-  const response = await apiClient.patch<{
-    id: string;
-    estado: 'NO_ENTREGADO';
-    motivoFalla: string;
-    actualizadoEn: string;
-  }>(`/pedidos/${id}/cancelar`, { motivo });
-  return response.data;
+  return unwrapResponse(
+    await apiClient.patch<ApiResponse<{
+      id: string;
+      estado: 'NO_ENTREGADO';
+      motivoFalla: string;
+      actualizadoEn: string;
+    }>>(`/pedidos/${id}/cancelar`, { motivo }),
+  );
 }
 
 export async function agregarItemRequest(
   pedidoId: string,
   data: { itemId: string; cantidad: number }
 ): Promise<Pedido> {
-  const response = await apiClient.post<Pedido>(`/pedidos/${pedidoId}/items`, data);
-  return response.data;
+  return unwrapResponse(
+    await apiClient.post<ApiResponse<Pedido>>(`/pedidos/${pedidoId}/items`, data),
+  );
 }
 
 export async function actualizarCantidadItemRequest(
@@ -72,28 +78,31 @@ export async function actualizarCantidadItemRequest(
   itemId: string,
   cantidad: number
 ): Promise<Pedido> {
-  const response = await apiClient.patch<Pedido>(
-    `/pedidos/${pedidoId}/items/${itemId}`,
-    { cantidad }
+  return unwrapResponse(
+    await apiClient.patch<ApiResponse<Pedido>>(
+      `/pedidos/${pedidoId}/items/${itemId}`,
+      { cantidad },
+    ),
   );
-  return response.data;
 }
 
 export async function iniciarEntregaRequest(
   id: string
-): Promise<{ id: string; estado: 'EN_RUTA'; actualizadoEn: string }> {
-  const response = await apiClient.patch<{
-    id: string;
-    estado: 'EN_RUTA';
-    actualizadoEn: string;
-  }>(`/pedidos/${id}/estado`, { estado: 'EN_RUTA' });
-  return response.data;
+): Promise<{ id: string; estado: string; actualizadoEn: string }> {
+  return unwrapResponse(
+    await apiClient.patch<ApiResponse<{
+      id: string;
+      estado: string;
+      actualizadoEn: string;
+    }>>(`/pedidos/${id}/estado`, { estado: 'EN_RUTA' }),
+  );
 }
 
 export async function quitarItemRequest(
   pedidoId: string,
   itemId: string
 ): Promise<Pedido> {
-  const response = await apiClient.delete<Pedido>(`/pedidos/${pedidoId}/items/${itemId}`);
-  return response.data;
+  return unwrapResponse(
+    await apiClient.delete<ApiResponse<Pedido>>(`/pedidos/${pedidoId}/items/${itemId}`),
+  );
 }
