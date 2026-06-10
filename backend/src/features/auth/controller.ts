@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
 import { loginSchema, actualizarMeSchema } from './schema.js';
+import { sendSuccess } from '../../utils/response.js';
 import * as authService from './service.js';
 
 /** POST /api/v1/auth/login — devuelve { token, usuario } */
@@ -11,7 +12,7 @@ export async function loginController(
   try {
     const input = loginSchema.parse(req.body);
     const result = await authService.login(input);
-    res.status(200).json(result);
+    sendSuccess(res, result);
   } catch (err) {
     next(err);
   }
@@ -26,7 +27,7 @@ export async function meController(
   try {
     const user = req.user!;
     const result = await authService.getMe(user.userId);
-    res.status(200).json(result);
+    sendSuccess(res, result);
   } catch (err) {
     next(err);
   }
@@ -42,7 +43,7 @@ export async function updateMeController(
     const user = req.user!;
     const input = actualizarMeSchema.parse(req.body);
     const result = await authService.updateMe(user.userId, input);
-    res.status(200).json(result);
+    sendSuccess(res, result);
   } catch (err) {
     next(err);
   }
