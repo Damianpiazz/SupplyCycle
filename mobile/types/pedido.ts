@@ -13,6 +13,7 @@ export type MotivoCancelacion =
 
 export interface Pedido {
   id: string;
+  numeroPedido: string;
   orden: number;
   estado: EstadoPedido;
   fecha: string;
