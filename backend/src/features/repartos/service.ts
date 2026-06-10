@@ -1,19 +1,6 @@
 import { prisma } from '../../lib/prisma.js';
 import { ApiError } from '../../utils/api-error.js';
-
-/** Create a Date from YYYY-MM-DD string without timezone conversion */
-function dateFromISODate(dateStr: string): Date {
-  const [y, m, d] = dateStr.slice(0, 10).split('-');
-  return new Date(Number(y), Number(m) - 1, Number(d));
-}
-
-/** Format a calendar-date Date to YYYY-MM-DD without timezone shift */
-function fmtDate(d: Date): string {
-  const y = String(d.getFullYear());
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
-}
+import { dateFromISODate, fmtDate } from '../../utils/dates.js';
 
 function formatReparto(reparto: {
   id: string;
