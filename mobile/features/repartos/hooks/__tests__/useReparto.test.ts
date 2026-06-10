@@ -1,29 +1,36 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 
 vi.mock('@tanstack/react-query', async (importOriginal) => {
   const actual = await importOriginal();
   return {
     ...(actual as object),
     useQuery: vi.fn(),
+    useMutation: vi.fn(() => ({
+      mutate: vi.fn(),
+      mutateAsync: vi.fn(),
+      isPending: false,
+      isError: false,
+      error: null,
+      isSuccess: false,
+      reset: vi.fn(),
+      data: undefined,
+    })),
+    useQueryClient: vi.fn(() => ({ invalidateQueries: vi.fn() })),
   };
 });
 
-const mockGetRepartos = vi.fn();
+const mockGetRepartoHoy = vi.fn();
 const mockGetRepartoById = vi.fn();
+const mockUpdateRepartoEstado = vi.fn();
 
 vi.mock('@/features/repartos/services/repartoService', () => ({
-  getRepartosRequest: (...args: unknown[]) => mockGetRepartos(...args),
+  getRepartoHoyRequest: (...args: unknown[]) => mockGetRepartoHoy(...args),
   getRepartoByIdRequest: (...args: unknown[]) => mockGetRepartoById(...args),
+  updateRepartoEstadoRequest: (...args: unknown[]) => mockUpdateRepartoEstado(...args),
 }));
 
-vi.mock('@/stores/authStore', () => ({
-  useAuthStore: {
-    getState: () => ({ usuario: { id: 'user-1' } }),
-  },
-}));
-
-import { useReparto, useRepartoDetalle } from '@/features/repartos/hooks/useReparto';
+import { useReparto, useRepartoDetalle, useIniciarReparto } from '@/features/repartos/hooks/useReparto';
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -59,25 +66,25 @@ describe('useReparto hooks', () => {
       expect(opts.staleTime).toBe(5 * 60 * 1000);
     });
 
-    it('queryFn should call getRepartosRequest with repartidorId and return first item', async () => {
-      mockGetRepartos.mockResolvedValueOnce([{ id: 'r1' }]);
+    it('queryFn should call getRepartoHoyRequest', async () => {
+      mockGetRepartoHoy.mockResolvedValueOnce({ id: 'r1', estado: 'PENDIENTE' });
 
       useReparto();
       const opts = getQueryOptions();
       const result = await opts.queryFn();
 
-      expect(mockGetRepartos).toHaveBeenCalledWith('user-1');
-      expect(result).toEqual({ id: 'r1' });
+      expect(mockGetRepartoHoy).toHaveBeenCalledOnce();
+      expect(result).toEqual({ id: 'r1', estado: 'PENDIENTE' });
     });
 
-    it('queryFn should return undefined when result array is empty', async () => {
-      mockGetRepartos.mockResolvedValueOnce([]);
+    it('queryFn should return null when no reparto found', async () => {
+      mockGetRepartoHoy.mockResolvedValueOnce(null);
 
       useReparto();
       const opts = getQueryOptions();
       const result = await opts.queryFn();
 
-      expect(result).toBeUndefined();
+      expect(result).toBeNull();
     });
   });
 
@@ -117,6 +124,20 @@ describe('useReparto hooks', () => {
       expect(mockGetRepartoById).toHaveBeenCalledWith('r1');
       expect(result).toEqual({ id: 'r1' });
     });
+  });
 
+  describe('useIniciarReparto', () => {
+    it('should pass mutationFn that calls updateRepartoEstadoRequest with EN_CURSO', async () => {
+      const useMutationCalls = vi.mocked(useMutation).mock.calls;
+      // La primera llamada a useMutation registra la config
+      useIniciarReparto();
+      const mutationConfig = useMutationCalls[0][0] as {
+        mutationFn: (id: string) => Promise<unknown>;
+      };
+
+      await mutationConfig.mutationFn('reparto-1');
+
+      expect(mockUpdateRepartoEstado).toHaveBeenCalledWith('reparto-1', 'EN_CURSO');
+    });
   });
 });
