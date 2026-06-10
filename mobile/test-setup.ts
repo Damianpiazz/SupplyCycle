@@ -275,6 +275,50 @@ vi.mock('expo-image', () => ({
   Image: vi.fn(({ children }: any) => children || null),
 }));
 
+// ─── Mock @expo/vector-icons ───────────────────────────────────────────────────
+vi.mock('@expo/vector-icons', () => ({
+  Ionicons: vi.fn(({ name, size, color }: any) => null),
+  MaterialIcons: vi.fn(({ name, size, color }: any) => null),
+  MaterialCommunityIcons: vi.fn(({ name, size, color }: any) => null),
+  FontAwesome: vi.fn(({ name, size, color }: any) => null),
+  Feather: vi.fn(({ name, size, color }: any) => null),
+}));
+
+// ─── Mock @react-native-async-storage/async-storage ───────────────────────────
+vi.mock('@react-native-async-storage/async-storage', () => {
+  const store: Record<string, string> = {};
+  return {
+    default: {
+      getItem: vi.fn((key: string) => Promise.resolve(store[key] ?? null)),
+      setItem: vi.fn((key: string, value: string) => {
+        store[key] = value;
+        return Promise.resolve();
+      }),
+      removeItem: vi.fn((key: string) => {
+        delete store[key];
+        return Promise.resolve();
+      }),
+      clear: vi.fn(() => {
+        Object.keys(store).forEach((k) => delete store[k]);
+        return Promise.resolve();
+      }),
+    },
+    getItem: vi.fn((key: string) => Promise.resolve(store[key] ?? null)),
+    setItem: vi.fn((key: string, value: string) => {
+      store[key] = value;
+      return Promise.resolve();
+    }),
+    removeItem: vi.fn((key: string) => {
+      delete store[key];
+      return Promise.resolve();
+    }),
+    clear: vi.fn(() => {
+      Object.keys(store).forEach((k) => delete store[k]);
+      return Promise.resolve();
+    }),
+  };
+});
+
 // ─── Mock expo-haptics ───────────────────────────────────────────────────────
 vi.mock('expo-haptics', () => ({
   impactAsync: vi.fn(() => Promise.resolve()),
