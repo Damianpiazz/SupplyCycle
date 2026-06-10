@@ -6,29 +6,8 @@ import { LoadingSpinner, ErrorMessage, Header } from '@/components/ui';
 import { Colors, Spacing, FontSizes, BorderRadius } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { usePedidosDelDia } from '@/features/pedidos/hooks/usePedidos';
-import type { Pedido, EstadoPedido } from '@/types';
-
-function getEstadoColor(estado: EstadoPedido, theme: typeof Colors.light): string {
-  switch (estado) {
-    case 'PENDIENTE':
-      return theme.pendiente;
-    case 'ENTREGADO':
-      return theme.entregado;
-    case 'NO_ENTREGADO':
-      return theme.noEntregado;
-  }
-}
-
-function getEstadoLabel(estado: EstadoPedido): string {
-  switch (estado) {
-    case 'PENDIENTE':
-      return 'Pendiente';
-    case 'ENTREGADO':
-      return 'Entregado';
-    case 'NO_ENTREGADO':
-      return 'No entregado';
-  }
-}
+import { getEstadoColor, getEstadoLabel } from '@/features/pedidos/utils/estadoPedido';
+import type { Pedido } from '@/types';
 
 // Simple marker rendered as a colored dot with a label
 function MarkerPunto({
