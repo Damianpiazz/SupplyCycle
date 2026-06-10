@@ -7,10 +7,11 @@ import { QueryClientProvider } from '@tanstack/react-query';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useAuthStore } from '@/stores/authStore';
-import { getToken } from '@/features/auth/services/authStorage';
+import { getToken, clearToken } from '@/features/auth/services/authStorage';
 import { LoadingSpinner, Toast } from '@/components/ui';
 import { queryClient } from '@/lib/queryClient';
 import useOfflineSync from '@/hooks/useOfflineSync';
+import { apiClient } from '@/services/api';
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -30,19 +31,16 @@ export default function RootLayout() {
         const token = await getToken();
         if (token) {
           try {
-            const response = await fetch(
-              `${process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api/v1'}/auth/me`,
-              { headers: { Authorization: `Bearer ${token}` } },
-            );
-            if (response.ok) {
-              const usuario = await response.json();
-              setAuth(token, usuario);
-              return;
-            }
+            const response = await apiClient.get('/auth/me', {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            setAuth(token, response.data.data);
+            return;
           } catch {
-            // Error de red o backend caído -> ir a login
+            // Token inválido, expirado o backend no disponible
           }
-          // Token inválido, expirado o backend no disponible
+          // Limpiar token inválido
+          await clearToken();
           setLoading(false);
         } else {
           setLoading(false);
