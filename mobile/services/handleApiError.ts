@@ -1,10 +1,29 @@
 import type { ApiError } from '@/types';
+import axios from 'axios';
 
 interface ParsedError {
   message: string;
   code: string;
   status: number;
   details?: Record<string, string[]>;
+}
+
+/**
+ * Detecta si un error es de red (sin conexión, timeout, DNS, etc.)
+ * vs un error HTTP del servidor (4xx, 5xx).
+ */
+export function isNetworkError(error: unknown): boolean {
+  if (axios.isAxiosError(error)) {
+    // Si tiene response, es un error HTTP del servidor (4xx/5xx)
+    if (error.response) return false;
+    // Sin response = error de red/timeout
+    return true;
+  }
+  // Errores no-Axios (fetch, etc.) - tratar como red si no hay más info
+  if (error instanceof Error) {
+    return error.message === 'Network Error' || error.message.includes('ERR_NETWORK');
+  }
+  return false;
 }
 
 export function handleApiError(error: unknown): ParsedError {
