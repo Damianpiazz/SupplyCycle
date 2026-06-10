@@ -8,11 +8,13 @@ import { ConnectivityBanner } from '@/components/ui';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useAuthStore } from '@/stores/authStore';
+import useNetworkStatus from '@/hooks/useNetworkStatus';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme() ?? 'light';
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const isAdmin = useAuthStore((state) => state.usuario?.rol === 'ADMIN');
+  const { isConnected } = useNetworkStatus();
 
   if (!isAuthenticated) {
     return <Redirect href="/login" />;
@@ -20,7 +22,7 @@ export default function TabLayout() {
 
   return (
     <>
-      <ConnectivityBanner isConnected={true} />
+      <ConnectivityBanner isConnected={isConnected} />
       <Tabs
       screenOptions={{
         tabBarActiveTintColor: Colors[colorScheme].tint,
