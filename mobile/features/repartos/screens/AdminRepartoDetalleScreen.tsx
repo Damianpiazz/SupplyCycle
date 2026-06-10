@@ -135,23 +135,6 @@ function RepartoMetricasCards({ metricas, theme }: { metricas: RepartoDetallePro
   );
 }
 
-// ─── Barra de progreso ──────────────────────────────────────────────────────
-
-function RepartoProgreso({ progreso, theme }: { progreso: RepartoDetalleProcesado['progreso']; theme: typeof Colors.light }) {
-  return (
-    <Card>
-      <View style={styles.progresoHeader}>
-        <Text style={[styles.sectionCardTitle, { color: theme.text }]}>Progreso del reparto</Text>
-        <Text style={[styles.progresoPorcentaje, { color: theme.entregado }]}>{progreso.porcentaje}%</Text>
-      </View>
-      <View style={[styles.progresoBarBg, { backgroundColor: theme.surface }]}>
-        <View style={[styles.progresoBarFill, { backgroundColor: theme.entregado, width: `${Math.max(progreso.porcentaje, 4)}%` as unknown as number }]} />
-      </View>
-      <Text style={[styles.progresoText, { color: theme.muted }]}>{progreso.entregados} / {progreso.total} entregas completadas</Text>
-    </Card>
-  );
-}
-
 // ─── Resumen operativo ──────────────────────────────────────────────────────
 
 function RepartoResumenOperativo({ resumen, theme }: { resumen: RepartoDetalleProcesado['resumenOperativo']; theme: typeof Colors.light }) {
@@ -176,34 +159,18 @@ function RepartoResumenOperativo({ resumen, theme }: { resumen: RepartoDetallePr
 // ─── Acciones / edit toggle / add pedido ────────────────────────────────────
 
 function RepartoAcciones({
-  esFechaPasada,
   editando,
-  esCompletado,
   onToggleEdit,
   onAgregarPedido,
   agregando,
   theme,
 }: {
-  esFechaPasada: boolean;
   editando: boolean;
-  esCompletado: boolean;
   onToggleEdit: () => void;
   onAgregarPedido: () => void;
   agregando: boolean;
   theme: typeof Colors.light;
 }) {
-  // No editable: past date, today, or COMPLETADO
-  if (esFechaPasada || esCompletado) {
-    return (
-      <Card>
-        <Text style={[styles.sectionCardTitle, { color: theme.text }]}>Acciones</Text>
-        <Text style={[styles.accionesMuted, { color: theme.muted }]}>
-          Este reparto ya no puede modificarse.
-        </Text>
-      </Card>
-    );
-  }
-
   if (editando) {
     return (
       <Card>
@@ -503,18 +470,17 @@ export default function AdminRepartoDetalleScreen({ id, onBack }: { id: string; 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         <RepartoDetailHeader reparto={reparto} theme={theme} />
         <RepartoMetricasCards metricas={reparto.metricas} theme={theme} />
-        <RepartoProgreso progreso={reparto.progreso} theme={theme} />
         <RepartoResumenOperativo resumen={reparto.resumenOperativo} theme={theme} />
 
-        <RepartoAcciones
-          esFechaPasada={reparto.esFechaPasada}
-          editando={editando}
-          esCompletado={reparto.estado === 'COMPLETADO'}
-          onToggleEdit={toggleEdit}
-          onAgregarPedido={() => setModalVisible(true)}
-          agregando={agregarMutation.isPending}
-          theme={theme}
-        />
+        {reparto.estado === 'PENDIENTE' && (
+          <RepartoAcciones
+            editando={editando}
+            onToggleEdit={toggleEdit}
+            onAgregarPedido={() => setModalVisible(true)}
+            agregando={agregarMutation.isPending}
+            theme={theme}
+          />
+        )}
 
         <Text style={[styles.sectionTitle, { color: theme.text }]}>Pedidos</Text>
 
@@ -574,13 +540,7 @@ const styles = StyleSheet.create({
   metricaNumber: { fontSize: FontSizes.xl, fontWeight: 'bold' },
   metricaLabel: { fontSize: FontSizes.xs, fontWeight: '600', marginTop: Spacing.xs },
 
-  // Progreso
-  progresoHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Spacing.sm },
-  progresoPorcentaje: { fontSize: FontSizes.lg, fontWeight: 'bold' },
   sectionCardTitle: { fontSize: FontSizes.sm, fontWeight: '700' },
-  progresoBarBg: { height: 10, borderRadius: 5, overflow: 'hidden', marginBottom: Spacing.xs },
-  progresoBarFill: { height: '100%', borderRadius: 5, minWidth: 4 },
-  progresoText: { fontSize: FontSizes.xs, textAlign: 'center' },
 
   // Resumen operativo
   resumenOpRow: { flexDirection: 'row', marginTop: Spacing.sm },
@@ -590,7 +550,6 @@ const styles = StyleSheet.create({
   resumenOpDivider: { width: 1, backgroundColor: 'transparent' },
 
   // Acciones / Botones
-  accionesMuted: { fontSize: FontSizes.sm, fontStyle: 'italic' },
   botonPrimario: { paddingVertical: Spacing.md, borderRadius: BorderRadius.md, alignItems: 'center', marginTop: Spacing.sm },
   botonPrimarioText: { color: '#FFFFFF', fontSize: FontSizes.md, fontWeight: '700' },
 

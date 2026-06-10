@@ -327,7 +327,7 @@ function ProximasEntregasList({
           <TouchableOpacity
             key={pedido.id}
             style={[styles.proximaItem, { borderColor: theme.border }]}
-            onPress={() => router.push(`/pedidos/${pedido.id}`)}
+            onPress={() => router.push(`/inicio/${pedido.id}`)}
             activeOpacity={0.7}
           >
             <View style={styles.proximaItemLeft}>
@@ -425,7 +425,7 @@ function RepartoEnCursoView({
               onIniciarEntrega={() => onIniciarEntrega(proximaEntrega.id)}
               onConfirmar={() => onConfirmarEntrega(proximaEntrega.id)}
               onCancelar={() => onCancelarEntrega(proximaEntrega.id)}
-              onVerDetalle={() => router.push(`/pedidos/${proximaEntrega.id}`)}
+              onVerDetalle={() => router.push(`/inicio/${proximaEntrega.id}`)}
               theme={theme}
               iniciarLoading={iniciarLoading}
               confirmarLoading={confirmarLoading}

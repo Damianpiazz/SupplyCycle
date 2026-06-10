@@ -77,6 +77,12 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="inicio"
+        options={{
+          href: null,
+        }}
+      />
+      <Tabs.Screen
         name="mapa"
         options={{
           title: 'Mapa',

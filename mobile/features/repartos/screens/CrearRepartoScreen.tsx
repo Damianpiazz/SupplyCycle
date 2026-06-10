@@ -51,7 +51,7 @@ export default function CrearRepartoScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <Header />
+      <Header onBack={() => router.back()} />
       <FlatList
         data={disponibles ?? []}
         keyExtractor={(item) => item.id}
