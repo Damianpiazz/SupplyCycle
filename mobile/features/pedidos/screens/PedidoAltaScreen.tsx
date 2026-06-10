@@ -156,7 +156,7 @@ export default function PedidoAltaScreen() {
     crearPedido.mutate(payload, {
       onSuccess: (pedido) => {
         showToast(
-          `Pedido #${pedido.orden} creado para ${pedido.cliente.nombre} ${pedido.cliente.apellido}`,
+          `${pedido.numeroPedido} creado para ${pedido.cliente.nombre} ${pedido.cliente.apellido}`,
           'success'
         );
         router.replace('/pedidos');

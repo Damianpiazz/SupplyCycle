@@ -120,7 +120,7 @@ export default function MapaScreen() {
                 </Text>
               </View>
               <Text style={[styles.ordenText, { color: theme.muted }]}>
-                #{selectedPedido.orden}
+                {selectedPedido.numeroPedido}
               </Text>
             </View>
             <Text style={[styles.infoCardNombre, { color: theme.text }]}>

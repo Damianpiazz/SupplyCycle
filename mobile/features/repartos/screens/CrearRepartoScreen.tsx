@@ -119,7 +119,7 @@ export default function CrearRepartoScreen() {
           >
             <View style={styles.pedidoInfo}>
               <Text style={[styles.pedidoOrden, { color: theme.text }]}>
-                #{item.orden} — {item.cliente.nombre} {item.cliente.apellido}
+                {item.numeroPedido} — {item.cliente.nombre} {item.cliente.apellido}
               </Text>
               <Text style={[styles.pedidoCliente, { color: theme.muted }]}>
                 {item.cliente.domicilio.calle} {item.cliente.domicilio.numero}, {item.cliente.domicilio.localidad}

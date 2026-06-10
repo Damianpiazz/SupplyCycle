@@ -205,7 +205,7 @@ function ProximaEntregaCard({
           </Text>
         </View>
         <Text style={[styles.ordenText, { color: theme.muted }]}>
-          Pedido #{pedido.orden}
+          {pedido.numeroPedido}
         </Text>
       </View>
 

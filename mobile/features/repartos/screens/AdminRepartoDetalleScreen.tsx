@@ -293,7 +293,7 @@ function AgregarPedidoModal({
                 <View key={pedido.id} style={[styles.pedidoDisponibleCard, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
                   <View style={styles.pedidoDisponibleInfo}>
                     <Text style={[styles.pedidoDisponibleCliente, { color: theme.text }]} numberOfLines={1}>
-                      #{pedido.orden} — {pedido.cliente.nombre} {pedido.cliente.apellido}
+                      {pedido.numeroPedido} — {pedido.cliente.nombre} {pedido.cliente.apellido}
                     </Text>
                     <Text style={[styles.pedidoDisponibleDireccion, { color: theme.muted }]} numberOfLines={1}>
                       {pedido.cliente.domicilio.calle} {pedido.cliente.domicilio.numero}, {pedido.cliente.domicilio.localidad}
@@ -342,7 +342,7 @@ function PedidoCard({
     <View style={[styles.pedidoCard, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
       <View style={styles.pedidoHeader}>
         <Text style={[styles.pedidoCliente, { color: theme.text }]} numberOfLines={1}>
-          #{pedido.orden} — {pedido.cliente.nombre} {pedido.cliente.apellido}
+          {pedido.numeroPedido} — {pedido.cliente.nombre} {pedido.cliente.apellido}
         </Text>
         {editando ? (
           <TouchableOpacity

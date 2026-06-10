@@ -174,7 +174,7 @@ export default function PedidoDetalleScreen({ id, onBack }: PedidoDetalleScreenP
     <ThemedView style={styles.container}>
       <Header onBack={onBack ?? (() => router.back())} />
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <EstadoBadge estado={pedido.estado} orden={pedido.orden} />
+        <EstadoBadge estado={pedido.estado} numeroPedido={pedido.numeroPedido} />
         <InfoCliente cliente={pedido.cliente} fecha={pedido.fecha} />
 
         <ItemsList
