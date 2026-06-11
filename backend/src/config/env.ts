@@ -9,4 +9,5 @@ export const env = {
   bcryptSaltRounds: parseInt(process.env['BCRYPT_SALT_ROUNDS'] ?? '10', 10),
   corsOrigin: process.env['CORS_ORIGIN'] ?? '*',
   logLevel: process.env['LOG_LEVEL'] ?? 'debug',
+  sessionSecret: process.env['SESSION_SECRET'] ?? 'supplycycle-session-secret',
 } as const;

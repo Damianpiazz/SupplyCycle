@@ -1,0 +1,80 @@
+<%- include('../layouts/header') %>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <span class="text-muted"><%= total %> pedidos</span>
+  </div>
+  <a href="/admin/pedidos/nuevo" class="btn btn-primary">Nuevo Pedido</a>
+</div>
+
+<form method="GET" class="row g-2 mb-3">
+  <div class="col-auto">
+    <input type="text" class="form-control form-control-sm" name="clienteNombre" placeholder="Buscar cliente..." value="<%= typeof filters.clienteNombre !== 'undefined' ? filters.clienteNombre : '' %>">
+  </div>
+  <div class="col-auto">
+    <input type="date" class="form-control form-control-sm" name="fecha" value="<%= typeof filters.fecha !== 'undefined' ? filters.fecha : '' %>">
+  </div>
+  <div class="col-auto">
+    <select class="form-select form-select-sm" name="estado">
+      <option value="">Todos los estados</option>
+      <% estados.forEach(e => { %>
+        <option value="<%= e %>" <%= filters.estado === e ? 'selected' : '' %>><%= e.replace(/_/g, ' ') %></option>
+      <% }) %>
+    </select>
+  </div>
+  <div class="col-auto">
+    <button type="submit" class="btn btn-outline-secondary btn-sm">Filtrar</button>
+  </div>
+</form>
+
+<div class="table-responsive">
+  <table class="table table-hover align-middle">
+    <thead class="table-light">
+      <tr>
+        <th>#</th>
+        <th>Cliente</th>
+        <th>Fecha</th>
+        <th>Estado</th>
+        <th>Items</th>
+        <th>Total</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% pedidos.forEach(p => { %>
+        <tr>
+          <td><%= p.numeroPedido %></td>
+          <td><%= p.cliente.apellido %>, <%= p.cliente.nombre %></td>
+          <td><%= p.fecha %></td>
+          <td>
+            <span class="badge bg-<%= p.estado === 'ENTREGADO' ? 'success' : p.estado === 'CANCELADO' || p.estado === 'NO_ENTREGADO' ? 'danger' : p.estado === 'EN_RUTA' ? 'warning' : 'secondary' %>">
+              <%= p.estado.replace(/_/g, ' ') %>
+            </span>
+          </td>
+          <td><%= p.itemsCount %></td>
+          <td>$<%= p.total?.toFixed(2) %></td>
+          <td>
+            <a href="/admin/pedidos/<%= p.id %>" class="btn btn-sm btn-outline-primary">Ver</a>
+          </td>
+        </tr>
+      <% }) %>
+      <% if (pedidos.length === 0) { %>
+        <tr><td colspan="7" class="text-center text-muted py-4">No hay pedidos</td></tr>
+      <% } %>
+    </tbody>
+  </table>
+</div>
+
+<% if (total > pageSize) { %>
+  <nav>
+    <ul class="pagination pagination-sm">
+      <% for (let i = 1; i <= Math.ceil(total / pageSize); i++) { %>
+        <li class="page-item <%= i === page ? 'active' : '' %>">
+          <a class="page-link" href="?page=<%= i %><%= filters.estado ? '&estado=' + filters.estado : '' %><%= filters.clienteNombre ? '&clienteNombre=' + filters.clienteNombre : '' %><%= filters.fecha ? '&fecha=' + filters.fecha : '' %>"><%= i %></a>
+        </li>
+      <% } %>
+    </ul>
+  </nav>
+<% } %>
+
+<%- include('../layouts/footer') %>

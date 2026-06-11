@@ -1,0 +1,49 @@
+<%- include('../layouts/header') %>
+
+<div class="mb-3">
+  <a href="/admin/clientes" class="btn btn-outline-secondary btn-sm">&larr; Volver</a>
+</div>
+
+<div class="card mb-4">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <span><strong><%= cliente.apellido %>, <%= cliente.nombre %></strong></span>
+    <span class="badge bg-<%= cliente.activo ? 'success' : 'danger' %> fs-6"><%= cliente.activo ? 'Activo' : 'Inactivo' %></span>
+  </div>
+  <div class="card-body">
+    <div class="row">
+      <div class="col-md-6">
+        <h6>Contacto</h6>
+        <p class="mb-1">Teléfono: <%= cliente.telefono %></p>
+      </div>
+      <div class="col-md-6">
+        <h6>Dirección</h6>
+        <p class="mb-1"><%= cliente.domicilio.calle %> <%= cliente.domicilio.numero %></p>
+        <p class="mb-1"><%= cliente.domicilio.localidad %></p>
+      </div>
+    </div>
+    <hr>
+    <div class="row">
+      <div class="col-md-6">
+        <h6>Horarios de entrega</h6>
+        <p class="mb-1">Día: <%= cliente.diaEntrega ? cliente.diaEntrega.charAt(0).toUpperCase() + cliente.diaEntrega.slice(1) : '-' %></p>
+        <p class="mb-1">Horario: <%= cliente.horarioDesde %> - <%= cliente.horarioHasta %></p>
+      </div>
+      <div class="col-md-6">
+        <h6>Observaciones</h6>
+        <p class="mb-0"><%= cliente.observaciones || 'Sin observaciones' %></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="d-flex gap-2">
+  <a href="/admin/clientes/<%= cliente.id %>/editar" class="btn btn-primary">Editar</a>
+  <% if (cliente.activo) { %>
+    <form method="POST" action="/admin/clientes/<%= cliente.id %>/eliminar" data-confirm="¿Desactivar este cliente?">
+      <button type="submit" class="btn btn-danger">Desactivar</button>
+    </form>
+  <% } %>
+  <a href="/admin/clientes" class="btn btn-outline-secondary">Volver</a>
+</div>
+
+<%- include('../layouts/footer') %>
