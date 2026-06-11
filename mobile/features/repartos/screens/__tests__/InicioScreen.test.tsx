@@ -86,7 +86,7 @@ describe('InicioScreen', () => {
       data: undefined, isLoading: false, isError: false, error: null,
     } as any);
     render(<InicioScreen />);
-    expect(screen.getByText('No hay ningún reparto activo en este momento')).toBeTruthy();
+    expect(screen.getByText('No hay repartos asignados para hoy')).toBeTruthy();
   });
 
   it('should show progress bar and next delivery with pedidos', () => {

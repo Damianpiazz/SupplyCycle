@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react-native';
 
-vi.mock('@/features/pedidos/hooks/usePedidos', () => ({
-  usePedidosDelDia: vi.fn(),
+vi.mock('@/features/repartos/hooks/useReparto', () => ({
+  useReparto: vi.fn(),
 }));
 
-import { usePedidosDelDia } from '@/features/pedidos/hooks/usePedidos';
+import { useReparto } from '@/features/repartos/hooks/useReparto';
 import RepartosListScreen from '@/features/repartos/screens/RepartosListScreen';
 
 const mockPedido = {
@@ -26,32 +26,32 @@ describe('RepartosListScreen', () => {
   beforeEach(() => { vi.clearAllMocks(); });
 
   it('should show loading state', () => {
-    vi.mocked(usePedidosDelDia).mockReturnValue({ data: undefined, isLoading: true } as any);
+    vi.mocked(useReparto).mockReturnValue({ data: undefined, isLoading: true } as any);
     render(<RepartosListScreen />);
     expect(screen.getByText('Cargando entregas...')).toBeTruthy();
   });
 
   it('should show error state with retry', () => {
-    vi.mocked(usePedidosDelDia).mockReturnValue({ data: undefined, isLoading: false, isError: true, error: { message: 'Error al cargar las entregas' } } as any);
+    vi.mocked(useReparto).mockReturnValue({ data: undefined, isLoading: false, isError: true, error: { message: 'Error al cargar las entregas' } } as any);
     render(<RepartosListScreen />);
     expect(screen.getByText('Error al cargar las entregas')).toBeTruthy();
   });
 
   it('should render list of pedidos', () => {
-    vi.mocked(usePedidosDelDia).mockReturnValue({ data: [mockPedido], isLoading: false, isError: false } as any);
+    vi.mocked(useReparto).mockReturnValue({ data: { pedidos: [mockPedido] }, isLoading: false, isError: false } as any);
     render(<RepartosListScreen />);
     expect(screen.getByText('María González')).toBeTruthy();
   });
 
   it('should show empty state when no pedidos', () => {
-    vi.mocked(usePedidosDelDia).mockReturnValue({ data: [], isLoading: false, isError: false } as any);
+    vi.mocked(useReparto).mockReturnValue({ data: { pedidos: [] }, isLoading: false, isError: false } as any);
     render(<RepartosListScreen />);
     expect(screen.getByText('No hay entregas para mostrar')).toBeTruthy();
   });
 
   it('should filter list when pressing a filter button', () => {
-    vi.mocked(usePedidosDelDia).mockReturnValue({
-      data: [mockPedido, { ...mockPedido, id: 'pedido-2', estado: 'ENTREGADO' }],
+    vi.mocked(useReparto).mockReturnValue({
+      data: { pedidos: [mockPedido, { ...mockPedido, id: 'pedido-2', estado: 'ENTREGADO' }] },
       isLoading: false, isError: false,
     } as any);
     render(<RepartosListScreen />);

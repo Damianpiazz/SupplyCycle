@@ -326,3 +326,29 @@ vi.mock('expo-haptics', () => ({
   ImpactFeedbackStyle: { Light: 'light', Medium: 'medium', Heavy: 'heavy' },
   NotificationFeedbackType: { Success: 'success', Error: 'error' },
 }));
+
+// ─── Mock react-native-svg ──────────────────────────────────────────────────
+vi.mock('react-native-svg', () => {
+  const mockComponent = (name: string) =>
+    vi.fn(({ children, ...props }: any) =>
+      require('react').createElement(name, props, children),
+    );
+  return {
+    default: mockComponent('Svg'),
+    Svg: mockComponent('Svg'),
+    Circle: mockComponent('Circle'),
+    Path: mockComponent('Path'),
+    Rect: mockComponent('Rect'),
+    Line: mockComponent('Line'),
+    Polyline: mockComponent('Polyline'),
+    Polygon: mockComponent('Polygon'),
+    G: mockComponent('G'),
+    Defs: mockComponent('Defs'),
+    ClipPath: mockComponent('ClipPath'),
+    LinearGradient: mockComponent('LinearGradient'),
+    RadialGradient: mockComponent('RadialGradient'),
+    Stop: mockComponent('Stop'),
+    Text: mockComponent('SvgText'),
+    TSpan: mockComponent('TSpan'),
+  };
+});
