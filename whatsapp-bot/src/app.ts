@@ -1,8 +1,7 @@
 import { join } from 'path'
 import { createBot, createProvider, createFlow, addKeyword, utils } from '@builderbot/bot'
-import { PostgreSQLAdapter as Database } from '@builderbot/database-postgres'
-import { MetaProvider as Provider } from '@builderbot/provider-meta'
-
+import { MemoryDB as Database } from '@builderbot/bot'
+import { BaileysProvider as Provider } from '@builderbot/provider-baileys'
 const PORT = process.env.PORT ?? 3008
 
 const discordFlow = addKeyword<Provider, Database>('doc').addAnswer(
@@ -60,19 +59,14 @@ const fullSamplesFlow = addKeyword<Provider, Database>(['samples', utils.setEven
 
 const main = async () => {
     const adapterFlow = createFlow([welcomeFlow, registerFlow, fullSamplesFlow])
-    const adapterProvider = createProvider(Provider, {
-        jwtToken: 'jwtToken',
-        numberId: 'numberId',
-        verifyToken: 'verifyToken',
-        version: 'v18.0'
-    })
-    const adapterDB = new Database({
-       host: process.env.POSTGRES_DB_HOST,
-       user: process.env.POSTGRES_DB_USER,
-       database: process.env.POSTGRES_DB_NAME,
-       password: process.env.POSTGRES_DB_PASSWORD,
-       port: +process.env.POSTGRES_DB_PORT
-   })
+    
+    // If you experience ERRO AUTH issues, check the latest WhatsApp version at:
+    // https://wppconnect.io/whatsapp-versions/
+    // Example: version "2.3000.1035824857-alpha" -> [2, 3000, 1035824857]
+    const adapterProvider = createProvider(Provider, 
+		{ version: [2, 3000, 1035824857] } 
+	)
+    const adapterDB = new Database()
 
     const { handleCtx, httpServer } = await createBot({
         flow: adapterFlow,
