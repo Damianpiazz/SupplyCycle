@@ -19,6 +19,7 @@ enum DiaSemana {
   JUEVES
   VIERNES
   SABADO
+  DOMINGO
 }
 
 enum EstadoPedido {
@@ -33,6 +34,12 @@ enum EstadoReparto {
   PENDIENTE
   EN_CURSO
   COMPLETADO
+}
+
+enum EstadoRetenido {
+  RETENIDO
+  DEVUELTO
+  PERDIDO
 }
 
 model Usuario {
@@ -66,6 +73,9 @@ model Cliente {
   creadoEn      DateTime  @default(now())
   actualizadoEn DateTime  @updatedAt
   pedidos       Pedido[]
+  domicilios    Domicilio[]
+  retenidos     Retenido[]
+  reclamos      Reclamo[]
 }
 
 model Item {
@@ -77,6 +87,7 @@ model Item {
   activo      Boolean      @default(true)
   creadoEn    DateTime     @default(now())
   pedidoItems PedidoItem[]
+  retenidos   Retenido[]
 }
 
 model Pedido {
@@ -94,7 +105,8 @@ model Pedido {
   cliente       Cliente       @relation(fields: [clienteId], references: [id])
   reparto       Reparto?      @relation(fields: [repartoId], references: [id])
   items         PedidoItem[]
-
+  visitas       Visita[]
+  retenidos     Retenido[]
 }
 
 model PedidoItem {
@@ -120,4 +132,87 @@ model Reparto {
   pedidos       Pedido[]
 
   @@unique([repartidorId, fecha])
+}
+
+model Ciudad {
+  id         String      @id @default(uuid())
+  nombre     String      @db.VarChar(100)
+  creadoEn   DateTime    @default(now())
+  domicilios Domicilio[]
+}
+
+model Domicilio {
+  id          String   @id @default(uuid())
+  calle       String   @db.VarChar(200)
+  entreCalle1 String?
+  entreCalle2 String?
+  numero      String   @db.VarChar(20)
+  piso        String?
+  clienteId   String
+  ciudadId    String
+  creadoEn    DateTime @default(now())
+  cliente     Cliente  @relation(fields: [clienteId], references: [id])
+  ciudad      Ciudad   @relation(fields: [ciudadId], references: [id])
+  dias        Dia[]
+}
+
+model Dia {
+  id          String     @id @default(uuid())
+  nombre      DiaSemana
+  domicilioId String
+  creadoEn    DateTime   @default(now())
+  domicilio   Domicilio  @relation(fields: [domicilioId], references: [id])
+  horarios    Horario[]
+}
+
+model Horario {
+  id       String   @id @default(uuid())
+  inicio   DateTime
+  fin      DateTime
+  diaId    String
+  creadoEn DateTime @default(now())
+  dia      Dia      @relation(fields: [diaId], references: [id])
+}
+
+model Empleado {
+  id            String   @id @default(uuid())
+  nombre        String   @db.VarChar(100)
+  apellido      String   @db.VarChar(100)
+  dni           String   @unique @db.VarChar(20)
+  creadoEn      DateTime @default(now())
+  actualizadoEn DateTime @updatedAt
+  visitas       Visita[]
+}
+
+model Visita {
+  id         String   @id @default(uuid())
+  fecha      DateTime @db.Date
+  hora       DateTime
+  falta      Boolean  @default(false)
+  pedidoId   String
+  empleadoId String
+  creadoEn   DateTime @default(now())
+  pedido     Pedido   @relation(fields: [pedidoId], references: [id])
+  empleado   Empleado @relation(fields: [empleadoId], references: [id])
+}
+
+model Retenido {
+  id        String         @id @default(uuid())
+  estado    EstadoRetenido @default(RETENIDO)
+  inicio    DateTime
+  fin       DateTime?
+  itemId    String
+  clienteId String
+  pedidoId  String
+  creadoEn  DateTime       @default(now())
+  item      Item           @relation(fields: [itemId], references: [id])
+  cliente   Cliente        @relation(fields: [clienteId], references: [id])
+  pedido    Pedido         @relation(fields: [pedidoId], references: [id])
+}
+
+model Reclamo {
+  id        String   @id @default(uuid())
+  clienteId String
+  creadoEn  DateTime @default(now())
+  cliente   Cliente  @relation(fields: [clienteId], references: [id])
 }
