@@ -1,5 +1,7 @@
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { Colors, Spacing, FontSizes } from '@/constants/theme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Colors, Spacing, FontSizes, FontFamily } from '@/constants/theme';
+import { LucideIcon } from '@/components/ui/lucide-icon';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
 interface HeaderProps {
@@ -10,12 +12,13 @@ interface HeaderProps {
 export default function Header({ title = 'SupplyCycle', onBack }: HeaderProps) {
   const colorScheme = useColorScheme() ?? 'light';
   const theme = Colors[colorScheme];
+  const insets = useSafeAreaInsets();
 
   return (
-    <View style={[styles.header, { backgroundColor: theme.headerBackground }]}>
+    <View style={[styles.header, { backgroundColor: theme.headerBackground, paddingTop: Spacing.xxl + insets.top }]}>
       {onBack && (
-        <TouchableOpacity onPress={onBack} style={styles.backButton} activeOpacity={0.7}>
-          <Text style={[styles.backIcon, { color: theme.headerText }]}>{'<'}</Text>
+        <TouchableOpacity onPress={onBack} style={[styles.backButton, { backgroundColor: theme.headerText + '25' }]} activeOpacity={0.7}>
+          <LucideIcon name="arrow-left" size={18} strokeWidth={2} color={theme.headerText} />
         </TouchableOpacity>
       )}
       <Text
@@ -35,10 +38,9 @@ export default function Header({ title = 'SupplyCycle', onBack }: HeaderProps) {
 const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-end',
     justifyContent: 'center',
-    paddingTop: Spacing.xxl,
-    paddingBottom: Spacing.lg,
+    paddingBottom: 12,
     paddingHorizontal: Spacing.xl,
   },
   backButton: {
@@ -51,12 +53,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  backIcon: {
-    fontSize: 22,
-    fontWeight: '700',
-  },
   title: {
     fontSize: FontSizes.xl,
+    fontFamily: FontFamily.interBold,
     fontWeight: 'bold',
     flexShrink: 1,
   },

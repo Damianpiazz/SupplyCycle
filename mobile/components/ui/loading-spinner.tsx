@@ -1,5 +1,5 @@
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
-import { Colors, Spacing, FontSizes } from '@/constants/theme';
+import { Colors, Spacing, FontSizes, FontFamily } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
 interface LoadingSpinnerProps {
@@ -34,5 +34,6 @@ const styles = StyleSheet.create({
   message: {
     marginTop: Spacing.lg,
     fontSize: FontSizes.md,
+    fontFamily: FontFamily.inter,
   },
 });

@@ -6,7 +6,7 @@ import {
   View,
   type TextInputProps,
 } from 'react-native';
-import { Colors, BorderRadius, Spacing, FontSizes } from '@/constants/theme';
+import { Colors, BorderRadius, Spacing, FontSizes, FontFamily } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
 interface InputProps extends TextInputProps {
@@ -19,7 +19,7 @@ export default function Input({ label, error, style, ...rest }: InputProps) {
   const theme = Colors[colorScheme];
   const [isFocused, setIsFocused] = useState(false);
 
-  const placeholderColor = colorScheme === 'light' ? '#64748B' : '#94A3B8';
+  const placeholderColor = theme.muted;
 
   return (
     <View style={styles.container}>
@@ -50,6 +50,7 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: FontSizes.sm,
+    fontFamily: FontFamily.interSemiBold,
     fontWeight: '600',
     marginBottom: Spacing.xs,
   },
@@ -59,10 +60,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.md,
     fontSize: FontSizes.md,
+    fontFamily: FontFamily.inter,
     minHeight: 48,
   },
   error: {
     fontSize: FontSizes.xs,
+    fontFamily: FontFamily.inter,
     marginTop: Spacing.xs,
   },
 });

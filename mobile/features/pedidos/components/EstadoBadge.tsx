@@ -6,10 +6,10 @@ import type { EstadoPedido } from '@/types';
 
 interface EstadoBadgeProps {
   estado: EstadoPedido;
-  orden: number;
+  numeroPedido: string;
 }
 
-export default function EstadoBadge({ estado, orden }: EstadoBadgeProps) {
+export default function EstadoBadge({ estado, numeroPedido }: EstadoBadgeProps) {
   const colorScheme = useColorScheme() ?? 'light';
   const theme = Colors[colorScheme];
   const color = getEstadoColor(estado, theme);
@@ -22,7 +22,7 @@ export default function EstadoBadge({ estado, orden }: EstadoBadgeProps) {
         </Text>
       </View>
       <Text style={[styles.ordenText, { color: theme.muted }]}>
-        Pedido #{orden}
+        {numeroPedido}
       </Text>
     </View>
   );

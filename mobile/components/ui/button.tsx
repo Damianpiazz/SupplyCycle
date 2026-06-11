@@ -1,6 +1,6 @@
 import { StyleSheet, Text, TouchableOpacity, type TouchableOpacityProps } from 'react-native';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { Colors, BorderRadius, Spacing, FontSizes } from '@/constants/theme';
+import { Colors, BorderRadius, Spacing, FontSizes, FontFamily } from '@/constants/theme';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'ghost' | 'success' | 'warning';
 
@@ -21,26 +21,19 @@ export default function Button({
   const colorScheme = useColorScheme() ?? 'light';
   const theme = Colors[colorScheme];
 
-  const variantColors: Record<ButtonVariant, string> = {
-    primary: theme.buttonPrimary,
-    secondary: theme.surface,
-    danger: theme.noEntregado,
-    ghost: 'transparent',
-    success: theme.entregado,
-    warning: theme.warning,
+  const variantColors: Record<ButtonVariant, { bg: string; text: string }> = {
+    primary: { bg: theme.buttonPrimary, text: '#FFFFFF' },
+    secondary: { bg: theme.surface, text: theme.text },
+    danger: { bg: theme.errorBg, text: theme.noEntregado },
+    ghost: { bg: 'transparent', text: theme.text },
+    success: { bg: theme.successBg, text: theme.entregado },
+    warning: { bg: theme.warningBg, text: theme.warning },
   };
 
+  const vc = variantColors[variant];
   const isGhost = variant === 'ghost';
-  const backgroundColor = disabled
-    ? theme.muted
-    : isGhost
-      ? 'transparent'
-      : variantColors[variant];
-  const textColor = disabled
-    ? '#FFFFFF'
-    : isGhost
-      ? theme.text
-      : '#FFFFFF';
+  const backgroundColor = disabled ? theme.muted : vc.bg;
+  const textColor = disabled ? '#FFFFFF' : vc.text;
 
   return (
     <TouchableOpacity
@@ -72,6 +65,7 @@ const styles = StyleSheet.create({
   },
   text: {
     fontSize: FontSizes.sm,
+    fontFamily: FontFamily.interSemiBold,
     fontWeight: '600',
   },
 });

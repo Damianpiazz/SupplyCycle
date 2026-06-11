@@ -3,7 +3,7 @@ import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Linking, Platform
 import { router } from 'expo-router';
 import { ThemedView } from '@/components/themed-view';
 import { Card, Button, LoadingSpinner, ErrorMessage, Header } from '@/components/ui';
-import { Colors, Spacing, FontSizes, BorderRadius } from '@/constants/theme';
+import { Colors, FontFamily, Spacing, FontSizes, BorderRadius } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useReparto, useIniciarReparto } from '@/features/repartos/hooks/useReparto';
 import { useConfirmarEntrega, useCancelarPedido, useIniciarEntrega } from '@/features/pedidos/hooks/usePedidos';
@@ -182,7 +182,7 @@ function ProximaEntregaCard({
           </Text>
         </View>
         <Text style={[styles.ordenText, { color: theme.muted }]}>
-          Pedido #{pedido.orden}
+          {pedido.numeroPedido}
         </Text>
       </View>
 
@@ -304,7 +304,7 @@ function ProximasEntregasList({
           <TouchableOpacity
             key={pedido.id}
             style={[styles.proximaItem, { borderColor: theme.border }]}
-            onPress={() => router.push(`/pedidos/${pedido.id}`)}
+            onPress={() => router.push(`/inicio/${pedido.id}`)}
             activeOpacity={0.7}
           >
             <View style={styles.proximaItemLeft}>
@@ -402,7 +402,7 @@ function RepartoEnCursoView({
               onIniciarEntrega={() => onIniciarEntrega(proximaEntrega.id)}
               onConfirmar={() => onConfirmarEntrega(proximaEntrega.id)}
               onCancelar={() => onCancelarEntrega(proximaEntrega.id)}
-              onVerDetalle={() => router.push(`/pedidos/${proximaEntrega.id}`)}
+              onVerDetalle={() => router.push(`/inicio/${proximaEntrega.id}`)}
               theme={theme}
               iniciarLoading={iniciarLoading}
               confirmarLoading={confirmarLoading}
@@ -598,16 +598,19 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     fontSize: FontSizes.lg,
+    fontFamily: FontFamily.interBold,
     fontWeight: 'bold',
     textAlign: 'center',
     marginBottom: Spacing.md,
   },
   emptySubtitle: {
     fontSize: FontSizes.md,
+    fontFamily: FontFamily.inter,
     textAlign: 'center',
   },
   sectionTitle: {
     fontSize: FontSizes.lg,
+    fontFamily: FontFamily.interBold,
     fontWeight: 'bold',
     marginBottom: Spacing.md,
     marginTop: Spacing.lg,
@@ -621,9 +624,11 @@ const styles = StyleSheet.create({
   },
   resumenLabel: {
     fontSize: FontSizes.sm,
+    fontFamily: FontFamily.inter,
   },
   resumenValue: {
     fontSize: FontSizes.md,
+    fontFamily: FontFamily.interSemiBold,
     fontWeight: '600',
   },
   resumenDivider: {
@@ -633,6 +638,7 @@ const styles = StyleSheet.create({
   },
   resumenHint: {
     fontSize: FontSizes.sm,
+    fontFamily: FontFamily.inter,
     marginBottom: Spacing.lg,
     lineHeight: 20,
   },
@@ -653,18 +659,24 @@ const styles = StyleSheet.create({
   },
   estadoBadgeText: {
     fontSize: FontSizes.xs,
-    fontWeight: '600',
+    fontFamily: FontFamily.interMedium,
+    fontWeight: '500',
   },
   ordenText: {
     fontSize: FontSizes.xs,
+    fontFamily: FontFamily.inter,
   },
   clienteNombre: {
     fontSize: FontSizes.lg,
+    fontFamily: FontFamily.interBold,
     fontWeight: 'bold',
     marginBottom: Spacing.xs,
+    letterSpacing: 0.18,
   },
   direccion: {
-    fontSize: FontSizes.sm,
+    fontSize: FontSizes.cardSecondary,
+    fontFamily: FontFamily.inter,
+    lineHeight: 19.5,
     marginBottom: Spacing.md,
   },
   infoRow: {
@@ -672,11 +684,13 @@ const styles = StyleSheet.create({
   },
   infoLabel: {
     fontSize: FontSizes.xs,
-    fontWeight: '600',
+    fontFamily: FontFamily.interMedium,
+    fontWeight: '500',
     marginBottom: 1,
   },
   infoValue: {
     fontSize: FontSizes.md,
+    fontFamily: FontFamily.inter,
   },
   itemsList: {
     marginTop: Spacing.sm,
@@ -684,6 +698,7 @@ const styles = StyleSheet.create({
   },
   itemText: {
     fontSize: FontSizes.sm,
+    fontFamily: FontFamily.inter,
     marginBottom: 2,
   },
   actionButtons: {
@@ -712,10 +727,12 @@ const styles = StyleSheet.create({
   },
   progressLabel: {
     fontSize: FontSizes.sm,
+    fontFamily: FontFamily.interSemiBold,
     fontWeight: '600',
   },
   progressCount: {
     fontSize: FontSizes.sm,
+    fontFamily: FontFamily.inter,
   },
   progressBar: {
     height: 10,
@@ -746,15 +763,22 @@ const styles = StyleSheet.create({
   },
   proximaCliente: {
     fontSize: FontSizes.md,
+    fontFamily: FontFamily.interSemiBold,
     fontWeight: '600',
     marginBottom: 2,
+    letterSpacing: 0.16,
+    lineHeight: 24,
   },
   proximaDireccion: {
-    fontSize: FontSizes.sm,
+    fontSize: FontSizes.cardSecondary,
+    fontFamily: FontFamily.inter,
+    lineHeight: 19.5,
     marginBottom: 2,
   },
   proximaHorario: {
-    fontSize: FontSizes.sm,
+    fontSize: FontSizes.cardSecondary,
+    fontFamily: FontFamily.inter,
+    lineHeight: 19.5,
   },
   proximaBadge: {
     paddingHorizontal: Spacing.sm,
@@ -763,7 +787,8 @@ const styles = StyleSheet.create({
   },
   proximaBadgeText: {
     fontSize: FontSizes.xs,
-    fontWeight: '600',
+    fontFamily: FontFamily.interMedium,
+    fontWeight: '500',
   },
   // ── Ver todos ──
   verTodosContainer: {
@@ -773,6 +798,7 @@ const styles = StyleSheet.create({
   // ── Completado ──
   completadoText: {
     fontSize: FontSizes.md,
+    fontFamily: FontFamily.interSemiBold,
     fontWeight: '600',
     textAlign: 'center',
   },

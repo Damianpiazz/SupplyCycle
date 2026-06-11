@@ -3,7 +3,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { ThemedView } from '@/components/themed-view';
 import { Card, Button, Header, Input } from '@/components/ui';
-import { Colors, Spacing, FontSizes, BorderRadius } from '@/constants/theme';
+import { Colors, FontFamily, Spacing, FontSizes, BorderRadius } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useAuthStore } from '@/stores/authStore';
 import { clearToken } from '@/features/auth/services/authStorage';
@@ -174,6 +174,7 @@ export default function PerfilScreen() {
         {!isEditing ? (
           <Button
             title="Modificar perfil"
+            variant="success"
             onPress={startEditing}
             style={styles.editButton}
           />
@@ -226,6 +227,7 @@ const styles = StyleSheet.create({
   },
   avatarText: {
     fontSize: FontSizes.title,
+    fontFamily: FontFamily.interBold,
     fontWeight: 'bold',
   },
   infoRow: {
@@ -233,11 +235,13 @@ const styles = StyleSheet.create({
   },
   infoLabel: {
     fontSize: FontSizes.xs,
-    fontWeight: '600',
+    fontFamily: FontFamily.interMedium,
+    fontWeight: '500',
     marginBottom: 2,
   },
   infoValue: {
     fontSize: FontSizes.md,
+    fontFamily: FontFamily.inter,
   },
   divider: {
     height: 1,
@@ -258,6 +262,7 @@ const styles = StyleSheet.create({
   saveError: {
     marginTop: Spacing.xs,
     fontSize: FontSizes.xs,
+    fontFamily: FontFamily.interSemiBold,
     fontWeight: '600',
   },
   logoutButton: {
@@ -271,5 +276,6 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: FontSizes.md,
+    fontFamily: FontFamily.inter,
   },
 });

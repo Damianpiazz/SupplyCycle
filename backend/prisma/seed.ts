@@ -101,9 +101,12 @@ async function main() {
     [item6l.id]: item6l.precio!,
   };
 
-  for (const pd of pedidosData) {
+  for (let idx = 0; idx < pedidosData.length; idx++) {
+    const pd = pedidosData[idx]!;
+    const numero = 'PEDIDO #' + String(idx + 1);
     await prisma.pedido.create({
       data: {
+        numeroPedido: numero,
         clienteId: clientes[pd.clienteIdx]!.id,
         repartoId: reparto.id,
         fecha: today,

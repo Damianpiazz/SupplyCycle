@@ -1,70 +1,113 @@
 /**
  * Colors and spacing for light and dark mode.
+ * Based on the SupplyCycle brand palette — green, organic, fresh.
  */
 
 import { Platform } from 'react-native';
 
-const tintColorLight = '#0a7ea4';
-const tintColorDark = '#fff';
-
 export const Colors = {
   light: {
-    text: '#11181C',
-    background: '#fff',
-    tint: tintColorLight,
-    icon: '#687076',
-    tabIconDefault: '#687076',
-    tabIconSelected: tintColorLight,
-    // Estados pedido
-    pendiente: '#F59E0B',
-    entregado: '#10B981',
-    noEntregado: '#EF4444',
-    // Estados reparto
-    enCurso: '#3B82F6',
-    completado: '#10B981',
-    // UI
-    card: '#F8FAFC',
-    cardBorder: '#E2E8F0',
-    error: '#EF4444',
-    success: '#10B981',
-    warning: '#F59E0B',
-    info: '#3B82F6',
-    surface: '#F1F5F9',
-    border: '#E2E8F0',
-    muted: '#94A3B8',
-    inputBackground: '#F8FAFC',
-    headerBackground: '#0a7ea4',
+    /* ── Texto ─────────────────────────────────────────── */
+    text: '#1A2E18',
+    muted: '#4A6045',
+    icon: '#4A6045',
+    tabIconDefault: '#8AAA80',
+
+    /* ── Fondos ────────────────────────────────────────── */
+    background: '#F5F7F4',
+    surface: '#EAF3DE',
+    card: '#FFFFFF',
+    inputBackground: '#FFFFFF',
+    cardBorder: '#C8D4C0',
+    border: '#C8D4C0',
+
+    /* ── Primario / Accent ─────────────────────────────── */
+    tint: '#639922',
+    tabIconSelected: '#639922',
+    buttonPrimary: '#3B6D11',
+    headerBackground: '#3B6D11',
     headerText: '#FFFFFF',
-    buttonPrimary: '#0a7ea4',
+
+    /* ── Estados · texto (iconos, texto, bordes) ──────── */
+    error: '#7A3535',
+    success: '#2E6B42',
+    warning: '#7A5A1A',
+    info: '#2A4F70',
+
+    /* ── Estados · fondo (badges, toasts, banners) ────── */
+    errorBg: '#FCEEED',
+    successBg: '#EAF5EE',
+    warningBg: '#FDF4E7',
+    infoBg: '#EAF2FA',
+
+    /* ── Estados · borde ───────────────────────────────── */
+    errorBorder: '#EAC8C8',
+    successBorder: '#C2DFCB',
+    warningBorder: '#E8D8B0',
+    infoBorder: '#C0D8EC',
+
+    /* ── Estado de pedidos / rutas ─────────────────────── */
+    pendiente: '#7A5A1A',
+    entregado: '#2E6B42',
+    noEntregado: '#7A3535',
+    enCurso: '#2A4F70',
+    completado: '#2E6B42',
+
+    /* ── Utilidades ────────────────────────────────────── */
+    textDisabled: '#8AAA80',
+    borderSubtle: '#DDE8D5',
   },
+
   dark: {
-    text: '#ECEDEE',
-    background: '#151718',
-    tint: tintColorDark,
-    icon: '#9BA1A6',
-    tabIconDefault: '#9BA1A6',
-    tabIconSelected: tintColorDark,
-    // Estados pedido
-    pendiente: '#FBBF24',
-    entregado: '#34D399',
-    noEntregado: '#F87171',
-    // Estados reparto
-    enCurso: '#60A5FA',
-    completado: '#34D399',
-    // UI
-    card: '#1E293B',
-    cardBorder: '#334155',
-    error: '#F87171',
-    success: '#34D399',
-    warning: '#FBBF24',
-    info: '#60A5FA',
-    surface: '#1E293B',
-    border: '#334155',
-    muted: '#64748B',
-    inputBackground: '#1E293B',
-    headerBackground: '#0f172a',
-    headerText: '#F8FAFC',
-    buttonPrimary: '#2563eb',
+    /* ── Texto ─────────────────────────────────────────── */
+    text: '#D8ECC8',
+    muted: '#6A9060',
+    icon: '#6A9060',
+    tabIconDefault: '#3A5835',
+
+    /* ── Fondos ────────────────────────────────────────── */
+    background: '#0F1A12',
+    surface: '#1A3010',
+    card: '#162018',
+    inputBackground: '#162018',
+    cardBorder: '#1C3020',
+    border: '#1C3020',
+
+    /* ── Primario / Accent ─────────────────────────────── */
+    tint: '#A8D878',
+    tabIconSelected: '#A8D878',
+    buttonPrimary: '#7DC44A',
+    headerBackground: '#0F1A12',
+    headerText: '#D8ECC8',
+
+    /* ── Estados · texto ───────────────────────────────── */
+    error: '#D48080',
+    success: '#80C898',
+    warning: '#D4A84A',
+    info: '#80B8D8',
+
+    /* ── Estados · fondo ───────────────────────────────── */
+    errorBg: '#250E0E',
+    successBg: '#102A18',
+    warningBg: '#251C08',
+    infoBg: '#0E1A25',
+
+    /* ── Estados · borde ───────────────────────────────── */
+    errorBorder: '#401818',
+    successBorder: '#1E4828',
+    warningBorder: '#403010',
+    infoBorder: '#183040',
+
+    /* ── Estado de pedidos / rutas ─────────────────────── */
+    pendiente: '#D4A84A',
+    entregado: '#80C898',
+    noEntregado: '#D48080',
+    enCurso: '#80B8D8',
+    completado: '#80C898',
+
+    /* ── Utilidades ────────────────────────────────────── */
+    textDisabled: '#3A5835',
+    borderSubtle: '#284830',
   },
 };
 
@@ -86,6 +129,10 @@ export const FontSizes = {
   xl: 20,
   xxl: 24,
   title: 28,
+  /** Texto secundario (dirección, fecha) — 13px */
+  cardSecondary: 13,
+  /** Labels del navbar inferior — 11px */
+  tabLabel: 11,
 };
 
 export const BorderRadius = {
@@ -95,21 +142,33 @@ export const BorderRadius = {
   xl: 20,
 };
 
+/**
+ * Tipografía moderna: Inter (Google Font).
+ * Usar FontFamily.inter para texto normal, FontFamily.interMedium para medium (500),
+ * FontFamily.interSemiBold para semibold (600), FontFamily.interBold para bold (700).
+ */
+export const FontFamily = {
+  inter: 'Inter_400Regular',
+  interMedium: 'Inter_500Medium',
+  interSemiBold: 'Inter_600SemiBold',
+  interBold: 'Inter_700Bold',
+};
+
 export const Fonts = Platform.select({
   ios: {
-    sans: 'system-ui',
+    sans: FontFamily.inter,
     serif: 'ui-serif',
     rounded: 'ui-rounded',
     mono: 'ui-monospace',
   },
   default: {
-    sans: 'normal',
+    sans: FontFamily.inter,
     serif: 'serif',
     rounded: 'normal',
     mono: 'monospace',
   },
   web: {
-    sans: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+    sans: `"Inter", system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif`,
     serif: "Georgia, 'Times New Roman', serif",
     rounded: "'SF Pro Rounded', 'Hiragino Maru Gothic ProN', Meiryo, 'MS PGothic', sans-serif",
     mono: "SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",

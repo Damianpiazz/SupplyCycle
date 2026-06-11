@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Animated, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useApiStatusStore } from '@/stores/apiStatusStore';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { Colors, Spacing, FontSizes, BorderRadius } from '@/constants/theme';
+import { Colors, Spacing, FontSizes, BorderRadius, FontFamily } from '@/constants/theme';
 
 const AUTO_HIDE_MS = 4000;
 
@@ -46,7 +46,8 @@ export default function ApiStatusBanner() {
   if (!visible || !lastCall) return null;
 
   const isSuccess = lastCall.success;
-  const bgColor = isSuccess ? theme.success : theme.error;
+  const bgColor = isSuccess ? theme.successBg : theme.errorBg;
+  const fgColor = isSuccess ? theme.success : theme.error;
 
   return (
     <Animated.View
@@ -64,12 +65,12 @@ export default function ApiStatusBanner() {
         }}
         style={styles.inner}
       >
-        <Text style={styles.method}>{lastCall.method}</Text>
-        <Text style={styles.url} numberOfLines={1}>
+        <Text style={[styles.method, { color: fgColor }]}>{lastCall.method}</Text>
+        <Text style={[styles.url, { color: fgColor }]} numberOfLines={1}>
           {lastCall.url}
         </Text>
-        <View style={styles.statusBadge}>
-          <Text style={styles.statusText}>
+        <View style={[styles.statusBadge, { backgroundColor: fgColor + '18' }]}>
+          <Text style={[styles.statusText, { color: fgColor }]}>
             {lastCall.status} {lastCall.statusText}
           </Text>
         </View>
@@ -100,32 +101,29 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
   },
   method: {
-    color: '#FFFFFF',
     fontSize: FontSizes.xs,
+    fontFamily: FontFamily.interBold,
     fontWeight: '800',
-
-    backgroundColor: 'rgba(0,0,0,0.2)',
+    backgroundColor: 'rgba(0,0,0,0.06)',
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 4,
     overflow: 'hidden',
   },
   url: {
-    color: '#FFFFFF',
     fontSize: FontSizes.xs,
+    fontFamily: FontFamily.interSemiBold,
     fontWeight: '600',
     flex: 1,
   },
   statusBadge: {
-    backgroundColor: 'rgba(0,0,0,0.25)',
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 4,
   },
   statusText: {
-    color: '#FFFFFF',
     fontSize: FontSizes.xs,
+    fontFamily: FontFamily.interBold,
     fontWeight: '700',
-
   },
 });

@@ -51,7 +51,7 @@ export default function CrearRepartoScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <Header />
+      <Header onBack={() => router.back()} />
       <FlatList
         data={disponibles ?? []}
         keyExtractor={(item) => item.id}
@@ -119,7 +119,7 @@ export default function CrearRepartoScreen() {
           >
             <View style={styles.pedidoInfo}>
               <Text style={[styles.pedidoOrden, { color: theme.text }]}>
-                #{item.orden} — {item.cliente.nombre} {item.cliente.apellido}
+                {item.numeroPedido} — {item.cliente.nombre} {item.cliente.apellido}
               </Text>
               <Text style={[styles.pedidoCliente, { color: theme.muted }]}>
                 {item.cliente.domicilio.calle} {item.cliente.domicilio.numero}, {item.cliente.domicilio.localidad}

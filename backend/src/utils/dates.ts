@@ -1,7 +1,7 @@
 /** Create a Date from YYYY-MM-DD string without timezone conversion */
 export function dateFromISODate(dateStr: string): Date {
   const [y, m, d] = dateStr.slice(0, 10).split('-');
-  return new Date(Number(y), Number(m) - 1, Number(d));
+  return new Date(Number(y), Number(m) - 1, Number(d), 12, 0, 0);
 }
 
 /** Format a calendar-date Date to YYYY-MM-DD without timezone shift */

@@ -43,6 +43,7 @@ function formatPedido(pedido: PedidoConRelaciones) {
 
   return {
     id: pedido.id,
+    numeroPedido: pedido.numeroPedido,
     orden: pedido.orden,
     estado: pedido.estado,
     fecha: fmtDate(pedido.fecha),
@@ -188,7 +189,7 @@ export async function listarPedidos(params?: {
   }
 
   if (params?.fecha) {
-    const date = new Date(params.fecha);
+    const date = dateFromISODate(params.fecha);
     where['fecha'] = date;
   }
 
@@ -199,7 +200,7 @@ export async function listarPedidos(params?: {
         cliente: true,
         items: { include: { item: true } },
       },
-      orderBy: { orden: 'asc' },
+      orderBy: { fecha: 'desc' },
       skip,
       take: pageSize,
     }),
@@ -361,26 +362,33 @@ export async function crearPedido(data: {
     orden = (maxOrden._max.orden ?? 0) + 1;
   }
 
-  const pedido = await prisma.pedido.create({
-    data: {
-      clienteId: data.clienteId,
-      fecha: fechaDate,
-      orden,
-      items: {
-        create: data.items.map((i) => {
-          const itemInfo = itemsValidos.find((iv) => iv.id === i.itemId)!;
-          return {
-            itemId: i.itemId,
-            cantidad: i.cantidad,
-            precioUnitario: itemInfo.precio,
-          };
-        }),
+  // Generar numeroPedido dentro de una transacción para evitar duplicados
+  const pedido = await prisma.$transaction(async (tx) => {
+    const count = await tx.pedido.count();
+    const numeroPedido = 'PEDIDO #' + String(count + 1);
+
+    return tx.pedido.create({
+      data: {
+        numeroPedido,
+        clienteId: data.clienteId,
+        fecha: fechaDate,
+        orden,
+        items: {
+          create: data.items.map((i) => {
+            const itemInfo = itemsValidos.find((iv) => iv.id === i.itemId)!;
+            return {
+              itemId: i.itemId,
+              cantidad: i.cantidad,
+              precioUnitario: itemInfo.precio,
+            };
+          }),
+        },
       },
-    },
-    include: {
-      cliente: true,
-      items: { include: { item: true } },
-    },
+      include: {
+        cliente: true,
+        items: { include: { item: true } },
+      },
+    });
   });
 
   return formatPedido(pedido);

@@ -528,17 +528,18 @@ export async function actualizarEstado(repartoId: string, nuevoEstado: 'EN_CURSO
     throw ApiError.badRequest('El reparto ya está en curso');
   }
 
-  // No se puede iniciar si ya hay otro EN_CURSO
+  // No se puede iniciar si ya hay otro EN_CURSO en la misma fecha
   if (nuevoEstado === 'EN_CURSO') {
     const activo = await prisma.reparto.findFirst({
       where: {
         repartidorId: reparto.repartidorId,
         estado: 'EN_CURSO',
+        fecha: reparto.fecha,
         id: { not: repartoId },
       },
     });
     if (activo) {
-      throw ApiError.conflict('Ya existe un reparto en curso para hoy');
+      throw ApiError.conflict('Ya existe un reparto en curso para esta fecha');
     }
   }
 

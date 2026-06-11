@@ -81,6 +81,7 @@ model Item {
 
 model Pedido {
   id            String        @id @default(uuid())
+  numeroPedido  String        @unique @map("numero_pedido") @db.VarChar(20)
   clienteId     String
   repartoId     String?
   fecha         DateTime
