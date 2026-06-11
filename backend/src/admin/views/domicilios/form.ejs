@@ -1,0 +1,63 @@
+<%- include('../layouts/header') %>
+<div class="mb-3">
+  <a href="/admin/domicilios" class="btn btn-outline-secondary btn-sm">&larr; Volver</a>
+</div>
+<div class="card">
+  <div class="card-header"><strong><%= domicilio ? 'Editar' : 'Nuevo' %> Domicilio</strong></div>
+  <div class="card-body">
+    <% if (typeof errors.general !== 'undefined' && errors.general) { %>
+      <div class="alert alert-danger"><%= errors.general %></div>
+    <% } %>
+    <form method="POST" action="/admin/domicilios<%= domicilio ? '/' + domicilio.id : '' %>">
+      <div class="row mb-3">
+        <div class="col-md-6">
+          <label for="calle" class="form-label">Calle</label>
+          <input type="text" class="form-control" id="calle" name="calle" value="<%= domicilio ? domicilio.calle : '' %>" required>
+        </div>
+        <div class="col-md-3">
+          <label for="numero" class="form-label">Número</label>
+          <input type="text" class="form-control" id="numero" name="numero" value="<%= domicilio ? domicilio.numero : '' %>" required>
+        </div>
+        <div class="col-md-3">
+          <label for="piso" class="form-label">Piso</label>
+          <input type="text" class="form-control" id="piso" name="piso" value="<%= domicilio ? (domicilio.piso || '') : '' %>">
+        </div>
+      </div>
+      <div class="row mb-3">
+        <div class="col-md-6">
+          <label for="entreCalle1" class="form-label">Entre calle 1</label>
+          <input type="text" class="form-control" id="entreCalle1" name="entreCalle1" value="<%= domicilio ? (domicilio.entreCalle1 || '') : '' %>">
+        </div>
+        <div class="col-md-6">
+          <label for="entreCalle2" class="form-label">Entre calle 2</label>
+          <input type="text" class="form-control" id="entreCalle2" name="entreCalle2" value="<%= domicilio ? (domicilio.entreCalle2 || '') : '' %>">
+        </div>
+      </div>
+      <div class="row mb-3">
+        <div class="col-md-6">
+          <label for="clienteId" class="form-label">Cliente</label>
+          <select class="form-select" id="clienteId" name="clienteId" required>
+            <option value="">Seleccionar cliente...</option>
+            <% clientes.forEach(c => { %>
+              <option value="<%= c.id %>" <%= domicilio && domicilio.clienteId === c.id ? 'selected' : '' %>><%= c.apellido %>, <%= c.nombre %></option>
+            <% }) %>
+          </select>
+        </div>
+        <div class="col-md-6">
+          <label for="ciudadId" class="form-label">Ciudad</label>
+          <select class="form-select" id="ciudadId" name="ciudadId" required>
+            <option value="">Seleccionar ciudad...</option>
+            <% ciudades.forEach(c => { %>
+              <option value="<%= c.id %>" <%= domicilio && domicilio.ciudadId === c.id ? 'selected' : '' %>><%= c.nombre %></option>
+            <% }) %>
+          </select>
+        </div>
+      </div>
+      <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary"><%= domicilio ? 'Guardar Cambios' : 'Crear Domicilio' %></button>
+        <a href="/admin/domicilios" class="btn btn-outline-secondary">Cancelar</a>
+      </div>
+    </form>
+  </div>
+</div>
+<%- include('../layouts/footer') %>
