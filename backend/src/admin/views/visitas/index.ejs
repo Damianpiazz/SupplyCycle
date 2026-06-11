@@ -1,0 +1,50 @@
+<%- include('../layouts/header') %>
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div><span class="text-muted"><%= total %> visitas</span></div>
+  <a href="/admin/visitas/nuevo" class="btn btn-primary">Nueva Visita</a>
+</div>
+<form method="GET" class="row g-2 mb-3">
+  <div class="col-auto">
+    <select class="form-select form-select-sm" name="empleadoId">
+      <option value="">Todos los empleados</option>
+      <% empleados.forEach(e => { %>
+        <option value="<%= e.id %>" <%= filtroEmpleadoId === e.id ? 'selected' : '' %>><%= e.apellido %>, <%= e.nombre %></option>
+      <% }) %>
+    </select>
+  </div>
+  <div class="col-auto">
+    <button type="submit" class="btn btn-outline-secondary btn-sm">Filtrar</button>
+  </div>
+</form>
+<div class="table-responsive">
+  <table class="table table-hover align-middle">
+    <thead class="table-light">
+      <tr><th>Fecha</th><th>Hora</th><th>Pedido</th><th>Empleado</th><th>Falta</th><th></th></tr>
+    </thead>
+    <tbody>
+      <% visitas.forEach(v => { %>
+        <tr>
+          <td><%= v.fecha.toLocaleDateString() %></td>
+          <td><%= v.hora.toLocaleTimeString() %></td>
+          <td><%= v.pedido.numeroPedido %></td>
+          <td><%= v.empleado.apellido %>, <%= v.empleado.nombre %></td>
+          <td>
+            <span class="badge bg-<%= v.falta ? 'danger' : 'success' %>"><%= v.falta ? 'Sí' : 'No' %></span>
+          </td>
+          <td>
+            <a href="/admin/visitas/<%= v.id %>/editar" class="btn btn-sm btn-outline-primary">Editar</a>
+            <form method="POST" action="/admin/visitas/<%= v.id %>/eliminar" style="display:inline" onsubmit="return confirm('¿Eliminar esta visita?')">
+              <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
+            </form>
+          </td>
+        </tr>
+      <% }) %>
+      <% if (visitas.length === 0) { %>
+        <tr><td colspan="6" class="text-center text-muted py-4">No hay visitas</td></tr>
+      <% } %>
+    </tbody>
+  </table>
+</div>
+<% const totalPages = Math.ceil(total / pageSize); %>
+<%- include('../layouts/pagination', { totalPages, currentPage: page, qs }) %>
+<%- include('../layouts/footer') %>
