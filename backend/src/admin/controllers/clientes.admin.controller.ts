@@ -1,19 +1,61 @@
 import type { Request, Response, NextFunction } from 'express';
 import * as clientesService from '../../features/clientes/service.js';
+import { prisma } from '../../lib/prisma.js';
 
 export async function index(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const nombre = req.query.nombre as string | undefined;
     const dia = req.query.dia as string | undefined;
-    const clientes = await clientesService.listarTodosLosClientes({ nombre, dia });
+    const page = Math.max(1, parseInt(req.query.page as string) || 1);
+    const pageSize = 50;
+    const skip = (page - 1) * pageSize;
+
+    const where: Record<string, unknown> = {};
+    if (nombre) {
+      where['OR'] = [
+        { nombre: { contains: nombre, mode: 'insensitive' as const } },
+        { apellido: { contains: nombre, mode: 'insensitive' as const } },
+      ];
+    }
+    if (dia) where['diaEntrega'] = dia;
+
+    const [raw, total] = await Promise.all([
+      prisma.cliente.findMany({
+        where,
+        orderBy: { apellido: 'asc' },
+        skip,
+        take: pageSize,
+      }),
+      prisma.cliente.count({ where }),
+    ]);
+
+    const clientes = raw.map((c) => ({
+      id: c.id,
+      nombre: c.nombre,
+      apellido: c.apellido,
+      telefono: c.telefono,
+      domicilio: { calle: c.calle, numero: c.numero, localidad: c.localidad, latitud: c.latitud, longitud: c.longitud },
+      diaEntrega: c.diaEntrega,
+      horarioDesde: c.horarioDesde,
+      horarioHasta: c.horarioHasta,
+      observaciones: c.observaciones ?? undefined,
+      activo: c.activo,
+    }));
 
     const diasSemana = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'];
+    let qs = '';
+    if (nombre) qs += '&nombre=' + encodeURIComponent(nombre);
+    if (dia) qs += '&dia=' + encodeURIComponent(dia);
 
     res.render('clientes/index', {
       title: 'Clientes',
       clientes,
       diasSemana,
       filters: { nombre, dia },
+      page,
+      pageSize,
+      total,
+      qs,
     });
   } catch (err) {
     next(err);
