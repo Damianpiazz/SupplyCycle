@@ -6,11 +6,46 @@ import { prisma } from '../../lib/prisma.js';
 export async function index(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const fecha = req.query.fecha as string | undefined;
-    const repartos = await repartosService.listarRepartosAdmin({ fecha });
+    const page = Math.max(1, parseInt(req.query.page as string) || 1);
+    const pageSize = 50;
+    const skip = (page - 1) * pageSize;
+
+    const where = fecha ? { fecha: new Date(fecha) } : undefined;
+    const [raw, total] = await Promise.all([
+      prisma.reparto.findMany({
+        where,
+        include: { repartidor: { select: { id: true, nombre: true, apellido: true } }, pedidos: { select: { estado: true } } },
+        orderBy: { fecha: 'desc' },
+        skip,
+        take: pageSize,
+      }),
+      prisma.reparto.count({ where }),
+    ]);
+
+    const repartos = raw.map((r) => ({
+      id: r.id,
+      fecha: r.fecha,
+      estado: r.estado,
+      horaInicio: r.horaInicio ?? undefined,
+      horaFin: r.horaFin ?? undefined,
+      repartidor: r.repartidor,
+      pedidosCount: r.pedidos.length,
+      resumen: {
+        totalPedidos: r.pedidos.length,
+        completados: r.pedidos.filter((p) => p.estado !== 'PENDIENTE').length,
+        pendientes: r.pedidos.filter((p) => p.estado === 'PENDIENTE').length,
+      },
+    }));
+
+    const qs = fecha ? '&fecha=' + encodeURIComponent(fecha) : '';
     res.render('repartos/index', {
       title: 'Repartos',
       repartos,
       filters: { fecha },
+      page,
+      pageSize,
+      total,
+      qs,
     });
   } catch (err) {
     next(err);
