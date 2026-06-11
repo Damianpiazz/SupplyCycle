@@ -1,0 +1,59 @@
+<%- include('../layouts/header') %>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <span class="text-muted"><%= repartos.length %> repartos</span>
+  </div>
+  <a href="/admin/repartos/nuevo" class="btn btn-primary">Nuevo Reparto</a>
+</div>
+
+<form method="GET" class="row g-2 mb-3">
+  <div class="col-auto">
+    <input type="date" class="form-control form-control-sm" name="fecha" value="<%= typeof filters.fecha !== 'undefined' ? filters.fecha : '' %>">
+  </div>
+  <div class="col-auto">
+    <button type="submit" class="btn btn-outline-secondary btn-sm">Filtrar</button>
+  </div>
+</form>
+
+<div class="table-responsive">
+  <table class="table table-hover align-middle">
+    <thead class="table-light">
+      <tr>
+        <th>Fecha</th>
+        <th>Repartidor</th>
+        <th>Estado</th>
+        <th>Pedidos</th>
+        <th>Completados</th>
+        <th>Inicio</th>
+        <th>Fin</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% repartos.forEach(r => { %>
+        <tr>
+          <td><%= r.fecha %></td>
+          <td><%= r.repartidor.apellido %>, <%= r.repartidor.nombre %></td>
+          <td>
+            <span class="badge bg-<%= r.estado === 'COMPLETADO' ? 'success' : r.estado === 'EN_CURSO' ? 'warning' : 'secondary' %>">
+              <%= r.estado.replace(/_/g, ' ') %>
+            </span>
+          </td>
+          <td><%= r.resumen.totalPedidos %></td>
+          <td><%= r.resumen.completados %> / <%= r.resumen.totalPedidos %></td>
+          <td><%= r.horaInicio || '-' %></td>
+          <td><%= r.horaFin || '-' %></td>
+          <td>
+            <a href="/admin/repartos/<%= r.id %>" class="btn btn-sm btn-outline-primary">Ver</a>
+          </td>
+        </tr>
+      <% }) %>
+      <% if (repartos.length === 0) { %>
+        <tr><td colspan="8" class="text-center text-muted py-4">No hay repartos</td></tr>
+      <% } %>
+    </tbody>
+  </table>
+</div>
+
+<%- include('../layouts/footer') %>

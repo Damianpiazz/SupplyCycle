@@ -1,0 +1,57 @@
+<%- include('../layouts/header') %>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <span class="text-muted"><%= items.length %> items</span>
+  </div>
+  <a href="/admin/items/nuevo" class="btn btn-primary">Nuevo Item</a>
+</div>
+
+<form method="GET" class="row g-2 mb-3">
+  <div class="col-auto">
+    <select class="form-select form-select-sm" name="activo">
+      <option value="">Todos</option>
+      <option value="true" <%= filterActivo === 'true' ? 'selected' : '' %>>Activos</option>
+      <option value="false" <%= filterActivo === 'false' ? 'selected' : '' %>>Inactivos</option>
+    </select>
+  </div>
+  <div class="col-auto">
+    <button type="submit" class="btn btn-outline-secondary btn-sm">Filtrar</button>
+  </div>
+</form>
+
+<div class="table-responsive">
+  <table class="table table-hover align-middle">
+    <thead class="table-light">
+      <tr>
+        <th>Nombre</th>
+        <th>Descripción</th>
+        <th>Unidad</th>
+        <th>Precio</th>
+        <th>Estado</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% items.forEach(i => { %>
+        <tr>
+          <td><%= i.nombre %></td>
+          <td><%= i.descripcion || '-' %></td>
+          <td><%= i.unidad %></td>
+          <td><%= i.precio ? '$' + i.precio.toFixed(2) : '-' %></td>
+          <td>
+            <span class="badge bg-<%= i.activo ? 'success' : 'danger' %>"><%= i.activo ? 'Activo' : 'Inactivo' %></span>
+          </td>
+          <td>
+            <a href="/admin/items/<%= i.id %>/editar" class="btn btn-sm btn-outline-primary">Editar</a>
+          </td>
+        </tr>
+      <% }) %>
+      <% if (items.length === 0) { %>
+        <tr><td colspan="6" class="text-center text-muted py-4">No hay items</td></tr>
+      <% } %>
+    </tbody>
+  </table>
+</div>
+
+<%- include('../layouts/footer') %>
