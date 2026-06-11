@@ -58,14 +58,14 @@ export async function listarController(
     const estado = typeof req.query.estado === 'string' ? req.query.estado : undefined;
     const page = req.query.page ? parseInt(req.query.page as string, 10) : undefined;
     const pageSize = req.query.pageSize ? parseInt(req.query.pageSize as string, 10) : undefined;
-    const result = await pedidosService.listarPedidos({
+    const { data, total } = await pedidosService.listarPedidos({
       clienteNombre,
       fecha,
       estado,
       page,
       pageSize,
     });
-    res.status(200).json(result);
+    sendList(res, data, total);
   } catch (err) {
     next(err);
   }
@@ -79,7 +79,7 @@ export async function confirmarController(
   try {
     const id = req.params['id'] as string;
     const result = await pedidosService.confirmarEntrega(id);
-    res.status(200).json(result);
+    sendSuccess(res, result);
   } catch (err) {
     next(err);
   }
@@ -95,7 +95,7 @@ export async function cancelarRepartidorController(
     const id = req.params['id'] as string;
     const { motivo } = cancelarPedidoSchema.parse(req.body);
     const result = await pedidosService.cancelarPedidoRepartidor(id, motivo);
-    res.status(200).json(result);
+    sendSuccess(res, result);
   } catch (err) {
     next(err);
   }
@@ -111,7 +111,7 @@ export async function actualizarEstadoController(
     const id = req.params['id'] as string;
     const { estado } = actualizarEstadoSchema.parse(req.body);
     const result = await pedidosService.actualizarEstado(id, estado);
-    res.status(200).json(result);
+    sendSuccess(res, result);
   } catch (err) {
     next(err);
   }
@@ -127,7 +127,7 @@ export async function agregarItemController(
     const pedidoId = req.params['pedidoId'] as string;
     const data = agregarItemSchema.parse(req.body);
     const result = await pedidosService.agregarItem(pedidoId, data);
-    res.status(201).json(result);
+    sendSuccess(res, result, 201);
   } catch (err) {
     next(err);
   }
@@ -144,7 +144,7 @@ export async function actualizarCantidadItemController(
     const itemId = req.params['itemId'] as string;
     const { cantidad } = actualizarCantidadSchema.parse(req.body);
     const result = await pedidosService.actualizarCantidadItem(pedidoId, itemId, cantidad);
-    res.status(200).json(result);
+    sendSuccess(res, result);
   } catch (err) {
     next(err);
   }
@@ -160,7 +160,7 @@ export async function quitarItemController(
     const pedidoId = req.params['pedidoId'] as string;
     const itemId = req.params['itemId'] as string;
     const result = await pedidosService.quitarItem(pedidoId, itemId);
-    res.status(200).json(result);
+    sendSuccess(res, result);
   } catch (err) {
     next(err);
   }
@@ -175,7 +175,7 @@ export async function eliminarPedidoController(
   try {
     const id = req.params['id'] as string;
     const result = await pedidosService.eliminarPedido(id);
-    res.status(200).json(result);
+    sendSuccess(res, result);
   } catch (err) {
     next(err);
   }

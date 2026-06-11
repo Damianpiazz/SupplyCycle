@@ -1,11 +1,7 @@
 import 'dotenv/config';
 import bcrypt from 'bcrypt';
-import { PrismaPg } from '@prisma/adapter-pg';
-import { PrismaClient, type Cliente } from '../generated/prisma/client.js';
-
-const connectionString = `${process.env['DATABASE_URL']}`;
-const adapter = new PrismaPg({ connectionString });
-const prisma = new PrismaClient({ adapter });
+import { type Cliente } from '../generated/prisma/client.js';
+import { prisma } from '../src/lib/prisma.js';
 
 async function main() {
   console.log('🌱 Seeding database...');
@@ -105,9 +101,12 @@ async function main() {
     [item6l.id]: item6l.precio!,
   };
 
-  for (const pd of pedidosData) {
+  for (let idx = 0; idx < pedidosData.length; idx++) {
+    const pd = pedidosData[idx]!;
+    const numero = 'PEDIDO #' + String(idx + 1);
     await prisma.pedido.create({
       data: {
+        numeroPedido: numero,
         clienteId: clientes[pd.clienteIdx]!.id,
         repartoId: reparto.id,
         fecha: today,

@@ -58,36 +58,39 @@ describe('authenticate', () => {
     req = mockReq();
   });
 
-  it('debe lanzar UNAUTHORIZED si no hay header Authorization', () => {
-    expect(() => authenticate(req, res, next)).toThrow(ApiError);
-    expect(() => authenticate(req, res, next)).toThrow('Token no proporcionado');
-    try {
-      authenticate(req, res, next);
-    } catch (e) {
-      expect(e).toBeInstanceOf(ApiError);
-      expect((e as ApiError).statusCode).toBe(401);
-    }
+  it('debe llamar next con UNAUTHORIZED si no hay header Authorization', () => {
+    authenticate(req, res, next);
+    expect(next).toHaveBeenCalledOnce();
+    expect(next.mock.calls[0]![0]).toBeInstanceOf(ApiError);
+    expect((next.mock.calls[0]![0] as ApiError).message).toBe('Token no proporcionado');
+    expect((next.mock.calls[0]![0] as ApiError).statusCode).toBe(401);
   });
 
-  it('debe lanzar UNAUTHORIZED si el header no comienza con Bearer', () => {
+  it('debe llamar next con UNAUTHORIZED si el header no comienza con Bearer', () => {
     req.headers.authorization = 'Basic token123';
-    expect(() => authenticate(req, res, next)).toThrow('Token no proporcionado');
+    authenticate(req, res, next);
+    expect(next).toHaveBeenCalledOnce();
+    expect((next.mock.calls[0]![0] as ApiError).message).toBe('Token no proporcionado');
   });
 
-  it('debe lanzar UNAUTHORIZED si el token expiró', () => {
+  it('debe llamar next con UNAUTHORIZED si el token expiró', () => {
     req.headers.authorization = 'Bearer expired.token.here';
     mockVerify.mockImplementation(() => {
       throw new MockTokenExpiredError();
     });
-    expect(() => authenticate(req, res, next)).toThrow('Token expirado');
+    authenticate(req, res, next);
+    expect(next).toHaveBeenCalledOnce();
+    expect((next.mock.calls[0]![0] as ApiError).message).toBe('Token expirado');
   });
 
-  it('debe lanzar UNAUTHORIZED si el token es inválido', () => {
+  it('debe llamar next con UNAUTHORIZED si el token es inválido', () => {
     req.headers.authorization = 'Bearer invalid.token.here';
     mockVerify.mockImplementation(() => {
       throw new Error('invalid signature');
     });
-    expect(() => authenticate(req, res, next)).toThrow('Token inválido');
+    authenticate(req, res, next);
+    expect(next).toHaveBeenCalledOnce();
+    expect((next.mock.calls[0]![0] as ApiError).message).toBe('Token inválido');
   });
 
   it('debe setear req.user y llamar next() con token válido', () => {
@@ -99,6 +102,7 @@ describe('authenticate', () => {
 
     expect(req.user).toEqual(payload);
     expect(next).toHaveBeenCalledOnce();
+    expect(next.mock.calls[0]![0]).toBeUndefined();
   });
 });
 
@@ -114,27 +118,23 @@ describe('requireRole', () => {
     req = mockReq();
   });
 
-  it('debe lanzar UNAUTHORIZED si no hay req.user', () => {
+  it('debe llamar next con UNAUTHORIZED si no hay req.user', () => {
     const middleware = requireRole('ADMIN');
-    expect(() => middleware(req, res, next)).toThrow(ApiError);
-    expect(() => middleware(req, res, next)).toThrow('No autenticado');
-    try {
-      middleware(req, res, next);
-    } catch (e) {
-      expect((e as ApiError).statusCode).toBe(401);
-    }
+    middleware(req, res, next);
+    expect(next).toHaveBeenCalledOnce();
+    expect(next.mock.calls[0]![0]).toBeInstanceOf(ApiError);
+    expect((next.mock.calls[0]![0] as ApiError).message).toBe('No autenticado');
+    expect((next.mock.calls[0]![0] as ApiError).statusCode).toBe(401);
   });
 
-  it('debe lanzar FORBIDDEN si el rol no está permitido', () => {
+  it('debe llamar next con FORBIDDEN si el rol no está permitido', () => {
     req.user = { userId: 'user-1', email: 'test@test.com', rol: 'REPARTIDOR' };
     const middleware = requireRole('ADMIN');
-    expect(() => middleware(req, res, next)).toThrow(ApiError);
-    expect(() => middleware(req, res, next)).toThrow('No tiene permisos');
-    try {
-      middleware(req, res, next);
-    } catch (e) {
-      expect((e as ApiError).statusCode).toBe(403);
-    }
+    middleware(req, res, next);
+    expect(next).toHaveBeenCalledOnce();
+    expect(next.mock.calls[0]![0]).toBeInstanceOf(ApiError);
+    expect((next.mock.calls[0]![0] as ApiError).message).toBe('No tiene permisos para esta acción');
+    expect((next.mock.calls[0]![0] as ApiError).statusCode).toBe(403);
   });
 
   it('debe llamar next() si el rol coincide', () => {

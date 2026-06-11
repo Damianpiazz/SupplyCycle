@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction } from 'express';
 import { ZodError } from 'zod';
 import { ApiError } from '../utils/api-error.js';
+import { logger } from '../lib/logger.js';
 
 export function errorHandler(
   err: Error,
@@ -41,7 +42,7 @@ export function errorHandler(
   }
 
   // Unexpected errors
-  console.error('Unhandled error:', err);
+  logger.error({ err, path: _req.path }, 'Unhandled error');
   res.status(500).json({
     error: {
       code: 'INTERNAL_ERROR',

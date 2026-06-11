@@ -1,8 +1,9 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
-import morgan from 'morgan';
+import { pinoHttp } from 'pino-http';
 
+import { logger } from './lib/logger.js';
 import authRoutes from './features/auth/routes.js';
 import clientesRoutes from './features/clientes/routes.js';
 import itemsRoutes from './features/items/routes.js';
@@ -17,7 +18,7 @@ const app = express();
 app.use(helmet());
 app.use(cors());
 app.use(express.json());
-app.use(morgan('dev'));
+app.use(pinoHttp({ logger }));
 
 // Health check
 app.get('/health', (_req, res) => {

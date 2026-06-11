@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { handleApiError } from '@/services/handleApiError';
+import { handleApiError, isNetworkError } from '@/services/handleApiError';
 
 describe('handleApiError', () => {
   it('should parse Axios error with response data', () => {
@@ -45,5 +45,33 @@ describe('handleApiError', () => {
     const result = handleApiError(axiosError);
     expect(result.message).toBe('Error de conexión con el servidor');
     expect(result.code).toBe('CONNECTION_ERROR');
+  });
+});
+
+describe('isNetworkError', () => {
+  it('returns true for Axios error without response (network error)', () => {
+    const error = { isAxiosError: true, response: undefined, message: 'Network Error' };
+    expect(isNetworkError(error)).toBe(true);
+  });
+
+  it('returns false for Axios error with response (HTTP error)', () => {
+    const error = { isAxiosError: true, response: { status: 500 }, message: 'Internal Server Error' };
+    expect(isNetworkError(error)).toBe(false);
+  });
+
+  it('returns true for native Error with Network Error message', () => {
+    const error = new Error('Network Error');
+    expect(isNetworkError(error)).toBe(true);
+  });
+
+  it('returns false for native Error without Network Error message', () => {
+    const error = new Error('Something went wrong');
+    expect(isNetworkError(error)).toBe(false);
+  });
+
+  it('returns false for non-error values', () => {
+    expect(isNetworkError('string')).toBe(false);
+    expect(isNetworkError(null)).toBe(false);
+    expect(isNetworkError(undefined)).toBe(false);
   });
 });

@@ -41,32 +41,11 @@ export interface RepartoDetalleProcesado {
     pendientes: number;
     fallidos: number;
   };
-  progreso: {
-    entregados: number;
-    total: number;
-    porcentaje: number;
-  };
   resumenOperativo: {
     totalClientes: number;
     totalItems: number;
   };
   grupos: GrupoPedidos[];
-  esFechaPasada: boolean;
-}
-
-/** Check if a YYYY-MM-DD date is before today (timezone-safe) */
-function esFechaPasada(iso: string): boolean {
-  const { year, month, day } = parseDateParts(iso);
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const fecha = new Date(Number(year), Number(month) - 1, Number(day));
-  return fecha < today;
-}
-
-function parseDateParts(iso: string): { year: string; month: string; day: string } {
-  const [datePart] = iso.split('T');
-  const [year, month, day] = datePart.split('-');
-  return { year, month, day };
 }
 
 export function useRepartoAdminDetalleData(id: string) {
@@ -86,9 +65,6 @@ export function useRepartoAdminDetalleData(id: string) {
       (p) => p.estado === 'NO_ENTREGADO' || p.estado === 'CANCELADO'
     ).length;
     const totalPedidos = pedidos.length;
-
-    // Progress (only ENTREGADO counts)
-    const porcentaje = totalPedidos > 0 ? Math.round((entregados / totalPedidos) * 100) : 0;
 
     // Operational summary
     const clientesUnicos = new Set(pedidos.map((p) => p.cliente.id));
@@ -118,10 +94,8 @@ export function useRepartoAdminDetalleData(id: string) {
       horaFin: reparto.horaFin,
       repartidor: reparto.repartidor,
       metricas: { totalPedidos, entregados, enRuta, pendientes, fallidos },
-      progreso: { entregados, total: totalPedidos, porcentaje },
       resumenOperativo: { totalClientes: clientesUnicos.size, totalItems },
       grupos,
-      esFechaPasada: esFechaPasada(reparto.fecha),
     };
   }, [query.data]);
 

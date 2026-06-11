@@ -1,34 +1,15 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { Colors, Spacing, FontSizes, BorderRadius } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { getEstadoColor, getEstadoLabel } from '@/features/pedidos/utils/estadoPedido';
 import type { EstadoPedido } from '@/types';
-
-function getEstadoColor(estado: EstadoPedido, theme: typeof Colors.light): string {
-  switch (estado) {
-    case 'PENDIENTE': return theme.pendiente;
-    case 'EN_RUTA': return theme.tint;
-    case 'ENTREGADO': return theme.entregado;
-    case 'NO_ENTREGADO': return theme.noEntregado;
-    case 'CANCELADO': return theme.muted;
-  }
-}
-
-function getEstadoLabel(estado: EstadoPedido): string {
-  switch (estado) {
-    case 'PENDIENTE': return 'Pendiente';
-    case 'EN_RUTA': return 'En ruta';
-    case 'ENTREGADO': return 'Entregado';
-    case 'NO_ENTREGADO': return 'No entregado';
-    case 'CANCELADO': return 'Cancelado';
-  }
-}
 
 interface EstadoBadgeProps {
   estado: EstadoPedido;
-  orden: number;
+  numeroPedido: string;
 }
 
-export default function EstadoBadge({ estado, orden }: EstadoBadgeProps) {
+export default function EstadoBadge({ estado, numeroPedido }: EstadoBadgeProps) {
   const colorScheme = useColorScheme() ?? 'light';
   const theme = Colors[colorScheme];
   const color = getEstadoColor(estado, theme);
@@ -41,7 +22,7 @@ export default function EstadoBadge({ estado, orden }: EstadoBadgeProps) {
         </Text>
       </View>
       <Text style={[styles.ordenText, { color: theme.muted }]}>
-        Pedido #{orden}
+        {numeroPedido}
       </Text>
     </View>
   );

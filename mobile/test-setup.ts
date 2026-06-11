@@ -275,6 +275,50 @@ vi.mock('expo-image', () => ({
   Image: vi.fn(({ children }: any) => children || null),
 }));
 
+// ─── Mock @expo/vector-icons ───────────────────────────────────────────────────
+vi.mock('@expo/vector-icons', () => ({
+  Ionicons: vi.fn(({ name, size, color }: any) => null),
+  MaterialIcons: vi.fn(({ name, size, color }: any) => null),
+  MaterialCommunityIcons: vi.fn(({ name, size, color }: any) => null),
+  FontAwesome: vi.fn(({ name, size, color }: any) => null),
+  Feather: vi.fn(({ name, size, color }: any) => null),
+}));
+
+// ─── Mock @react-native-async-storage/async-storage ───────────────────────────
+vi.mock('@react-native-async-storage/async-storage', () => {
+  const store: Record<string, string> = {};
+  return {
+    default: {
+      getItem: vi.fn((key: string) => Promise.resolve(store[key] ?? null)),
+      setItem: vi.fn((key: string, value: string) => {
+        store[key] = value;
+        return Promise.resolve();
+      }),
+      removeItem: vi.fn((key: string) => {
+        delete store[key];
+        return Promise.resolve();
+      }),
+      clear: vi.fn(() => {
+        Object.keys(store).forEach((k) => delete store[k]);
+        return Promise.resolve();
+      }),
+    },
+    getItem: vi.fn((key: string) => Promise.resolve(store[key] ?? null)),
+    setItem: vi.fn((key: string, value: string) => {
+      store[key] = value;
+      return Promise.resolve();
+    }),
+    removeItem: vi.fn((key: string) => {
+      delete store[key];
+      return Promise.resolve();
+    }),
+    clear: vi.fn(() => {
+      Object.keys(store).forEach((k) => delete store[k]);
+      return Promise.resolve();
+    }),
+  };
+});
+
 // ─── Mock expo-haptics ───────────────────────────────────────────────────────
 vi.mock('expo-haptics', () => ({
   impactAsync: vi.fn(() => Promise.resolve()),
@@ -282,3 +326,29 @@ vi.mock('expo-haptics', () => ({
   ImpactFeedbackStyle: { Light: 'light', Medium: 'medium', Heavy: 'heavy' },
   NotificationFeedbackType: { Success: 'success', Error: 'error' },
 }));
+
+// ─── Mock react-native-svg ──────────────────────────────────────────────────
+vi.mock('react-native-svg', () => {
+  const mockComponent = (name: string) =>
+    vi.fn(({ children, ...props }: any) =>
+      require('react').createElement(name, props, children),
+    );
+  return {
+    default: mockComponent('Svg'),
+    Svg: mockComponent('Svg'),
+    Circle: mockComponent('Circle'),
+    Path: mockComponent('Path'),
+    Rect: mockComponent('Rect'),
+    Line: mockComponent('Line'),
+    Polyline: mockComponent('Polyline'),
+    Polygon: mockComponent('Polygon'),
+    G: mockComponent('G'),
+    Defs: mockComponent('Defs'),
+    ClipPath: mockComponent('ClipPath'),
+    LinearGradient: mockComponent('LinearGradient'),
+    RadialGradient: mockComponent('RadialGradient'),
+    Stop: mockComponent('Stop'),
+    Text: mockComponent('SvgText'),
+    TSpan: mockComponent('TSpan'),
+  };
+});

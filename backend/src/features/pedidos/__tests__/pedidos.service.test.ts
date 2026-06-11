@@ -4,6 +4,7 @@ import { ApiError } from '../../../utils/api-error.js';
 // ─── Mock prisma ──────────────────────────────────────────────────────────────
 
 const mockPrisma = {
+  $transaction: vi.fn((callback: (tx: typeof mockPrisma) => unknown) => callback(mockPrisma)),
   pedido: {
     findMany: vi.fn(),
     findUnique: vi.fn(),
@@ -33,6 +34,7 @@ function buildMockPedido(overrides: Record<string, unknown> = {}) {
   const now = new Date('2026-05-22T10:00:00Z');
   return {
     id: 'ped-001',
+    numeroPedido: 'PEDIDO #1',
     orden: 1,
     estado: 'PENDIENTE',
     fecha: now,
@@ -99,18 +101,23 @@ describe('PedidosService', () => {
       mockPrisma.cliente.findUnique.mockResolvedValue({ id: 'cli-001', nombre: 'Juan', apellido: 'Pérez' });
       mockPrisma.item.findUnique.mockResolvedValue({ id: 'prod-001', nombre: 'Bidón 20L', precio: 1500, activo: true });
       mockPrisma.pedido.aggregate.mockResolvedValue({ _max: { orden: 5 } });
-      mockPrisma.pedido.create.mockResolvedValue(buildMockPedido());
+      mockPrisma.pedido.count.mockResolvedValue(5); // Para generar numeroPedido PEDIDO #6
+      mockPrisma.pedido.create.mockResolvedValue(buildMockPedido({ numeroPedido: 'PEDIDO #6' }));
 
       const result = await service.crearPedido(validPayload);
 
       expect(result).toBeDefined();
       expect(result.id).toBe('ped-001');
+      expect(result.numeroPedido).toBe('PEDIDO #6');
       expect(result.estado).toBe('PENDIENTE');
       expect(result.items).toHaveLength(1);
       expect(result.items[0]!.precioUnitario).toBe(1500);
       expect(result.items[0]!.cantidad).toBe(2);
       // Verificar que se usó el precio del item
       expect(mockPrisma.item.findUnique).toHaveBeenCalledWith({ where: { id: 'prod-001' } });
+      // Verificar que se generó mediante transacción
+      expect(mockPrisma.$transaction).toHaveBeenCalled();
+      expect(mockPrisma.pedido.count).toHaveBeenCalled();
     });
 
     it('debe rechazar si el cliente no existe', async () => {

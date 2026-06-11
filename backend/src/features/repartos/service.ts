@@ -1,22 +1,10 @@
 import { prisma } from '../../lib/prisma.js';
 import { ApiError } from '../../utils/api-error.js';
-
-/** Create a Date from YYYY-MM-DD string without timezone conversion */
-function dateFromISODate(dateStr: string): Date {
-  const [y, m, d] = dateStr.slice(0, 10).split('-');
-  return new Date(Number(y), Number(m) - 1, Number(d));
-}
-
-/** Format a calendar-date Date to YYYY-MM-DD without timezone shift */
-function fmtDate(d: Date): string {
-  const y = String(d.getFullYear());
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
-}
+import { dateFromISODate, fmtDate } from '../../utils/dates.js';
 
 function formatReparto(reparto: {
   id: string;
+  repartidorId: string;
   fecha: Date;
   estado: string;
   horaInicio: string | null;
@@ -31,6 +19,7 @@ function formatReparto(reparto: {
 
   return {
     id: reparto.id,
+    repartidorId: reparto.repartidorId,
     fecha: fmtDate(reparto.fecha),
     estado: reparto.estado,
     horaInicio: reparto.horaInicio ?? undefined,
@@ -134,7 +123,7 @@ export async function obtenerReparto(id: string) {
       orden: p.orden,
       estado: p.estado,
       fecha: p.fecha.toISOString(),
-      motivoFalla: p.motivoFalla ?? undefined,
+      motivoFalla: p.motivoFalla ?? null,
       cliente: {
         id: p.cliente.id,
         nombre: p.cliente.nombre,
@@ -149,8 +138,12 @@ export async function obtenerReparto(id: string) {
         },
         horarioDesde: p.cliente.horarioDesde,
         horarioHasta: p.cliente.horarioHasta,
+        diaEntrega: p.cliente.diaEntrega,
+        observaciones: p.cliente.observaciones ?? undefined,
+        activo: p.cliente.activo,
       },
       items: p.items.map((pi) => ({
+        id: pi.id,
         item: {
           id: pi.item.id,
           nombre: pi.item.nombre,
@@ -159,6 +152,7 @@ export async function obtenerReparto(id: string) {
           activo: pi.item.activo,
         },
         cantidad: pi.cantidad,
+        precioUnitario: pi.precioUnitario,
       })),
     })),
   };
@@ -285,7 +279,7 @@ export async function obtenerRepartoAdmin(id: string) {
       orden: p.orden,
       estado: p.estado,
       fecha: p.fecha.toISOString(),
-      motivoFalla: p.motivoFalla ?? undefined,
+      motivoFalla: p.motivoFalla ?? null,
       cliente: {
         id: p.cliente.id,
         nombre: p.cliente.nombre,
@@ -300,8 +294,12 @@ export async function obtenerRepartoAdmin(id: string) {
         },
         horarioDesde: p.cliente.horarioDesde,
         horarioHasta: p.cliente.horarioHasta,
+        diaEntrega: p.cliente.diaEntrega,
+        observaciones: p.cliente.observaciones ?? undefined,
+        activo: p.cliente.activo,
       },
       items: p.items.map((pi) => ({
+        id: pi.id,
         item: {
           id: pi.item.id,
           nombre: pi.item.nombre,
@@ -310,6 +308,7 @@ export async function obtenerRepartoAdmin(id: string) {
           activo: pi.item.activo,
         },
         cantidad: pi.cantidad,
+        precioUnitario: pi.precioUnitario,
       })),
     })),
   };
@@ -356,7 +355,7 @@ export async function obtenerRepartoDelDia(repartidorId: string) {
       orden: p.orden,
       estado: p.estado,
       fecha: p.fecha.toISOString(),
-      motivoFalla: p.motivoFalla ?? undefined,
+      motivoFalla: p.motivoFalla ?? null,
       cliente: {
         id: p.cliente.id,
         nombre: p.cliente.nombre,
@@ -371,8 +370,12 @@ export async function obtenerRepartoDelDia(repartidorId: string) {
         },
         horarioDesde: p.cliente.horarioDesde,
         horarioHasta: p.cliente.horarioHasta,
+        diaEntrega: p.cliente.diaEntrega,
+        observaciones: p.cliente.observaciones ?? undefined,
+        activo: p.cliente.activo,
       },
       items: p.items.map((pi) => ({
+        id: pi.id,
         item: {
           id: pi.item.id,
           nombre: pi.item.nombre,
@@ -381,6 +384,7 @@ export async function obtenerRepartoDelDia(repartidorId: string) {
           activo: pi.item.activo,
         },
         cantidad: pi.cantidad,
+        precioUnitario: pi.precioUnitario,
       })),
     })),
   };
@@ -484,8 +488,12 @@ export async function crearReparto(data: {
         },
         horarioDesde: p.cliente.horarioDesde,
         horarioHasta: p.cliente.horarioHasta,
+        diaEntrega: p.cliente.diaEntrega,
+        observaciones: p.cliente.observaciones ?? undefined,
+        activo: p.cliente.activo,
       },
       items: p.items.map((pi) => ({
+        id: pi.id,
         item: {
           id: pi.item.id,
           nombre: pi.item.nombre,
@@ -494,6 +502,7 @@ export async function crearReparto(data: {
           activo: pi.item.activo,
         },
         cantidad: pi.cantidad,
+        precioUnitario: pi.precioUnitario,
       })),
     })),
   };
@@ -519,17 +528,18 @@ export async function actualizarEstado(repartoId: string, nuevoEstado: 'EN_CURSO
     throw ApiError.badRequest('El reparto ya está en curso');
   }
 
-  // No se puede iniciar si ya hay otro EN_CURSO
+  // No se puede iniciar si ya hay otro EN_CURSO en la misma fecha
   if (nuevoEstado === 'EN_CURSO') {
     const activo = await prisma.reparto.findFirst({
       where: {
         repartidorId: reparto.repartidorId,
         estado: 'EN_CURSO',
+        fecha: reparto.fecha,
         id: { not: repartoId },
       },
     });
     if (activo) {
-      throw ApiError.conflict('Ya existe un reparto en curso para hoy');
+      throw ApiError.conflict('Ya existe un reparto en curso para esta fecha');
     }
   }
 

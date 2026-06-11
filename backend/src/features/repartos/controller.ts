@@ -54,7 +54,7 @@ export async function obtenerHoyController(
     const repartidorId = req.user!.userId;
     const result = await repartosService.obtenerRepartoDelDia(repartidorId);
     if (!result) {
-      res.status(200).json({ data: null, message: 'No hay repartos para hoy' });
+      sendSuccess(res, null);
       return;
     }
     sendSuccess(res, result);
@@ -111,7 +111,7 @@ export async function cargaController(
   try {
     const id = req.params['id'] as string;
     const result = await repartosService.obtenerResumenCarga(id);
-    res.status(200).json(result);
+    sendSuccess(res, result);
   } catch (err) {
     next(err);
   }
@@ -126,7 +126,7 @@ export async function estadoController(
     const id = req.params['id'] as string;
     const { estado } = actualizarEstadoSchema.parse(req.body);
     const result = await repartosService.actualizarEstado(id, estado);
-    res.status(200).json(result);
+    sendSuccess(res, result);
   } catch (err) {
     next(err);
   }

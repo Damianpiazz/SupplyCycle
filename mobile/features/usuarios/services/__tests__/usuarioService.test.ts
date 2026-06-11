@@ -12,8 +12,11 @@ vi.mock('@/services/api', () => ({
     get: vi.fn(),
     post: vi.fn(),
     patch: vi.fn(),
+    put: vi.fn(),
     delete: vi.fn(),
   },
+  unwrapResponse: vi.fn((response) => response.data.data),
+  unwrapList: vi.fn((response) => response.data),
 }));
 
 const mockUsuario = {
@@ -39,6 +42,8 @@ describe('usuarioService', () => {
 
     expect(apiClient.get).toHaveBeenCalledWith('/usuarios');
     expect(result.data).toHaveLength(1);
+    expect(result.total).toBe(1);
+    expect(result.data[0].email).toBe('admin@test.com');
   });
 
   it('createUsuarioRequest crea usuario', async () => {

@@ -13,7 +13,7 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useToastStore, type ToastType } from '@/stores/toastStore';
 import { IconSymbol } from './icon-symbol';
-import { Colors, Spacing, FontSizes, BorderRadius } from '@/constants/theme';
+import { Colors, Spacing, FontSizes, BorderRadius, FontFamily } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
 const TOAST_HEIGHT = 64;
@@ -45,13 +45,21 @@ export default function Toast() {
   }));
 
   const bgColorMap: Record<ToastType, string> = {
+    success: theme.successBg,
+    error: theme.errorBg,
+    warning: theme.warningBg,
+    info: theme.infoBg,
+  };
+
+  const fgColorMap: Record<ToastType, string> = {
     success: theme.success,
     error: theme.error,
     warning: theme.warning,
     info: theme.info,
   };
 
-  const backgroundColor = bgColorMap[type] || theme.info;
+  const backgroundColor = bgColorMap[type] || theme.infoBg;
+  const foregroundColor = fgColorMap[type] || theme.info;
   const iconName = getIconName(type);
 
   if (!visible) return null;
@@ -74,8 +82,8 @@ export default function Toast() {
         onPress={hide}
         activeOpacity={0.8}
       >
-        <IconSymbol name={iconName} size={22} color="#FFFFFF" style={styles.icon} />
-        <Text style={styles.message} numberOfLines={2}>
+        <IconSymbol name={iconName} size={22} color={foregroundColor} style={styles.icon} />
+        <Text style={[styles.message, { color: foregroundColor }]} numberOfLines={2}>
           {message}
         </Text>
       </TouchableOpacity>
@@ -107,8 +115,8 @@ const styles = StyleSheet.create({
   },
   message: {
     flex: 1,
-    color: '#FFFFFF',
     fontSize: FontSizes.md,
+    fontFamily: FontFamily.interSemiBold,
     fontWeight: '600',
     lineHeight: 20,
   },

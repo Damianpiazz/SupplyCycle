@@ -3,32 +3,11 @@ import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from 'react-nati
 import { router } from 'expo-router';
 import { ThemedView } from '@/components/themed-view';
 import { LoadingSpinner, ErrorMessage, Header } from '@/components/ui';
-import { Colors, Spacing, FontSizes, BorderRadius } from '@/constants/theme';
+import { Colors, FontFamily, Spacing, FontSizes, BorderRadius } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { usePedidosDelDia } from '@/features/pedidos/hooks/usePedidos';
-import type { Pedido, EstadoPedido } from '@/types';
-
-function getEstadoColor(estado: EstadoPedido, theme: typeof Colors.light): string {
-  switch (estado) {
-    case 'PENDIENTE':
-      return theme.pendiente;
-    case 'ENTREGADO':
-      return theme.entregado;
-    case 'NO_ENTREGADO':
-      return theme.noEntregado;
-  }
-}
-
-function getEstadoLabel(estado: EstadoPedido): string {
-  switch (estado) {
-    case 'PENDIENTE':
-      return 'Pendiente';
-    case 'ENTREGADO':
-      return 'Entregado';
-    case 'NO_ENTREGADO':
-      return 'No entregado';
-  }
-}
+import { getEstadoColor, getEstadoLabel } from '@/features/pedidos/utils/estadoPedido';
+import type { Pedido } from '@/types';
 
 // Simple marker rendered as a colored dot with a label
 function MarkerPunto({
@@ -120,7 +99,7 @@ export default function MapaScreen() {
                 </Text>
               </View>
               <Text style={[styles.ordenText, { color: theme.muted }]}>
-                #{selectedPedido.orden}
+                {selectedPedido.numeroPedido}
               </Text>
             </View>
             <Text style={[styles.infoCardNombre, { color: theme.text }]}>
@@ -162,10 +141,12 @@ const styles = StyleSheet.create({
   },
   mapPlaceholderText: {
     fontSize: FontSizes.lg,
+    fontFamily: FontFamily.interSemiBold,
     fontWeight: '600',
   },
   mapPlaceholderHint: {
     fontSize: FontSizes.sm,
+    fontFamily: FontFamily.inter,
     marginTop: Spacing.xs,
   },
   markersList: {
@@ -191,6 +172,7 @@ const styles = StyleSheet.create({
   },
   markerLabel: {
     fontSize: FontSizes.xs,
+    fontFamily: FontFamily.inter,
     fontWeight: '500',
   },
   // Info card at bottom
@@ -216,18 +198,25 @@ const styles = StyleSheet.create({
   },
   estadoBadgeText: {
     fontSize: FontSizes.xs,
-    fontWeight: '600',
+    fontFamily: FontFamily.interMedium,
+    fontWeight: '500',
   },
   ordenText: {
     fontSize: FontSizes.xs,
+    fontFamily: FontFamily.inter,
   },
   infoCardNombre: {
     fontSize: FontSizes.md,
-    fontWeight: '700',
+    fontFamily: FontFamily.interSemiBold,
+    fontWeight: '600',
     marginBottom: 2,
+    letterSpacing: 0.16,
+    lineHeight: 24,
   },
   infoCardDireccion: {
-    fontSize: FontSizes.sm,
+    fontSize: FontSizes.cardSecondary,
+    fontFamily: FontFamily.inter,
+    lineHeight: 19.5,
     marginBottom: Spacing.md,
   },
   verDetalleButton: {
@@ -237,6 +226,7 @@ const styles = StyleSheet.create({
   },
   verDetalleText: {
     fontWeight: '600',
+    fontFamily: FontFamily.interSemiBold,
     fontSize: FontSizes.sm,
   },
 });

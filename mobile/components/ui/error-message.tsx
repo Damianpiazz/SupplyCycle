@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 import Button from '@/components/ui/button';
-import { Colors, Spacing, FontSizes } from '@/constants/theme';
+import { Colors, Spacing, FontSizes, FontFamily } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
 interface ErrorMessageProps {
@@ -36,6 +36,7 @@ const styles = StyleSheet.create({
   },
   message: {
     fontSize: FontSizes.md,
+    fontFamily: FontFamily.inter,
     textAlign: 'center',
     marginBottom: Spacing.xl,
   },

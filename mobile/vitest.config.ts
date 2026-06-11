@@ -16,8 +16,9 @@ export default defineConfig({
     },
   },
   resolve: {
-    alias: {
-      '@': path.resolve(__dirname, '.'),
-    },
+    alias: [
+      { find: /^@expo\/vector-icons(?:\/.*)?$/, replacement: path.resolve(__dirname, '__mocks__/@expo/vector-icons/index.js') },
+      { find: '@', replacement: path.resolve(__dirname, '.') },
+    ],
   },
 });

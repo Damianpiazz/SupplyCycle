@@ -181,7 +181,6 @@ Define cada agente especializado con su modelo, color, prompt y permisos especí
 "backend": {
   "mode": "primary",
   "description": "Desarrolla en backend (Express + Prisma + PostgreSQL)",
-  "model": "anthropic/claude-sonnet-4-20250514",
   "color": "#68A063",
   "prompt": "{file:.opencode/agents/backend.md}",
   "permission": {
@@ -218,7 +217,6 @@ Define cada agente especializado con su modelo, color, prompt y permisos especí
 "mobile": {
   "mode": "primary",
   "description": "Desarrolla en mobile (React Native / Expo)",
-  "model": "anthropic/claude-sonnet-4-20250514",
   "color": "#61DAFB",
   "prompt": "{file:.opencode/agents/mobile.md}",
   "permission": {
@@ -251,7 +249,6 @@ Define cada agente especializado con su modelo, color, prompt y permisos especí
 "whatsapp-bot": {
   "mode": "primary",
   "description": "Desarrolla en whatsapp-bot (BuilderBot + Meta API)",
-  "model": "anthropic/claude-sonnet-4-20250514",
   "color": "#25D366",
   "prompt": "{file:.opencode/agents/whatsapp-bot.md}",
   "permission": {

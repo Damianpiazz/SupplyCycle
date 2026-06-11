@@ -90,7 +90,7 @@ describe('updateMeController', () => {
       email: 'nuevo@test.com',
     });
     expect(res.status).toHaveBeenCalledWith(200);
-    expect(res.json).toHaveBeenCalledWith(updatedUser);
+    expect(res.json).toHaveBeenCalledWith({ data: updatedUser });
     expect(next).not.toHaveBeenCalled();
   });
 

@@ -1,22 +1,26 @@
-import { apiClient } from '@/services/api';
+import { apiClient, unwrapResponse } from '@/services/api';
 import type { Reparto, RepartoAdminListItem, RepartoAdminDetalle, ResumenCarga } from '@/types/reparto';
 import type { Pedido } from '@/types/pedido';
+import type { ApiResponse, ApiListResponse } from '@/types/api';
 
 export async function getRepartosAdminRequest(fecha?: string): Promise<RepartoAdminListItem[]> {
   const params: Record<string, string> = {};
   if (fecha) params.fecha = fecha;
-  const response = await apiClient.get<{ data: RepartoAdminListItem[]; total: number }>('/repartos/admin', { params });
-  return response.data.data;
+  return unwrapResponse(
+    await apiClient.get<ApiResponse<RepartoAdminListItem[]>>('/repartos/admin', { params }),
+  );
 }
 
 export async function getRepartoAdminByIdRequest(id: string): Promise<RepartoAdminDetalle> {
-  const response = await apiClient.get<{ data: RepartoAdminDetalle }>(`/repartos/admin/${id}`);
-  return response.data.data;
+  return unwrapResponse(
+    await apiClient.get<ApiResponse<RepartoAdminDetalle>>(`/repartos/admin/${id}`),
+  );
 }
 
 export async function getRepartoHoyRequest(): Promise<Reparto | null> {
-  const response = await apiClient.get<{ data: Reparto | null; message?: string }>('/repartos/hoy');
-  return response.data.data;
+  return unwrapResponse(
+    await apiClient.get<ApiResponse<Reparto | null>>('/repartos/hoy'),
+  );
 }
 
 export async function getRepartosRequest(
@@ -27,22 +31,25 @@ export async function getRepartosRequest(
   const params: Record<string, string> = { repartidorId };
   if (fecha) params.fecha = fecha;
   if (estado) params.estado = estado;
-  const response = await apiClient.get<{ data: Reparto[] }>('/repartos', { params });
-  return response.data.data;
+  return unwrapResponse(
+    await apiClient.get<ApiResponse<Reparto[]>>('/repartos', { params }),
+  );
 }
 
 export async function getRepartoByIdRequest(id: string): Promise<Reparto> {
-  const response = await apiClient.get<{ data: Reparto }>(`/repartos/${id}`);
-  return response.data.data;
+  return unwrapResponse(
+    await apiClient.get<ApiResponse<Reparto>>(`/repartos/${id}`),
+  );
 }
 
 export async function getResumenCargaRequest(
   repartoId: string
 ): Promise<{ repartoId: string; items: ResumenCarga[] }> {
-  const response = await apiClient.get<{ repartoId: string; items: ResumenCarga[] }>(
-    `/repartos/${repartoId}/carga`
+  return unwrapResponse(
+    await apiClient.get<ApiResponse<{ repartoId: string; items: ResumenCarga[] }>>(
+      `/repartos/${repartoId}/carga`,
+    ),
   );
-  return response.data;
 }
 
 export async function crearRepartoRequest(data: {
@@ -50,45 +57,50 @@ export async function crearRepartoRequest(data: {
   fecha: string;
   pedidoIds: string[];
 }): Promise<Reparto> {
-  const response = await apiClient.post<{ data: Reparto }>('/repartos', data);
-  return response.data.data;
+  return unwrapResponse(
+    await apiClient.post<ApiResponse<Reparto>>('/repartos', data),
+  );
 }
 
 export async function getPedidosDisponiblesRequest(fecha: string): Promise<Pedido[]> {
-  const response = await apiClient.get<{ data: Pedido[]; total: number }>('/pedidos/disponibles', {
-    params: { fecha },
-  });
-  return response.data.data;
+  return unwrapResponse(
+    await apiClient.get<ApiResponse<Pedido[]>>('/pedidos/disponibles', {
+      params: { fecha },
+    }),
+  );
 }
 
 export async function updateRepartoEstadoRequest(
   id: string,
   estado: 'EN_CURSO' | 'COMPLETADO'
 ): Promise<{ id: string; estado: string; actualizadoEn: string }> {
-  const response = await apiClient.patch<{ id: string; estado: string; actualizadoEn: string }>(
-    `/repartos/${id}/estado`,
-    { estado }
+  return unwrapResponse(
+    await apiClient.patch<ApiResponse<{ id: string; estado: string; actualizadoEn: string }>>(
+      `/repartos/${id}/estado`,
+      { estado },
+    ),
   );
-  return response.data;
 }
 
 export async function agregarPedidoARepartoRequest(
   repartoId: string,
   pedidoId: string
 ): Promise<{ repartoId: string; pedidoId: string; accion: string }> {
-  const response = await apiClient.post<{ data: { repartoId: string; pedidoId: string; accion: string } }>(
-    `/repartos/admin/${repartoId}/pedidos`,
-    { pedidoId }
+  return unwrapResponse(
+    await apiClient.post<ApiResponse<{ repartoId: string; pedidoId: string; accion: string }>>(
+      `/repartos/admin/${repartoId}/pedidos`,
+      { pedidoId },
+    ),
   );
-  return response.data.data;
 }
 
 export async function quitarPedidoDeRepartoRequest(
   repartoId: string,
   pedidoId: string
 ): Promise<{ repartoId: string; pedidoId: string; accion: string }> {
-  const response = await apiClient.delete<{ data: { repartoId: string; pedidoId: string; accion: string } }>(
-    `/repartos/admin/${repartoId}/pedidos/${pedidoId}`
+  return unwrapResponse(
+    await apiClient.delete<ApiResponse<{ repartoId: string; pedidoId: string; accion: string }>>(
+      `/repartos/admin/${repartoId}/pedidos/${pedidoId}`,
+    ),
   );
-  return response.data.data;
 }

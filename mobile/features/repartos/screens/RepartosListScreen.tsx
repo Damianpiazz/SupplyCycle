@@ -3,10 +3,11 @@ import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native
 import { router } from 'expo-router';
 import { ThemedView } from '@/components/themed-view';
 import { Card, LoadingSpinner, ErrorMessage, Header } from '@/components/ui';
-import { Colors, Spacing, FontSizes, BorderRadius } from '@/constants/theme';
+import { Colors, FontFamily, Spacing, FontSizes, BorderRadius } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useReparto } from '@/features/repartos/hooks/useReparto';
-import type { Pedido, EstadoPedido } from '@/types';
+import { getEstadoColor, getEstadoLabel } from '@/features/pedidos/utils/estadoPedido';
+import type { Pedido } from '@/types';
 
 type FiltroEstado = 'TODAS' | 'PENDIENTE' | 'EN_RUTA' | 'ENTREGADO' | 'NO_ENTREGADO' | 'CANCELADO';
 
@@ -18,36 +19,6 @@ const FILTROS: { key: FiltroEstado; label: string }[] = [
   { key: 'NO_ENTREGADO', label: 'No entregados' },
   { key: 'CANCELADO', label: 'Cancelados' },
 ];
-
-function getEstadoColor(estado: EstadoPedido, theme: typeof Colors.light): string {
-  switch (estado) {
-    case 'PENDIENTE':
-      return theme.pendiente;
-    case 'EN_RUTA':
-      return theme.tint;
-    case 'ENTREGADO':
-      return theme.entregado;
-    case 'NO_ENTREGADO':
-      return theme.noEntregado;
-    case 'CANCELADO':
-      return theme.muted;
-  }
-}
-
-function getEstadoLabel(estado: EstadoPedido): string {
-  switch (estado) {
-    case 'PENDIENTE':
-      return 'Pendiente';
-    case 'EN_RUTA':
-      return 'En ruta';
-    case 'ENTREGADO':
-      return 'Entregado';
-    case 'NO_ENTREGADO':
-      return 'No entregado';
-    case 'CANCELADO':
-      return 'Cancelado';
-  }
-}
 
 function EntregaCard({
   pedido,
@@ -186,8 +157,9 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.xl,
   },
   filtroText: {
-    fontSize: FontSizes.sm,
-    fontWeight: '600',
+    fontSize: FontSizes.xs,
+    fontFamily: FontFamily.interMedium,
+    fontWeight: '500',
   },
   listContent: {
     padding: Spacing.lg,
@@ -201,8 +173,11 @@ const styles = StyleSheet.create({
   },
   cardNombre: {
     fontSize: FontSizes.md,
+    fontFamily: FontFamily.interSemiBold,
     fontWeight: '600',
     flex: 1,
+    letterSpacing: 0.16,
+    lineHeight: 24,
   },
   estadoBadge: {
     paddingHorizontal: Spacing.sm,
@@ -211,15 +186,20 @@ const styles = StyleSheet.create({
   },
   estadoText: {
     fontSize: FontSizes.xs,
-    fontWeight: '600',
+    fontFamily: FontFamily.interMedium,
+    fontWeight: '500',
   },
   cardDireccion: {
-    fontSize: FontSizes.sm,
+    fontSize: FontSizes.cardSecondary,
+    fontFamily: FontFamily.inter,
+    lineHeight: 19.5,
     marginBottom: 2,
   },
   cardHorario: {
-    fontSize: FontSizes.xs,
-    fontWeight: '500',
+    fontSize: FontSizes.cardSecondary,
+    fontFamily: FontFamily.inter,
+    fontWeight: '400',
+    lineHeight: 19.5,
   },
   emptyContainer: {
     padding: Spacing.xxl,
@@ -227,5 +207,6 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: FontSizes.md,
+    fontFamily: FontFamily.inter,
   },
 });

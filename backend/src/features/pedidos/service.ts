@@ -1,20 +1,7 @@
 import { prisma } from '../../lib/prisma.js';
 import { ApiError } from '../../utils/api-error.js';
+import { dateFromISODate, fmtDate } from '../../utils/dates.js';
 import type { Prisma } from '../../../generated/prisma/client.js';
-
-/** Create a Date from YYYY-MM-DD string without timezone conversion */
-function dateFromISODate(dateStr: string): Date {
-  const [y, m, d] = dateStr.slice(0, 10).split('-');
-  return new Date(Number(y), Number(m) - 1, Number(d));
-}
-
-/** Format a calendar-date Date to YYYY-MM-DD without timezone shift */
-function fmtDate(d: Date): string {
-  const y = String(d.getFullYear());
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
-}
 
 // ─── Tipos ──────────────────────────────────────────────────────────────────
 
@@ -56,27 +43,31 @@ function formatPedido(pedido: PedidoConRelaciones) {
 
   return {
     id: pedido.id,
+    numeroPedido: pedido.numeroPedido,
     orden: pedido.orden,
     estado: pedido.estado,
     fecha: fmtDate(pedido.fecha),
-    motivoFalla: pedido.motivoFalla ?? undefined,
+    motivoFalla: pedido.motivoFalla ?? null,
     total,
     itemsCount: pedido.items.length,
     cliente: {
-      id: pedido.cliente.id,
-      nombre: pedido.cliente.nombre,
-      apellido: pedido.cliente.apellido,
-      telefono: pedido.cliente.telefono,
-      domicilio: {
-        calle: pedido.cliente.calle,
-        numero: pedido.cliente.numero,
-        localidad: pedido.cliente.localidad,
-        latitud: pedido.cliente.latitud,
-        longitud: pedido.cliente.longitud,
+        id: pedido.cliente.id,
+        nombre: pedido.cliente.nombre,
+        apellido: pedido.cliente.apellido,
+        telefono: pedido.cliente.telefono,
+        domicilio: {
+          calle: pedido.cliente.calle,
+          numero: pedido.cliente.numero,
+          localidad: pedido.cliente.localidad,
+          latitud: pedido.cliente.latitud,
+          longitud: pedido.cliente.longitud,
+        },
+        horarioDesde: pedido.cliente.horarioDesde,
+        horarioHasta: pedido.cliente.horarioHasta,
+        diaEntrega: pedido.cliente.diaEntrega,
+        observaciones: pedido.cliente.observaciones ?? undefined,
+        activo: pedido.cliente.activo,
       },
-      horarioDesde: pedido.cliente.horarioDesde,
-      horarioHasta: pedido.cliente.horarioHasta,
-    },
     items: pedido.items.map((pi) => ({
       id: pi.id,
       item: {
@@ -198,7 +189,7 @@ export async function listarPedidos(params?: {
   }
 
   if (params?.fecha) {
-    const date = new Date(params.fecha);
+    const date = dateFromISODate(params.fecha);
     where['fecha'] = date;
   }
 
@@ -209,7 +200,7 @@ export async function listarPedidos(params?: {
         cliente: true,
         items: { include: { item: true } },
       },
-      orderBy: { orden: 'asc' },
+      orderBy: { fecha: 'desc' },
       skip,
       take: pageSize,
     }),
@@ -371,26 +362,33 @@ export async function crearPedido(data: {
     orden = (maxOrden._max.orden ?? 0) + 1;
   }
 
-  const pedido = await prisma.pedido.create({
-    data: {
-      clienteId: data.clienteId,
-      fecha: fechaDate,
-      orden,
-      items: {
-        create: data.items.map((i) => {
-          const itemInfo = itemsValidos.find((iv) => iv.id === i.itemId)!;
-          return {
-            itemId: i.itemId,
-            cantidad: i.cantidad,
-            precioUnitario: itemInfo.precio,
-          };
-        }),
+  // Generar numeroPedido dentro de una transacción para evitar duplicados
+  const pedido = await prisma.$transaction(async (tx) => {
+    const count = await tx.pedido.count();
+    const numeroPedido = 'PEDIDO #' + String(count + 1);
+
+    return tx.pedido.create({
+      data: {
+        numeroPedido,
+        clienteId: data.clienteId,
+        fecha: fechaDate,
+        orden,
+        items: {
+          create: data.items.map((i) => {
+            const itemInfo = itemsValidos.find((iv) => iv.id === i.itemId)!;
+            return {
+              itemId: i.itemId,
+              cantidad: i.cantidad,
+              precioUnitario: itemInfo.precio,
+            };
+          }),
+        },
       },
-    },
-    include: {
-      cliente: true,
-      items: { include: { item: true } },
-    },
+      include: {
+        cliente: true,
+        items: { include: { item: true } },
+      },
+    });
   });
 
   return formatPedido(pedido);

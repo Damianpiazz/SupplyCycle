@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuthStore } from '@/stores/authStore';
 import { useOfflineStore } from '@/stores/offlineStore';
+import { isNetworkError } from '@/services/handleApiError';
 import {
   getPedidosDelDiaRequest,
   getPedidoByIdRequest,
@@ -98,14 +99,17 @@ export function useConfirmarEntrega() {
     mutationFn: async (pedidoId: string) => {
       try {
         return await confirmarEntregaRequest(pedidoId);
-      } catch {
-        // Modo offline: encolar y devolver respuesta optimista
-        addToQueue({ type: 'CONFIRMAR_ENTREGA', payload: { pedidoId } });
-        return {
-          id: pedidoId,
-          estado: 'ENTREGADO' as const,
-          actualizadoEn: new Date().toISOString(),
-        };
+      } catch (error) {
+        // Solo encolar si es error de red; errores 4xx/5xx se relanzan
+        if (isNetworkError(error)) {
+          addToQueue({ type: 'CONFIRMAR_ENTREGA', payload: { pedidoId } });
+          return {
+            id: pedidoId,
+            estado: 'ENTREGADO' as const,
+            actualizadoEn: new Date().toISOString(),
+          };
+        }
+        throw error;
       }
     },
     onSuccess: (data) => {
@@ -134,15 +138,17 @@ export function useCancelarPedido() {
     }) => {
       try {
         return await cancelarPedidoRequest(pedidoId, motivo);
-      } catch {
-        // Modo offline: encolar y devolver respuesta optimista
-        addToQueue({ type: 'CANCELAR_PEDIDO', payload: { pedidoId, motivo } });
-        return {
-          id: pedidoId,
-          estado: 'NO_ENTREGADO' as const,
-          motivoFalla: motivo,
-          actualizadoEn: new Date().toISOString(),
-        };
+      } catch (error) {
+        if (isNetworkError(error)) {
+          addToQueue({ type: 'CANCELAR_PEDIDO', payload: { pedidoId, motivo } });
+          return {
+            id: pedidoId,
+            estado: 'NO_ENTREGADO' as const,
+            motivoFalla: motivo,
+            actualizadoEn: new Date().toISOString(),
+          };
+        }
+        throw error;
       }
     },
     onSuccess: (data) => {
@@ -179,9 +185,12 @@ export function useAgregarItem(pedidoId: string) {
     mutationFn: async (data: { itemId: string; cantidad: number }) => {
       try {
         return await agregarItemRequest(pedidoId, data);
-      } catch {
-        addToQueue({ type: 'AGREGAR_ITEM', payload: { pedidoId, ...data } });
-        return data;
+      } catch (error) {
+        if (isNetworkError(error)) {
+          addToQueue({ type: 'AGREGAR_ITEM', payload: { pedidoId, ...data } });
+          return data;
+        }
+        throw error;
       }
     },
     onSuccess: () => {
@@ -208,12 +217,15 @@ export function useActualizarCantidadItem(pedidoId: string) {
     }) => {
       try {
         return await actualizarCantidadItemRequest(pedidoId, itemId, cantidad);
-      } catch {
-        addToQueue({
-          type: 'ACTUALIZAR_CANTIDAD_ITEM',
-          payload: { pedidoId, itemId, cantidad },
-        });
-        return { itemId, cantidad };
+      } catch (error) {
+        if (isNetworkError(error)) {
+          addToQueue({
+            type: 'ACTUALIZAR_CANTIDAD_ITEM',
+            payload: { pedidoId, itemId, cantidad },
+          });
+          return { itemId, cantidad };
+        }
+        throw error;
       }
     },
     onSuccess: () => {
@@ -232,12 +244,15 @@ export function useQuitarItem(pedidoId: string) {
     mutationFn: async (itemId: string) => {
       try {
         return await quitarItemRequest(pedidoId, itemId);
-      } catch {
-        addToQueue({
-          type: 'QUITAR_ITEM',
-          payload: { pedidoId, itemId },
-        });
-        return { itemId };
+      } catch (error) {
+        if (isNetworkError(error)) {
+          addToQueue({
+            type: 'QUITAR_ITEM',
+            payload: { pedidoId, itemId },
+          });
+          return { itemId };
+        }
+        throw error;
       }
     },
     onSuccess: () => {

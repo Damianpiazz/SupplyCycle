@@ -10,43 +10,16 @@ import {
 import { router } from 'expo-router';
 import { ThemedView } from '@/components/themed-view';
 import { Card, LoadingSpinner, ErrorMessage, Header } from '@/components/ui';
-import { Colors, Spacing, FontSizes, BorderRadius } from '@/constants/theme';
+import { Colors, FontFamily, Spacing, FontSizes, BorderRadius } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useBuscarPedidos } from '@/features/pedidos/hooks/usePedidos';
+import { getEstadoColor, getEstadoLabel } from '@/features/pedidos/utils/estadoPedido';
+import { parseISODate } from '@/utils/date';
 import type { EstadoPedido } from '@/types';
 
-function getEstadoColor(estado: EstadoPedido, theme: typeof Colors.light): string {
-  switch (estado) {
-    case 'PENDIENTE':
-      return theme.pendiente;
-    case 'EN_RUTA':
-      return theme.tint;
-    case 'ENTREGADO':
-      return theme.entregado;
-    case 'NO_ENTREGADO':
-      return theme.noEntregado;
-    case 'CANCELADO':
-      return theme.muted;
-  }
-}
-
-function getEstadoLabel(estado: EstadoPedido): string {
-  switch (estado) {
-    case 'PENDIENTE':
-      return 'Pendiente';
-    case 'EN_RUTA':
-      return 'En ruta';
-    case 'ENTREGADO':
-      return 'Entregado';
-    case 'NO_ENTREGADO':
-      return 'No entregado';
-    case 'CANCELADO':
-      return 'Cancelado';
-  }
-}
-
 function formatFecha(iso: string): string {
-  const date = new Date(iso);
+  const { year, month, day } = parseISODate(iso);
+  const date = new Date(Number(year), Number(month) - 1, Number(day));
   return date.toLocaleDateString('es-AR', {
     day: 'numeric',
     month: 'short',
@@ -213,6 +186,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: '700',
     lineHeight: 28,
+    fontFamily: FontFamily.interBold,
   },
   filtrosContainer: {
     flexDirection: 'row',
@@ -228,7 +202,8 @@ const styles = StyleSheet.create({
   },
   filtroText: {
     fontSize: FontSizes.xs,
-    fontWeight: '600',
+    fontWeight: '500',
+    fontFamily: FontFamily.interMedium,
   },
   listContent: {
     padding: Spacing.lg,
@@ -244,6 +219,9 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.md,
     fontWeight: '600',
     flex: 1,
+    fontFamily: FontFamily.interSemiBold,
+    letterSpacing: 0.16,
+    lineHeight: 24,
   },
   estadoBadge: {
     paddingHorizontal: Spacing.sm,
@@ -252,14 +230,17 @@ const styles = StyleSheet.create({
   },
   estadoText: {
     fontSize: FontSizes.xs,
-    fontWeight: '600',
+    fontWeight: '500',
+    fontFamily: FontFamily.interMedium,
   },
   cardDireccion: {
-    fontSize: FontSizes.sm,
+    fontSize: FontSizes.cardSecondary,
+    lineHeight: 19.5,
     marginBottom: 2,
   },
   cardFecha: {
-    fontSize: FontSizes.xs,
+    fontSize: FontSizes.cardSecondary,
+    lineHeight: 19.5,
   },
   emptyContainer: {
     padding: Spacing.xxl,

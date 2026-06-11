@@ -22,21 +22,26 @@ export function authenticate(
   _res: Response,
   next: NextFunction
 ): void {
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    throw ApiError.unauthorized('Token no proporcionado');
-  }
-
-  const token = authHeader.slice(7);
   try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      throw ApiError.unauthorized('Token no proporcionado');
+    }
+
+    const token = authHeader.slice(7);
     const payload = jwt.verify(token, env.jwtSecret) as JwtPayload;
     req.user = payload;
     next();
   } catch (err) {
     if (err instanceof jwt.TokenExpiredError) {
-      throw ApiError.unauthorized('Token expirado');
+      next(ApiError.unauthorized('Token expirado'));
+      return;
     }
-    throw ApiError.unauthorized('Token inválido');
+    if (err instanceof ApiError) {
+      next(err);
+      return;
+    }
+    next(ApiError.unauthorized('Token inválido'));
   }
 }
 
@@ -44,12 +49,16 @@ export function authenticate(
  *  Debe usarse después de `authenticate`. */
 export function requireRole(...roles: Array<'REPARTIDOR' | 'ADMIN'>) {
   return (req: Request, _res: Response, next: NextFunction): void => {
-    if (!req.user) {
-      throw ApiError.unauthorized('No autenticado');
+    try {
+      if (!req.user) {
+        throw ApiError.unauthorized('No autenticado');
+      }
+      if (!roles.includes(req.user.rol)) {
+        throw ApiError.forbidden('No tiene permisos para esta acción');
+      }
+      next();
+    } catch (err) {
+      next(err as ApiError);
     }
-    if (!roles.includes(req.user.rol)) {
-      throw ApiError.forbidden('No tiene permisos para esta acción');
-    }
-    next();
   };
 }

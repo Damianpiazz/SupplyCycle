@@ -73,7 +73,7 @@ describe('UsuariosListScreen', () => {
     render(<UsuariosListScreen />);
     expect(screen.getByText('Juan Pérez')).toBeTruthy();
     expect(screen.getByText('Ana Inactiva')).toBeTruthy();
-    expect(screen.getByText('Activo')).toBeTruthy();
+    expect(screen.getAllByText('Activo').length).toBeGreaterThan(0);
     expect(screen.getByText('Inactivo')).toBeTruthy();
   });
 

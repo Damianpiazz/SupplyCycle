@@ -111,7 +111,7 @@ describe('PedidoDetalleScreen', () => {
     fireEvent.press(screen.getByText('Editar items'));
     expect(screen.queryByText('Editar items')).toBeNull();
     expect(screen.getByText('Guardar cambios')).toBeTruthy();
-    expect(screen.getByText('Cancelar')).toBeTruthy();
+    expect(screen.getAllByText('Cancelar').length).toBeGreaterThan(0);
   });
 
   it('should change item quantity via stepper in edit mode', () => {
@@ -139,13 +139,13 @@ describe('PedidoDetalleScreen', () => {
     expect(screen.getByText('Agregar item')).toBeTruthy();
   });
 
-  it('should call guardarCambios and show loading state', () => {
+  it('should call guardarCambios and exit edit mode', () => {
     renderScreen();
     fireEvent.press(screen.getByText('Editar items'));
     fireEvent.press(screen.getByText('Guardar cambios'));
     expect(screen.getByText('Confirmar cambios')).toBeTruthy();
     expect(screen.getByText('¿Estás seguro de que querés modificar los items del pedido?')).toBeTruthy();
     fireEvent.press(screen.getByText('Confirmar'));
-    expect(screen.getAllByText('Guardando...').length).toBeGreaterThan(0);
+    expect(screen.queryByText('Guardar cambios')).toBeNull();
   });
 });
