@@ -2,7 +2,7 @@
 
 <div class="d-flex justify-content-between align-items-center mb-3">
   <div>
-    <span class="text-muted"><%= repartos.length %> repartos</span>
+    <span class="text-muted"><%= total %> repartos</span>
   </div>
   <a href="/admin/repartos/nuevo" class="btn btn-primary">Nuevo Reparto</a>
 </div>
@@ -56,4 +56,6 @@
   </table>
 </div>
 
+<% const totalPages = Math.ceil(total / pageSize); %>
+<%- include('../layouts/pagination', { totalPages, currentPage: page, qs }) %>
 <%- include('../layouts/footer') %>
