@@ -1,0 +1,57 @@
+<%- include('../layouts/header') %>
+<div class="mb-3">
+  <a href="/admin/visitas" class="btn btn-outline-secondary btn-sm">&larr; Volver</a>
+</div>
+<div class="card">
+  <div class="card-header"><strong><%= visita ? 'Editar' : 'Nueva' %> Visita</strong></div>
+  <div class="card-body">
+    <% if (typeof errors.general !== 'undefined' && errors.general) { %>
+      <div class="alert alert-danger"><%= errors.general %></div>
+    <% } %>
+    <form method="POST" action="/admin/visitas<%= visita ? '/' + visita.id : '' %>">
+      <div class="row mb-3">
+        <div class="col-md-6">
+          <label for="fecha" class="form-label">Fecha</label>
+          <input type="date" class="form-control" id="fecha" name="fecha" value="<%= visita ? new Date(visita.fecha.getTime() - visita.fecha.getTimezoneOffset() * 60000).toISOString().slice(0, 10) : '' %>" required>
+        </div>
+        <div class="col-md-6">
+          <label for="hora" class="form-label">Hora</label>
+          <input type="datetime-local" class="form-control" id="hora" name="hora" value="<%= visita ? new Date(visita.hora.getTime() - visita.hora.getTimezoneOffset() * 60000).toISOString().slice(0, 16) : '' %>" required>
+        </div>
+      </div>
+      <div class="row mb-3">
+        <div class="col-md-4">
+          <div class="form-check mt-4">
+            <input type="checkbox" class="form-check-input" id="falta" name="falta" value="true" <%= visita && visita.falta ? 'checked' : '' %>>
+            <label class="form-check-label" for="falta">Marcar como falta</label>
+          </div>
+        </div>
+      </div>
+      <div class="row mb-3">
+        <div class="col-md-6">
+          <label for="pedidoId" class="form-label">Pedido</label>
+          <select class="form-select" id="pedidoId" name="pedidoId" required>
+            <option value="">Seleccionar pedido...</option>
+            <% pedidos.forEach(p => { %>
+              <option value="<%= p.id %>" <%= visita && visita.pedidoId === p.id ? 'selected' : '' %>><%= p.numeroPedido %> — <%= p.cliente.apellido %>, <%= p.cliente.nombre %></option>
+            <% }) %>
+          </select>
+        </div>
+        <div class="col-md-6">
+          <label for="empleadoId" class="form-label">Empleado</label>
+          <select class="form-select" id="empleadoId" name="empleadoId" required>
+            <option value="">Seleccionar empleado...</option>
+            <% empleados.forEach(e => { %>
+              <option value="<%= e.id %>" <%= visita && visita.empleadoId === e.id ? 'selected' : '' %>><%= e.apellido %>, <%= e.nombre %></option>
+            <% }) %>
+          </select>
+        </div>
+      </div>
+      <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary"><%= visita ? 'Guardar Cambios' : 'Crear Visita' %></button>
+        <a href="/admin/visitas" class="btn btn-outline-secondary">Cancelar</a>
+      </div>
+    </form>
+  </div>
+</div>
+<%- include('../layouts/footer') %>
