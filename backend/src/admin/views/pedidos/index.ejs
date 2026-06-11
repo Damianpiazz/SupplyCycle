@@ -65,16 +65,13 @@
   </table>
 </div>
 
-<% if (total > pageSize) { %>
-  <nav>
-    <ul class="pagination pagination-sm">
-      <% for (let i = 1; i <= Math.ceil(total / pageSize); i++) { %>
-        <li class="page-item <%= i === page ? 'active' : '' %>">
-          <a class="page-link" href="?page=<%= i %><%= filters.estado ? '&estado=' + filters.estado : '' %><%= filters.clienteNombre ? '&clienteNombre=' + filters.clienteNombre : '' %><%= filters.fecha ? '&fecha=' + filters.fecha : '' %>"><%= i %></a>
-        </li>
-      <% } %>
-    </ul>
-  </nav>
-<% } %>
+<%
+  const totalPages = Math.ceil(total / pageSize);
+  let qs = '';
+  if (filters.estado) qs += '&estado=' + encodeURIComponent(filters.estado);
+  if (filters.clienteNombre) qs += '&clienteNombre=' + encodeURIComponent(filters.clienteNombre);
+  if (filters.fecha) qs += '&fecha=' + encodeURIComponent(filters.fecha);
+%>
+<%- include('../layouts/pagination', { totalPages, currentPage: page, qs }) %>
 
 <%- include('../layouts/footer') %>
