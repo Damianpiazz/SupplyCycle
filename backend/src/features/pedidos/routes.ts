@@ -14,14 +14,15 @@ import {
   eliminarPedidoController,
 } from './controller.js';
 import { authenticate, requireRole } from '../../middleware/auth.middleware.js';
+import { apiKeyAuth } from '../../middleware/api-key-auth.js';
 
 const router = Router();
 
-// ─── Lectura — Admin y repartidor ─────────────────────────────────────────────
-router.get('/hoy', authenticate, obtenerHoyController);
+// ─── Lectura — Admin, repartidor y bot ────────────────────────────────────────
+router.get('/hoy', apiKeyAuth, authenticate, obtenerHoyController);
 router.get('/disponibles', authenticate, requireRole('ADMIN'), obtenerDisponiblesController);
-router.get('/', authenticate, listarController);
-router.get('/:id', authenticate, obtenerController);
+router.get('/', apiKeyAuth, authenticate, listarController);
+router.get('/:id', apiKeyAuth, authenticate, obtenerController);
 
 // ─── Escritura — Admin y repartidor ───────────────────────────────────────────
 router.post('/', authenticate, requireRole('ADMIN', 'REPARTIDOR'), crearController);

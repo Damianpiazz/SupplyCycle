@@ -7,12 +7,13 @@ import {
   eliminarController,
 } from './controller.js';
 import { authenticate, requireRole } from '../../middleware/auth.middleware.js';
+import { apiKeyAuth } from '../../middleware/api-key-auth.js';
 
 const router = Router();
 
 // Rutas públicas (cualquier rol autenticado)
-router.get('/', authenticate, listarController);
-router.get('/:id', authenticate, obtenerController);
+router.get('/', apiKeyAuth, authenticate, listarController);
+router.get('/:id', apiKeyAuth, authenticate, obtenerController);
 
 // Rutas admin-only
 router.post('/', authenticate, requireRole('ADMIN'), crearController);

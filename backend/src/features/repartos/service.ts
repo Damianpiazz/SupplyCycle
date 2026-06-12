@@ -100,9 +100,14 @@ export async function obtenerReparto(id: string) {
       longitud: number;
       horarioDesde: string;
       horarioHasta: string;
+      diaEntrega: string;
+      observaciones: string | null;
+      activo: boolean;
     };
     items: Array<{
+      id: string;
       cantidad: number;
+      precioUnitario: number | null;
       item: { id: string; nombre: string; descripcion: string | null; unidad: string; activo: boolean };
     }>;
   }>;

@@ -1,6 +1,12 @@
 import { prisma } from '../../lib/prisma.js';
 import { ApiError } from '../../utils/api-error.js';
 
+type ListarClientesParams = {
+  nombre?: string;
+  telefono?: string;
+  dia?: string;
+};
+
 type ClienteRow = {
   id: string;
   nombre: string;
@@ -56,13 +62,16 @@ function toClienteResponse(cliente: ClienteRow) {
   };
 }
 
-export async function listarClientes(params?: { nombre?: string; dia?: string }) {
+export async function listarClientes(params?: ListarClientesParams) {
   const where: Record<string, unknown> = { activo: true };
   if (params?.nombre) {
     where['OR'] = [
       { nombre: { contains: params.nombre, mode: 'insensitive' } },
       { apellido: { contains: params.nombre, mode: 'insensitive' } },
     ];
+  }
+  if (params?.telefono) {
+    where['telefono'] = { contains: params.telefono };
   }
   if (params?.dia) {
     where['diaEntrega'] = params.dia;
@@ -71,13 +80,16 @@ export async function listarClientes(params?: { nombre?: string; dia?: string })
   return clientes.map(toClienteResponse);
 }
 
-export async function listarTodosLosClientes(params?: { nombre?: string; dia?: string }) {
+export async function listarTodosLosClientes(params?: ListarClientesParams) {
   const where: Record<string, unknown> = {};
   if (params?.nombre) {
     where['OR'] = [
       { nombre: { contains: params.nombre, mode: 'insensitive' } },
       { apellido: { contains: params.nombre, mode: 'insensitive' } },
     ];
+  }
+  if (params?.telefono) {
+    where['telefono'] = { contains: params.telefono };
   }
   if (params?.dia) {
     where['diaEntrega'] = params.dia;

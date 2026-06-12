@@ -10,11 +10,12 @@ export async function listarController(
 ): Promise<void> {
   try {
     const nombre = typeof req.query.nombre === 'string' ? req.query.nombre : undefined;
+    const telefono = typeof req.query.telefono === 'string' ? req.query.telefono : undefined;
     const dia = typeof req.query.dia === 'string' ? req.query.dia : undefined;
     const incluirInactivos = req.query.incluirInactivos === 'true';
     const result = incluirInactivos
-      ? await clientesService.listarTodosLosClientes({ nombre, dia })
-      : await clientesService.listarClientes({ nombre, dia });
+      ? await clientesService.listarTodosLosClientes({ nombre, telefono, dia })
+      : await clientesService.listarClientes({ nombre, telefono, dia });
     sendList(res, result);
   } catch (err) {
     next(err);
