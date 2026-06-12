@@ -10,4 +10,5 @@ export const env = {
   corsOrigin: process.env['CORS_ORIGIN'] ?? '*',
   logLevel: process.env['LOG_LEVEL'] ?? 'debug',
   sessionSecret: process.env['SESSION_SECRET'] ?? 'supplycycle-session-secret',
+  botApiKey: process.env['BOT_API_KEY'] ?? '',
 } as const;

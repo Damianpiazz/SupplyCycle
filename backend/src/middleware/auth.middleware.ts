@@ -3,10 +3,12 @@ import jwt from 'jsonwebtoken';
 import { env } from '../config/env.js';
 import { ApiError } from '../utils/api-error.js';
 
+export type AllowedRole = 'REPARTIDOR' | 'ADMIN' | 'BOT';
+
 export interface JwtPayload {
   userId: string;
   email: string;
-  rol: 'REPARTIDOR' | 'ADMIN';
+  rol: AllowedRole;
 }
 
 declare global {
@@ -22,6 +24,8 @@ export function authenticate(
   _res: Response,
   next: NextFunction
 ): void {
+  if (req.user) return next();
+
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -47,7 +51,7 @@ export function authenticate(
 
 /** Middleware que verifica que el usuario tenga uno de los roles indicados.
  *  Debe usarse después de `authenticate`. */
-export function requireRole(...roles: Array<'REPARTIDOR' | 'ADMIN'>) {
+export function requireRole(...roles: AllowedRole[]) {
   return (req: Request, _res: Response, next: NextFunction): void => {
     try {
       if (!req.user) {
