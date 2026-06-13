@@ -52,6 +52,11 @@ class PedidoService {
     return res.data.data
   }
 
+  async cancelar(id: string, motivo: string): Promise<Pedido> {
+    const res = await api.patch<ApiResponse<Pedido>>(`/pedidos/${id}/cancelar`, { motivo })
+    return res.data.data
+  }
+
   getErrorMessage(error: unknown): string {
     if (isAxiosError(error)) {
       const axiosErr = error as AxiosError<ApiErrorBody>

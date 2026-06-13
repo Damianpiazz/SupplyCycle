@@ -55,6 +55,11 @@ class ClienteService {
     return res.data.data
   }
 
+  async actualizar(id: string, data: Partial<CrearClienteInput & { activo: boolean }>): Promise<Cliente> {
+    const res = await api.patch<ApiResponse<Cliente>>(`/clientes/${id}`, data)
+    return res.data.data
+  }
+
   getErrorMessage(error: unknown): string {
     if (isAxiosError(error)) {
       const axiosErr = error as AxiosError<ApiErrorBody>

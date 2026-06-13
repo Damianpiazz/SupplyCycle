@@ -1,1 +1,6 @@
 export { welcomeFlow } from './welcome.flow.js'
+export { altaFlow, yaRegistradoFlow } from './alta.flow.js'
+export { pedidoFlow, noRegistradoFlow } from './pedido.flow.js'
+export { reclamoFlow } from './reclamo.flow.js'
+export { cancelarFlow } from './cancelar.flow.js'
+export { bajaFlow } from './baja.flow.js'
