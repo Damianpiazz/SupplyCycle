@@ -37,7 +37,7 @@ export async function createForm(_req: Request, res: Response, next: NextFunctio
         where: { deletedAt: null },
         orderBy: { fecha: 'desc' },
         take: 500,
-        select: { id: true, numeroPedido: true, fecha: true, cliente: { select: { nombre: true, apellido: true } } },
+        select: { id: true, numeroPedido: true, fecha: true, domicilio: { select: { cliente: { select: { nombre: true, apellido: true } } } } },
       }),
     ]);
     res.render('visitas/form', { title: 'Nueva Visita', visita: null, empleados, pedidos, errors: {} });
