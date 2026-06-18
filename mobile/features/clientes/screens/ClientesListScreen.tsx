@@ -54,7 +54,10 @@ export default function ClientesListScreen() {
     const term = search.trim().toLowerCase();
 
     return list.filter((c) => {
-      if (filtroDia && c.diaEntrega !== filtroDia) return false;
+      if (filtroDia) {
+        const hasDia = c.domicilios.some((d) => d.dias.some((dia) => dia.nombre === filtroDia));
+        if (!hasDia) return false;
+      }
       if (!term) return true;
       const fullName = `${c.nombre} ${c.apellido}`.toLowerCase();
       return fullName.includes(term) || c.telefono.includes(term);
@@ -176,23 +179,20 @@ export default function ClientesListScreen() {
                   {item.nombre} {item.apellido}
                 </Text>
                 <Text style={[styles.cardDireccion, { color: theme.muted }]}>
-                  {item.domicilio.calle} {item.domicilio.numero},{' '}
-                  {item.domicilio.localidad}
+                  {item.domicilios[0]?.calle} {item.domicilios[0]?.numero},{' '}
+                  {item.domicilios[0]?.localidad}
                 </Text>
                 <View style={styles.cardRow}>
                   <Text style={[styles.cardTel, { color: theme.muted }]}>
                     {item.telefono}
                   </Text>
-                  <View
-                    style={[
-                      styles.diaBadge,
-                      { backgroundColor: theme.tint + '20' },
-                    ]}
-                  >
-                    <Text style={[styles.diaText, { color: theme.tint }]}>
-                      {DIAS_LABEL[item.diaEntrega]}
-                    </Text>
-                  </View>
+                  {item.domicilios[0]?.dias[0] && (
+                    <View style={[styles.diaBadge, { backgroundColor: theme.tint + '20' }]}>
+                      <Text style={[styles.diaText, { color: theme.tint }]}>
+                        {DIAS_LABEL[item.domicilios[0].dias[0].nombre]}
+                      </Text>
+                    </View>
+                  )}
                 </View>
               </TouchableOpacity>
 
