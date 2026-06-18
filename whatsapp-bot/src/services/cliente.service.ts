@@ -7,19 +7,33 @@ type ApiErrorBody = {
   error: { code: string; message: string; timestamp: string; details?: Record<string, string[]> }
 }
 
+export interface Horario {
+  inicio: string
+  fin: string
+}
+
+export interface Dia {
+  nombre: string
+  horarios: Horario[]
+}
+
+export interface Domicilio {
+  id?: string
+  calle: string
+  numero: string
+  localidad: string
+  latitud?: number
+  longitud?: number
+  principal?: boolean
+  dias: Dia[]
+}
+
 export interface Cliente {
   id: string
   nombre: string
   apellido: string
   telefono: string
-  calle: string
-  numero: string
-  localidad: string
-  latitud: number
-  longitud: number
-  diaEntrega: string
-  horarioDesde: string
-  horarioHasta: string
+  domicilios: Domicilio[]
   observaciones?: string | null
   activo: boolean
 }
@@ -28,14 +42,18 @@ export interface CrearClienteInput {
   nombre: string
   apellido: string
   telefono: string
-  calle: string
-  numero: string
-  localidad: string
-  latitud: number
-  longitud: number
-  diaEntrega: string
-  horarioDesde: string
-  horarioHasta: string
+  domicilios: Array<{
+    calle: string
+    numero: string
+    localidad: string
+    latitud?: number
+    longitud?: number
+    principal?: boolean
+    dias: Array<{
+      nombre: string
+      horarios: Array<{ inicio: string; fin: string }>
+    }>
+  }>
   observaciones?: string
 }
 
