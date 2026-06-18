@@ -263,7 +263,7 @@ function AgregarPedidoModal({
                       {pedido.numeroPedido} — {pedido.cliente.nombre} {pedido.cliente.apellido}
                     </Text>
                     <Text style={[styles.pedidoDisponibleDireccion, { color: theme.muted }]} numberOfLines={1}>
-                      {pedido.cliente.domicilio.calle} {pedido.cliente.domicilio.numero}, {pedido.cliente.domicilio.localidad}
+                      {pedido.domicilio.calle} {pedido.domicilio.numero}, {pedido.domicilio.localidad}
                     </Text>
                     <Text style={[styles.pedidoDisponibleItems, { color: theme.muted }]}>
                       {pedido.items.length} ítem(s)
@@ -324,7 +324,7 @@ function PedidoCard({
         )}
       </View>
       <Text style={[styles.pedidoDireccion, { color: theme.muted }]} numberOfLines={1}>
-        {pedido.cliente.domicilio.calle} {pedido.cliente.domicilio.numero}, {pedido.cliente.domicilio.localidad}
+        {pedido.domicilio.calle} {pedido.domicilio.numero}, {pedido.domicilio.localidad}
       </Text>
       {pedido.items.length > 0 && (
         <View style={[styles.pedidoItemsList, { borderTopColor: theme.border }]}>
