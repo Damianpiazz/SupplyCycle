@@ -79,7 +79,8 @@ export function useCrearPedido() {
 
   return useMutation({
     mutationFn: (data: {
-      clienteId: string;
+      clienteId?: string;
+      domicilioId?: string;
       fecha?: string;
       items: Array<{ itemId: string; cantidad: number }>;
     }) => crearPedidoRequest(data),
@@ -91,14 +92,46 @@ export function useCrearPedido() {
 }
 
 // Confirmar entrega exitosa (con soporte offline)
+// Preview: cuando el repartidor entrega por primera vez en un domicilio,
+// se captura la ubicación GPS para georreferenciar la dirección.
+// TODO: instalar expo-location y descomentar el bloque GPS para activar.
 export function useConfirmarEntrega() {
   const queryClient = useQueryClient();
   const addToQueue = useOfflineStore((s) => s.addToQueue);
 
   return useMutation({
-    mutationFn: async (pedidoId: string) => {
+    mutationFn: async ({
+      pedidoId,
+      // latitud,  // ← descomentar cuando se active GPS
+      // longitud, // ← descomentar cuando se active GPS
+    }: {
+      pedidoId: string;
+      // latitud?: number;
+      // longitud?: number;
+    }) => {
       try {
-        return await confirmarEntregaRequest(pedidoId);
+        /*
+         * ── Captura automática de ubicación al confirmar ──
+         * Si el domicilio aún no tiene coordenadas registradas,
+         * se envían la latitud/longitud actuales para que el backend
+         * las persista en el domicilio de una vez por todas.
+         *
+         * Requisito: instalar expo-location
+         *   npx expo install expo-location
+         *
+         * y pedir permiso LocationPermission en app.json si no está.
+         *
+        import { getCurrentPositionAsync, requestForegroundPermissionsAsync } from 'expo-location';
+        const { status } = await requestForegroundPermissionsAsync();
+        let latitud: number | undefined;
+        let longitud: number | undefined;
+        if (status === 'granted') {
+          const pos = await getCurrentPositionAsync({ accuracy: 3 }); // ACCURACY_MEDIUM ≈ 100m
+          latitud = pos.coords.latitude;
+          longitud = pos.coords.longitude;
+        }
+         */
+        return await confirmarEntregaRequest(pedidoId /*, { latitud, longitud } */);
       } catch (error) {
         // Solo encolar si es error de red; errores 4xx/5xx se relanzan
         if (isNetworkError(error)) {
