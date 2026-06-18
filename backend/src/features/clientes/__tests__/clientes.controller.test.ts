@@ -38,8 +38,8 @@ function mockRes(): Response {
   return res as unknown as Response;
 }
 
-function mockNext(): NextFunction {
-  return vi.fn() as unknown as NextFunction;
+function mockNext() {
+  return vi.fn();
 }
 
 describe('ClientesController', () => {
@@ -107,14 +107,18 @@ describe('ClientesController', () => {
       nombre: 'Juan',
       apellido: 'Pérez',
       telefono: '1122334455',
-      calle: 'Av. Siempre Viva',
-      numero: '742',
-      localidad: 'CABA',
-      latitud: -34.6037,
-      longitud: -58.3816,
-      diaEntrega: 'LUNES',
-      horarioDesde: '09:00',
-      horarioHasta: '13:00',
+      domicilios: [{
+        calle: 'Av. Siempre Viva',
+        numero: '742',
+        localidad: 'CABA',
+        latitud: -34.6037,
+        longitud: -58.3816,
+        principal: true,
+        dias: [{
+          nombre: 'LUNES',
+          horarios: [{ inicio: '09:00', fin: '13:00' }],
+        }],
+      }],
     };
 
     it('crea cliente con body válido y responde 201', async () => {
@@ -141,7 +145,7 @@ describe('ClientesController', () => {
 
       expect(mockService.crearCliente).not.toHaveBeenCalled();
       expect(next).toHaveBeenCalledOnce();
-      expect(next.mock.calls[0][0]).toBeInstanceOf(ZodError);
+      expect(next.mock.calls[0]![0]).toBeInstanceOf(ZodError);
     });
   });
 
@@ -166,7 +170,7 @@ describe('ClientesController', () => {
     it('llama next con ZodError si el body tiene campos inválidos', async () => {
       const req = mockReq({
         params: { id: 'cliente-1' },
-        body: { latitud: 'no-es-numero' },
+        body: { telefono: 'corto' },
       });
       const res = mockRes();
       const next = mockNext();
@@ -175,7 +179,7 @@ describe('ClientesController', () => {
 
       expect(mockService.actualizarCliente).not.toHaveBeenCalled();
       expect(next).toHaveBeenCalledOnce();
-      expect(next.mock.calls[0][0]).toBeInstanceOf(ZodError);
+      expect(next.mock.calls[0]![0]).toBeInstanceOf(ZodError);
     });
   });
 
