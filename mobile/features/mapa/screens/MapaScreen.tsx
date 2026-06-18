@@ -106,8 +106,8 @@ export default function MapaScreen() {
               {selectedPedido.cliente.nombre} {selectedPedido.cliente.apellido}
             </Text>
             <Text style={[styles.infoCardDireccion, { color: theme.muted }]}>
-              {selectedPedido.cliente.domicilio.calle}{' '}
-              {selectedPedido.cliente.domicilio.numero}
+              {selectedPedido.domicilio.calle}{' '}
+              {selectedPedido.domicilio.numero}
             </Text>
             <TouchableOpacity
               style={[styles.verDetalleButton, { backgroundColor: theme.buttonPrimary }]}
