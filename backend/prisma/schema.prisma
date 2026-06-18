@@ -60,19 +60,10 @@ model Cliente {
   nombre        String    @db.VarChar(100)
   apellido      String    @db.VarChar(100)
   telefono      String    @db.VarChar(20)
-  calle         String
-  numero        String
-  localidad     String
-  latitud       Float
-  longitud      Float
-  diaEntrega    DiaSemana
-  horarioDesde  String
-  horarioHasta  String
   observaciones String?
   activo        Boolean   @default(true)
   creadoEn      DateTime  @default(now())
   actualizadoEn DateTime  @updatedAt
-  pedidos       Pedido[]
   domicilios    Domicilio[]
   retenidos     Retenido[]
   reclamos      Reclamo[]
@@ -93,7 +84,7 @@ model Item {
 model Pedido {
   id            String        @id @default(uuid())
   numeroPedido  String        @unique @map("numero_pedido") @db.VarChar(20)
-  clienteId     String
+  domicilioId   String
   repartoId     String?
   fecha         DateTime
   estado        EstadoPedido  @default(PENDIENTE)
@@ -102,7 +93,7 @@ model Pedido {
   creadoEn      DateTime      @default(now())
   actualizadoEn DateTime      @updatedAt
   deletedAt     DateTime?
-  cliente       Cliente       @relation(fields: [clienteId], references: [id])
+  domicilio     Domicilio     @relation(fields: [domicilioId], references: [id])
   reparto       Reparto?      @relation(fields: [repartoId], references: [id])
   items         PedidoItem[]
   visitas       Visita[]
@@ -148,12 +139,17 @@ model Domicilio {
   entreCalle2 String?
   numero      String   @db.VarChar(20)
   piso        String?
+  localidad   String   @db.VarChar(200)
+  latitud     Float?
+  longitud    Float?
+  principal   Boolean  @default(true)
   clienteId   String
   ciudadId    String
   creadoEn    DateTime @default(now())
   cliente     Cliente  @relation(fields: [clienteId], references: [id])
   ciudad      Ciudad   @relation(fields: [ciudadId], references: [id])
   dias        Dia[]
+  pedidos     Pedido[]
 }
 
 model Dia {
