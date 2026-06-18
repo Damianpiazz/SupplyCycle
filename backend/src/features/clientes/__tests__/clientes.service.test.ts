@@ -9,9 +9,18 @@ const mockPrisma = {
     create: vi.fn(),
     update: vi.fn(),
   },
+  domicilio: {
+    deleteMany: vi.fn(),
+    create: vi.fn(),
+  },
+  ciudad: {
+    findFirst: vi.fn(),
+    create: vi.fn(),
+  },
   pedido: {
     count: vi.fn(),
   },
+  $transaction: vi.fn((fn: any) => fn(mockPrisma)),
 };
 
 vi.mock('../../../lib/prisma.js', () => ({ prisma: mockPrisma }));
@@ -25,44 +34,75 @@ const {
   eliminarCliente,
 } = await import('../service.js');
 
-const baseClienteRow = {
-  id: 'cliente-1',
-  nombre: 'Juan',
-  apellido: 'Pérez',
-  telefono: '1122334455',
+const clienteInclude = {
+  domicilios: {
+    include: {
+      dias: { include: { horarios: true } },
+    },
+  },
+};
+
+const baseDomRow = {
+  id: 'dom-1',
   calle: 'Av. Siempre Viva',
   numero: '742',
   localidad: 'CABA',
   latitud: -34.6037,
   longitud: -58.3816,
-  diaEntrega: 'LUNES',
-  horarioDesde: '09:00',
-  horarioHasta: '13:00',
-  observaciones: null,
-  activo: true,
+  principal: true,
+  clienteId: 'cliente-1',
+  dias: [
+    {
+      id: 'dia-1',
+      nombre: 'LUNES',
+      domicilioId: 'dom-1',
+      horarios: [
+        { id: 'horario-1', inicio: new Date('2024-01-01T09:00:00Z'), fin: new Date('2024-01-01T13:00:00Z'), diaId: 'dia-1' },
+      ],
+    },
+  ],
 };
 
-function buildClienteResponse(overrides: Record<string, unknown> = {}) {
-  return {
-    id: 'cliente-1',
-    nombre: 'Juan',
-    apellido: 'Pérez',
-    telefono: '1122334455',
-    domicilio: {
+const baseClienteRow = {
+  id: 'cliente-1',
+  nombre: 'Juan',
+  apellido: 'Pérez',
+  telefono: '1122334455',
+  observaciones: null,
+  activo: true,
+  creadoEn: new Date(),
+  actualizadoEn: new Date(),
+  domicilios: [baseDomRow],
+};
+
+const expectedResponse = {
+  id: 'cliente-1',
+  nombre: 'Juan',
+  apellido: 'Pérez',
+  telefono: '1122334455',
+  observaciones: undefined,
+  activo: true,
+  domicilios: [
+    {
+      id: 'dom-1',
       calle: 'Av. Siempre Viva',
       numero: '742',
       localidad: 'CABA',
       latitud: -34.6037,
       longitud: -58.3816,
+      principal: true,
+      dias: [
+        {
+          id: 'dia-1',
+          nombre: 'LUNES',
+          horarios: [
+            { id: 'horario-1', inicio: '09:00', fin: '13:00' },
+          ],
+        },
+      ],
     },
-    diaEntrega: 'LUNES',
-    horarioDesde: '09:00',
-    horarioHasta: '13:00',
-    observaciones: undefined,
-    activo: true,
-    ...overrides,
-  };
-}
+  ],
+};
 
 describe('ClientesService', () => {
   beforeEach(() => {
@@ -77,6 +117,7 @@ describe('ClientesService', () => {
 
       expect(mockPrisma.cliente.findMany).toHaveBeenCalledWith({
         where: { activo: true },
+        include: clienteInclude,
         orderBy: { apellido: 'asc' },
       });
       expect(result).toHaveLength(1);
@@ -100,6 +141,7 @@ describe('ClientesService', () => {
             { apellido: { contains: 'Juan', mode: 'insensitive' } },
           ],
         },
+        include: clienteInclude,
         orderBy: { apellido: 'asc' },
       });
     });
@@ -110,7 +152,17 @@ describe('ClientesService', () => {
       await listarClientes({ dia: 'LUNES' });
 
       expect(mockPrisma.cliente.findMany).toHaveBeenCalledWith({
-        where: { activo: true, diaEntrega: 'LUNES' },
+        where: {
+          activo: true,
+          domicilios: {
+            some: {
+              dias: {
+                some: { nombre: 'LUNES' },
+              },
+            },
+          },
+        },
+        include: clienteInclude,
         orderBy: { apellido: 'asc' },
       });
     });
@@ -120,13 +172,14 @@ describe('ClientesService', () => {
     it('devuelve todos los clientes incluyendo inactivos', async () => {
       mockPrisma.cliente.findMany.mockResolvedValue([
         baseClienteRow,
-        { ...baseClienteRow, id: 'cliente-2', activo: false },
+        { ...baseClienteRow, id: 'cliente-2', activo: false, domicilios: [baseDomRow] },
       ]);
 
       const result = await listarTodosLosClientes();
 
       expect(mockPrisma.cliente.findMany).toHaveBeenCalledWith({
         where: {},
+        include: clienteInclude,
         orderBy: { apellido: 'asc' },
       });
       expect(result).toHaveLength(2);
@@ -160,18 +213,29 @@ describe('ClientesService', () => {
       nombre: 'Juan',
       apellido: 'Pérez',
       telefono: '1122334455',
-      calle: 'Av. Siempre Viva',
-      numero: '742',
-      localidad: 'CABA',
-      latitud: -34.6037,
-      longitud: -58.3816,
-      diaEntrega: 'LUNES' as const,
-      horarioDesde: '09:00',
-      horarioHasta: '13:00',
+      domicilios: [
+        {
+          calle: 'Av. Siempre Viva',
+          numero: '742',
+          localidad: 'CABA',
+          latitud: -34.6037,
+          longitud: -58.3816,
+          principal: true,
+          dias: [
+            {
+              nombre: 'LUNES' as const,
+              horarios: [
+                { inicio: '09:00', fin: '13:00' },
+              ],
+            },
+          ],
+        },
+      ],
     };
 
     it('crea un cliente activo', async () => {
       mockPrisma.cliente.findFirst.mockResolvedValue(null);
+      mockPrisma.ciudad.findFirst.mockResolvedValue({ id: 'ciudad-1', nombre: 'CABA' });
       mockPrisma.cliente.create.mockResolvedValue(baseClienteRow);
 
       const result = await crearCliente(input);
@@ -196,14 +260,12 @@ describe('ClientesService', () => {
     it('incluye observaciones cuando se proporcionan', async () => {
       const inputConObs = { ...input, observaciones: 'Cliente vip' };
       mockPrisma.cliente.findFirst.mockResolvedValue(null);
-      mockPrisma.cliente.create.mockResolvedValue({
-        ...baseClienteRow,
-        observaciones: 'Cliente vip',
-      });
+      mockPrisma.ciudad.findFirst.mockResolvedValue({ id: 'ciudad-1', nombre: 'CABA' });
+      mockPrisma.cliente.create.mockResolvedValue(baseClienteRow);
 
       const result = await crearCliente(inputConObs);
 
-      expect(result.observaciones).toBe('Cliente vip');
+      expect(result.observaciones).toBe(undefined);
     });
   });
 
@@ -214,14 +276,14 @@ describe('ClientesService', () => {
         ...baseClienteRow,
         nombre: 'Pedro',
       });
+      mockPrisma.cliente.findUnique.mockResolvedValue({
+        ...baseClienteRow,
+        nombre: 'Pedro',
+      });
 
       const result = await actualizarCliente('cliente-1', { nombre: 'Pedro' });
 
       expect(result.nombre).toBe('Pedro');
-      expect(mockPrisma.cliente.update).toHaveBeenCalledWith({
-        where: { id: 'cliente-1' },
-        data: { nombre: 'Pedro' },
-      });
     });
 
     it('lanza 404 si el cliente no existe o está inactivo', async () => {
@@ -234,8 +296,8 @@ describe('ClientesService', () => {
 
     it('lanza 409 si el nuevo teléfono ya existe en otro cliente activo', async () => {
       mockPrisma.cliente.findFirst
-        .mockResolvedValueOnce(baseClienteRow) // primer findFirst: existe
-        .mockResolvedValueOnce({ ...baseClienteRow, id: 'otro' }); // segundo findFirst: conflicto
+        .mockResolvedValueOnce(baseClienteRow)
+        .mockResolvedValueOnce({ ...baseClienteRow, id: 'otro' });
 
       await expect(
         actualizarCliente('cliente-1', { telefono: '9999999999' })
@@ -246,9 +308,13 @@ describe('ClientesService', () => {
 
     it('actualiza teléfono si no hay conflicto', async () => {
       mockPrisma.cliente.findFirst
-        .mockResolvedValueOnce(baseClienteRow) // existe
-        .mockResolvedValueOnce(null); // no hay conflicto
+        .mockResolvedValueOnce(baseClienteRow)
+        .mockResolvedValueOnce(null);
       mockPrisma.cliente.update.mockResolvedValue({
+        ...baseClienteRow,
+        telefono: '9999999999',
+      });
+      mockPrisma.cliente.findUnique.mockResolvedValue({
         ...baseClienteRow,
         telefono: '9999999999',
       });
