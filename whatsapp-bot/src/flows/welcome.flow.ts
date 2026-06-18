@@ -5,7 +5,7 @@ import { clienteService } from '../services/cliente.service.js'
 import { normalizePhone } from '../utils/normalize-phone.js'
 
 const MENU_CLIENTE = [
-  '┌── *SUPPLYCYCLE* ──┐',
+  '*SupplyCycle* — Menú Principal',
   '',
   '✅ *Bienvenido! Sos cliente registrado*',
   '',
@@ -17,12 +17,10 @@ const MENU_CLIENTE = [
   '📝 *reclamo* — Hacer un reclamo',
   '🚫 *baja* — Darme de baja como cliente',
   '❓ *ayuda* — Ver este menú de nuevo',
-  '',
-  '└────────────────────┘',
 ].join('\n')
 
 const MENU_NO_CLIENTE = [
-  '┌── *SUPPLYCYCLE* ──┐',
+  '*SupplyCycle* — Menú Principal',
   '',
   '👋 *Hola! Soy el asistente virtual de SupplyCycle*',
   '',
@@ -31,8 +29,6 @@ const MENU_NO_CLIENTE = [
   '',
   '📋 *alta* — Darme de alta como cliente',
   '❓ *ayuda* — Ver este menú de nuevo',
-  '',
-  '└────────────────────┘',
 ].join('\n')
 
 export const welcomeFlow = addKeyword<Provider, Database>(EVENTS.WELCOME)
