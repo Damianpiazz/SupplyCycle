@@ -135,7 +135,7 @@ export default function PedidosListScreen() {
                 </View>
               </View>
               <Text style={[styles.cardDireccion, { color: theme.muted }]}>
-                {item.cliente.domicilio.calle} {item.cliente.domicilio.numero}
+                {item.domicilio.calle} {item.domicilio.numero}
               </Text>
               <Text style={[styles.cardFecha, { color: theme.muted }]}>
                 {formatFecha(item.fecha)}
