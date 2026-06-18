@@ -17,8 +17,35 @@ const mockPedido = {
   cliente: {
     id: 'cli-1', nombre: 'María', apellido: 'González',
     telefono: '1155550101',
-    domicilio: { calle: 'Av. Corrientes', numero: '1234', localidad: 'CABA', latitud: -34.6037, longitud: -58.3816 },
-    diaEntrega: 'LUNES', horarioDesde: '09:00', horarioHasta: '12:00',
+    activo: true,
+    domicilios: [{
+      id: 'dom-cliente-1',
+      calle: 'Av. Corrientes',
+      numero: '1234',
+      localidad: 'CABA',
+      latitud: -34.6037,
+      longitud: -58.3816,
+      principal: true,
+      dias: [{
+        id: 'dia-1',
+        nombre: 'LUNES',
+        horarios: [{ id: 'hor-1', inicio: '09:00', fin: '12:00' }],
+      }],
+    }],
+  },
+  domicilio: {
+    id: 'dom-pedido-1',
+    calle: 'Av. Corrientes',
+    numero: '1234',
+    localidad: 'CABA',
+    latitud: -34.6037,
+    longitud: -58.3816,
+    principal: true,
+    dias: [{
+      id: 'dia-1',
+      nombre: 'LUNES',
+      horarios: [{ id: 'hor-1', inicio: '09:00', fin: '12:00' }],
+    }],
   },
   items: [{ id: 'pi-1', item: { id: 'item-001', nombre: 'Bidón 20L', unidad: 'unidad', activo: true }, cantidad: 2 }],
 };
