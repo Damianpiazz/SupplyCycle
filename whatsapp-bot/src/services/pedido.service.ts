@@ -1,7 +1,7 @@
 import { type AxiosError, isAxiosError } from 'axios'
 import { api } from '../lib/axios.js'
-import type { Cliente } from './cliente.service.js'
 import type { Item } from './item.service.js'
+import type { Domicilio } from './cliente.service.js'
 
 type ApiResponse<T> = { data: T }
 type ApiListResponse<T> = { data: T[]; total: number }
@@ -9,9 +9,17 @@ type ApiErrorBody = {
   error: { code: string; message: string; timestamp: string; details?: Record<string, string[]> }
 }
 
+export interface PedidoCliente {
+  id: string
+  nombre: string
+  apellido: string
+  telefono: string
+  observaciones?: string | null
+  activo: boolean
+}
+
 export interface PedidoItem {
   id: string
-  itemId: string
   cantidad: number
   precioUnitario?: number | null
   item: Item
@@ -20,13 +28,15 @@ export interface PedidoItem {
 export interface Pedido {
   id: string
   numeroPedido: string
-  clienteId: string
-  repartoId?: string | null
-  fecha: string
-  estado: string
   orden: number
+  estado: string
+  fecha: string
+  motivoFalla: string | null
+  total: number
+  itemsCount: number
   items: PedidoItem[]
-  cliente?: Cliente
+  cliente: PedidoCliente
+  domicilio: Domicilio
 }
 
 export interface CrearPedidoInput {
