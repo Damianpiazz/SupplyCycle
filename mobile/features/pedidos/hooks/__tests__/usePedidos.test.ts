@@ -286,7 +286,7 @@ describe('usePedidos hooks', () => {
 
       useConfirmarEntrega();
       const opts = getMutationOptions();
-      const result = await opts.mutationFn('p1');
+      const result = await opts.mutationFn({ pedidoId: 'p1' });
 
       expect(mockConfirmarEntrega).toHaveBeenCalledWith('p1');
       expect(result).toEqual({ id: 'p1' });
@@ -328,7 +328,7 @@ describe('usePedidos hooks', () => {
 
       useConfirmarEntrega();
       const opts = getMutationOptions();
-      const result = await opts.mutationFn('p1');
+      const result = await opts.mutationFn({ pedidoId: 'p1' });
 
       expect(mockAddToQueue).toHaveBeenCalledWith({
         type: 'CONFIRMAR_ENTREGA',
