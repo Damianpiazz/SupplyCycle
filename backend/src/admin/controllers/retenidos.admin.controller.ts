@@ -36,7 +36,7 @@ export async function createForm(_req: Request, res: Response, next: NextFunctio
     const [items, clientes, pedidos] = await Promise.all([
       prisma.item.findMany({ where: { activo: true }, orderBy: { nombre: 'asc' } }),
       prisma.cliente.findMany({ where: { activo: true }, orderBy: [{ apellido: 'asc' }, { nombre: 'asc' }] }),
-      prisma.pedido.findMany({ where: { deletedAt: null }, orderBy: { fecha: 'desc' }, take: 500, select: { id: true, numeroPedido: true, cliente: { select: { nombre: true, apellido: true } } } }),
+      prisma.pedido.findMany({ where: { deletedAt: null }, orderBy: { fecha: 'desc' }, take: 500, select: { id: true, numeroPedido: true, domicilio: { select: { cliente: { select: { nombre: true, apellido: true } } } } } }),
     ]);
     res.render('retenidos/form', { title: 'Nuevo Retenido', retenido: null, items, clientes, pedidos, ESTADOS, errors: {} });
   } catch (err) { next(err); }
@@ -61,7 +61,7 @@ export async function create(req: Request, res: Response, next: NextFunction): P
     const [items, clientes, pedidos] = await Promise.all([
       prisma.item.findMany({ where: { activo: true }, orderBy: { nombre: 'asc' } }),
       prisma.cliente.findMany({ where: { activo: true }, orderBy: [{ apellido: 'asc' }, { nombre: 'asc' }] }),
-      prisma.pedido.findMany({ where: { deletedAt: null }, orderBy: { fecha: 'desc' }, take: 500, select: { id: true, numeroPedido: true, cliente: { select: { nombre: true, apellido: true } } } }),
+      prisma.pedido.findMany({ where: { deletedAt: null }, orderBy: { fecha: 'desc' }, take: 500, select: { id: true, numeroPedido: true, domicilio: { select: { cliente: { select: { nombre: true, apellido: true } } } } } }),
     ]);
     res.render('retenidos/form', { title: 'Nuevo Retenido', retenido: null, items, clientes, pedidos, ESTADOS, errors: { general: err.message } });
   }
@@ -73,7 +73,7 @@ export async function editForm(req: Request, res: Response, next: NextFunction):
       prisma.retenido.findUniqueOrThrow({ where: { id: req.params.id as string } }),
       prisma.item.findMany({ where: { activo: true }, orderBy: { nombre: 'asc' } }),
       prisma.cliente.findMany({ where: { activo: true }, orderBy: [{ apellido: 'asc' }, { nombre: 'asc' }] }),
-      prisma.pedido.findMany({ where: { deletedAt: null }, orderBy: { fecha: 'desc' }, take: 500, select: { id: true, numeroPedido: true, cliente: { select: { nombre: true, apellido: true } } } }),
+      prisma.pedido.findMany({ where: { deletedAt: null }, orderBy: { fecha: 'desc' }, take: 500, select: { id: true, numeroPedido: true, domicilio: { select: { cliente: { select: { nombre: true, apellido: true } } } } } }),
     ]);
     res.render('retenidos/form', { title: 'Editar Retenido', retenido, items, clientes, pedidos, ESTADOS, errors: {} });
   } catch (err) { next(err); }
