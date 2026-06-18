@@ -46,10 +46,10 @@ async function main() {
   await seedHorarios(dias);
 
   const repartosList = await seedRepartos(repartidores);
-  const pedidosList = await seedPedidos(clientes, itemsList, repartosList);
+  const pedidosList = await seedPedidos(clientes, itemsList, repartosList, domicilios);
 
   await seedVisitas(pedidosList, empleadosList);
-  await seedRetenidos(clientes, itemsList, pedidosList);
+  await seedRetenidos(clientes, itemsList, pedidosList, domicilios);
   await seedReclamos(clientes);
 
   console.log('\n🎉 Seed completado exitosamente!');
