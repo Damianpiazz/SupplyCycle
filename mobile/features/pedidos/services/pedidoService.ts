@@ -29,19 +29,21 @@ export async function getPedidosRequest(params?: {
 }
 
 export async function confirmarEntregaRequest(
-  id: string
+  id: string,
+  options?: { latitud?: number; longitud?: number }
 ): Promise<{ id: string; estado: 'ENTREGADO'; actualizadoEn: string }> {
   return unwrapResponse(
     await apiClient.patch<ApiResponse<{
       id: string;
       estado: 'ENTREGADO';
       actualizadoEn: string;
-    }>>(`/pedidos/${id}/confirmar`),
+    }>>(`/pedidos/${id}/confirmar`, options ?? {}),
   );
 }
 
 export async function crearPedidoRequest(data: {
-  clienteId: string;
+  clienteId?: string;
+  domicilioId?: string;
   fecha?: string;
   items: Array<{ itemId: string; cantidad: number }>;
 }): Promise<Pedido> {
