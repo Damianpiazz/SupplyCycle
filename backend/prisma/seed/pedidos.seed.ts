@@ -6,7 +6,12 @@ faker.seed(42);
 
 const ESTADOS = ['PENDIENTE', 'PENDIENTE', 'EN_RUTA', 'ENTREGADO', 'ENTREGADO', 'ENTREGADO', 'ENTREGADO', 'NO_ENTREGADO'] as const;
 
-export async function seedPedidos(clientes: any[], items: any[], repartos: any[]) {
+export async function seedPedidos(clientes: any[], items: any[], repartos: any[], domicilios: any[]) {
+  const clienteDomicilioMap = new Map<string, string>();
+  for (const d of domicilios) {
+    clienteDomicilioMap.set(d.clienteId, d.id);
+  }
+
   const itemPrices: Record<string, number> = {};
   for (const it of items) itemPrices[it.id] = it.precio ?? 500;
 
@@ -23,7 +28,7 @@ export async function seedPedidos(clientes: any[], items: any[], repartos: any[]
 
       pedidosData.push({
         numeroPedido: `P-${String(numPedido++).padStart(5, '0')}`,
-        clienteId: clientesAsignados[i]!.id,
+        domicilioId: clienteDomicilioMap.get(clientesAsignados[i]!.id)!,
         repartoId: reparto.id,
         fecha: reparto.fecha,
         estado: reparto.estado === 'COMPLETADO' ? faker.helpers.arrayElement(['ENTREGADO', 'ENTREGADO', 'ENTREGADO', 'NO_ENTREGADO']) as string
@@ -49,7 +54,7 @@ export async function seedPedidos(clientes: any[], items: any[], repartos: any[]
 
     pedidosData.push({
       numeroPedido: `P-${String(numPedido++).padStart(5, '0')}`,
-      clienteId: cliente.id,
+      domicilioId: clienteDomicilioMap.get(cliente.id)!,
       repartoId: null,
       fecha,
       estado: faker.helpers.arrayElement(['PENDIENTE', 'CANCELADO']) as string,
