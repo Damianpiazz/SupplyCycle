@@ -2,6 +2,67 @@ import { prisma } from '../../lib/prisma.js';
 import { ApiError } from '../../utils/api-error.js';
 import { dateFromISODate, fmtDate } from '../../utils/dates.js';
 
+function dateToTimeString(date: Date): string {
+  return date.toISOString().slice(11, 16);
+}
+
+const pedidoDomicilioInclude = {
+  domicilio: {
+    include: {
+      cliente: true,
+      dias: {
+        take: 1,
+        include: { horarios: { take: 1 } },
+      },
+    },
+  },
+} as const;
+
+function mapPedidoCliente(domicilio: {
+  calle: string;
+  numero: string;
+  localidad: string;
+  latitud: number | null;
+  longitud: number | null;
+  cliente: {
+    id: string;
+    nombre: string;
+    apellido: string;
+    telefono: string;
+    observaciones: string | null;
+    activo: boolean;
+  };
+  dias: Array<{
+    nombre: string;
+    horarios: Array<{
+      inicio: Date;
+      fin: Date;
+    }>;
+  }>;
+}) {
+  const dia = domicilio.dias?.[0];
+  const horario = dia?.horarios?.[0];
+
+  return {
+    id: domicilio.cliente.id,
+    nombre: domicilio.cliente.nombre,
+    apellido: domicilio.cliente.apellido,
+    telefono: domicilio.cliente.telefono,
+    domicilio: {
+      calle: domicilio.calle,
+      numero: domicilio.numero,
+      localidad: domicilio.localidad,
+      latitud: domicilio.latitud ?? undefined,
+      longitud: domicilio.longitud ?? undefined,
+    },
+    horarioDesde: horario ? dateToTimeString(horario.inicio) : '08:00',
+    horarioHasta: horario ? dateToTimeString(horario.fin) : '17:00',
+    diaEntrega: dia?.nombre ?? 'LUNES',
+    observaciones: domicilio.cliente.observaciones ?? undefined,
+    activo: domicilio.cliente.activo,
+  };
+}
+
 function formatReparto(reparto: {
   id: string;
   repartidorId: string;
@@ -69,7 +130,7 @@ export async function obtenerReparto(id: string) {
     include: {
       pedidos: {
         include: {
-          cliente: true,
+          ...pedidoDomicilioInclude,
           items: { include: { item: true } },
         },
         orderBy: { orden: 'asc' },
@@ -82,37 +143,7 @@ export async function obtenerReparto(id: string) {
   }
 
   const totalPedidos = reparto.pedidos.length;
-  const pedidosList = reparto.pedidos as Array<{
-    id: string;
-    orden: number;
-    estado: string;
-    fecha: Date;
-    motivoFalla: string | null;
-    cliente: {
-      id: string;
-      nombre: string;
-      apellido: string;
-      telefono: string;
-      calle: string;
-      numero: string;
-      localidad: string;
-      latitud: number;
-      longitud: number;
-      horarioDesde: string;
-      horarioHasta: string;
-      diaEntrega: string;
-      observaciones: string | null;
-      activo: boolean;
-    };
-    items: Array<{
-      id: string;
-      cantidad: number;
-      precioUnitario: number | null;
-      item: { id: string; nombre: string; descripcion: string | null; unidad: string; activo: boolean };
-    }>;
-  }>;
-
-  const completados = pedidosList.filter((p) => p.estado !== 'PENDIENTE').length;
+  const completados = reparto.pedidos.filter((p) => p.estado !== 'PENDIENTE').length;
   const pendientes = totalPedidos - completados;
 
   return {
@@ -123,31 +154,15 @@ export async function obtenerReparto(id: string) {
     horaInicio: reparto.horaInicio ?? undefined,
     horaFin: reparto.horaFin ?? undefined,
     resumen: { totalPedidos, completados, pendientes },
-    pedidos: pedidosList.map((p) => ({
+    pedidos: reparto.pedidos.map((p: any) => ({
       id: p.id,
+      numeroPedido: p.numeroPedido,
       orden: p.orden,
       estado: p.estado,
       fecha: p.fecha.toISOString(),
       motivoFalla: p.motivoFalla ?? null,
-      cliente: {
-        id: p.cliente.id,
-        nombre: p.cliente.nombre,
-        apellido: p.cliente.apellido,
-        telefono: p.cliente.telefono,
-        domicilio: {
-          calle: p.cliente.calle,
-          numero: p.cliente.numero,
-          localidad: p.cliente.localidad,
-          latitud: p.cliente.latitud,
-          longitud: p.cliente.longitud,
-        },
-        horarioDesde: p.cliente.horarioDesde,
-        horarioHasta: p.cliente.horarioHasta,
-        diaEntrega: p.cliente.diaEntrega,
-        observaciones: p.cliente.observaciones ?? undefined,
-        activo: p.cliente.activo,
-      },
-      items: p.items.map((pi) => ({
+      cliente: mapPedidoCliente(p.domicilio),
+      items: p.items.map((pi: any) => ({
         id: pi.id,
         item: {
           id: pi.item.id,
@@ -249,7 +264,7 @@ export async function obtenerRepartoAdmin(id: string) {
       repartidor: { select: { id: true, nombre: true, apellido: true, email: true } },
       pedidos: {
         include: {
-          cliente: true,
+          ...pedidoDomicilioInclude,
           items: { include: { item: true } },
         },
         orderBy: { orden: 'asc' },
@@ -262,7 +277,7 @@ export async function obtenerRepartoAdmin(id: string) {
   }
 
   const totalPedidos = reparto.pedidos.length;
-  const completados = reparto.pedidos.filter((p) => p.estado !== 'PENDIENTE').length;
+  const completados = reparto.pedidos.filter((p: any) => p.estado !== 'PENDIENTE').length;
   const pendientes = totalPedidos - completados;
 
   return {
@@ -279,31 +294,15 @@ export async function obtenerRepartoAdmin(id: string) {
       email: reparto.repartidor.email,
     },
     resumen: { totalPedidos, completados, pendientes },
-    pedidos: reparto.pedidos.map((p) => ({
+    pedidos: reparto.pedidos.map((p: any) => ({
       id: p.id,
+      numeroPedido: p.numeroPedido,
       orden: p.orden,
       estado: p.estado,
       fecha: p.fecha.toISOString(),
       motivoFalla: p.motivoFalla ?? null,
-      cliente: {
-        id: p.cliente.id,
-        nombre: p.cliente.nombre,
-        apellido: p.cliente.apellido,
-        telefono: p.cliente.telefono,
-        domicilio: {
-          calle: p.cliente.calle,
-          numero: p.cliente.numero,
-          localidad: p.cliente.localidad,
-          latitud: p.cliente.latitud,
-          longitud: p.cliente.longitud,
-        },
-        horarioDesde: p.cliente.horarioDesde,
-        horarioHasta: p.cliente.horarioHasta,
-        diaEntrega: p.cliente.diaEntrega,
-        observaciones: p.cliente.observaciones ?? undefined,
-        activo: p.cliente.activo,
-      },
-      items: p.items.map((pi) => ({
+      cliente: mapPedidoCliente(p.domicilio),
+      items: p.items.map((pi: any) => ({
         id: pi.id,
         item: {
           id: pi.item.id,
@@ -329,7 +328,7 @@ export async function obtenerRepartoDelDia(repartidorId: string) {
     include: {
       pedidos: {
         include: {
-          cliente: true,
+          ...pedidoDomicilioInclude,
           items: { include: { item: true } },
         },
         orderBy: { orden: 'asc' },
@@ -343,7 +342,7 @@ export async function obtenerRepartoDelDia(repartidorId: string) {
 
   const totalPedidos = reparto.pedidos.length;
   const completados = reparto.pedidos.filter(
-    (p) => p.estado !== 'PENDIENTE'
+    (p: any) => p.estado !== 'PENDIENTE'
   ).length;
   const pendientes = totalPedidos - completados;
 
@@ -355,31 +354,15 @@ export async function obtenerRepartoDelDia(repartidorId: string) {
     horaInicio: reparto.horaInicio ?? undefined,
     horaFin: reparto.horaFin ?? undefined,
     resumen: { totalPedidos, completados, pendientes },
-    pedidos: reparto.pedidos.map((p) => ({
+    pedidos: reparto.pedidos.map((p: any) => ({
       id: p.id,
+      numeroPedido: p.numeroPedido,
       orden: p.orden,
       estado: p.estado,
       fecha: p.fecha.toISOString(),
       motivoFalla: p.motivoFalla ?? null,
-      cliente: {
-        id: p.cliente.id,
-        nombre: p.cliente.nombre,
-        apellido: p.cliente.apellido,
-        telefono: p.cliente.telefono,
-        domicilio: {
-          calle: p.cliente.calle,
-          numero: p.cliente.numero,
-          localidad: p.cliente.localidad,
-          latitud: p.cliente.latitud,
-          longitud: p.cliente.longitud,
-        },
-        horarioDesde: p.cliente.horarioDesde,
-        horarioHasta: p.cliente.horarioHasta,
-        diaEntrega: p.cliente.diaEntrega,
-        observaciones: p.cliente.observaciones ?? undefined,
-        activo: p.cliente.activo,
-      },
-      items: p.items.map((pi) => ({
+      cliente: mapPedidoCliente(p.domicilio),
+      items: p.items.map((pi: any) => ({
         id: pi.id,
         item: {
           id: pi.item.id,
@@ -458,7 +441,7 @@ export async function crearReparto(data: {
     include: {
       pedidos: {
         include: {
-          cliente: true,
+          ...pedidoDomicilioInclude,
           items: { include: { item: true } },
         },
         orderBy: { orden: 'asc' },
@@ -474,30 +457,14 @@ export async function crearReparto(data: {
     fecha: fmtDate(reparto.fecha),
     estado: reparto.estado,
     resumen: { totalPedidos, completados: 0, pendientes: totalPedidos },
-    pedidos: reparto.pedidos.map((p) => ({
+    pedidos: reparto.pedidos.map((p: any) => ({
       id: p.id,
+      numeroPedido: p.numeroPedido,
       orden: p.orden,
       estado: p.estado,
       fecha: p.fecha.toISOString(),
-      cliente: {
-        id: p.cliente.id,
-        nombre: p.cliente.nombre,
-        apellido: p.cliente.apellido,
-        telefono: p.cliente.telefono,
-        domicilio: {
-          calle: p.cliente.calle,
-          numero: p.cliente.numero,
-          localidad: p.cliente.localidad,
-          latitud: p.cliente.latitud,
-          longitud: p.cliente.longitud,
-        },
-        horarioDesde: p.cliente.horarioDesde,
-        horarioHasta: p.cliente.horarioHasta,
-        diaEntrega: p.cliente.diaEntrega,
-        observaciones: p.cliente.observaciones ?? undefined,
-        activo: p.cliente.activo,
-      },
-      items: p.items.map((pi) => ({
+      cliente: mapPedidoCliente(p.domicilio),
+      items: p.items.map((pi: any) => ({
         id: pi.id,
         item: {
           id: pi.item.id,
