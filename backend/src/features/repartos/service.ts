@@ -18,7 +18,7 @@ const pedidoDomicilioInclude = {
   },
 } as const;
 
-function mapPedidoCliente(domicilio: {
+function mapClienteFromDomicilio(domicilio: {
   calle: string;
   numero: string;
   localidad: string;
@@ -32,34 +32,52 @@ function mapPedidoCliente(domicilio: {
     observaciones: string | null;
     activo: boolean;
   };
-  dias: Array<{
-    nombre: string;
-    horarios: Array<{
-      inicio: Date;
-      fin: Date;
-    }>;
-  }>;
 }) {
-  const dia = domicilio.dias?.[0];
-  const horario = dia?.horarios?.[0];
-
   return {
     id: domicilio.cliente.id,
     nombre: domicilio.cliente.nombre,
     apellido: domicilio.cliente.apellido,
     telefono: domicilio.cliente.telefono,
-    domicilio: {
-      calle: domicilio.calle,
-      numero: domicilio.numero,
-      localidad: domicilio.localidad,
-      latitud: domicilio.latitud ?? undefined,
-      longitud: domicilio.longitud ?? undefined,
-    },
-    horarioDesde: horario ? dateToTimeString(horario.inicio) : '08:00',
-    horarioHasta: horario ? dateToTimeString(horario.fin) : '17:00',
-    diaEntrega: dia?.nombre ?? 'LUNES',
     observaciones: domicilio.cliente.observaciones ?? undefined,
     activo: domicilio.cliente.activo,
+  };
+}
+
+function mapDomicilioFromDomicilio(domicilio: {
+  id: string;
+  calle: string;
+  numero: string;
+  localidad: string;
+  latitud: number | null;
+  longitud: number | null;
+  principal: boolean;
+  dias: Array<{
+    id: string;
+    nombre: string;
+    horarios: Array<{
+      id: string;
+      inicio: Date;
+      fin: Date;
+    }>;
+  }>;
+}) {
+  return {
+    id: domicilio.id,
+    calle: domicilio.calle,
+    numero: domicilio.numero,
+    localidad: domicilio.localidad,
+    latitud: domicilio.latitud ?? undefined,
+    longitud: domicilio.longitud ?? undefined,
+    principal: domicilio.principal,
+    dias: domicilio.dias.map((dia) => ({
+      id: dia.id,
+      nombre: dia.nombre,
+      horarios: dia.horarios.map((h) => ({
+        id: h.id,
+        inicio: dateToTimeString(h.inicio),
+        fin: dateToTimeString(h.fin),
+      })),
+    })),
   };
 }
 
@@ -161,7 +179,8 @@ export async function obtenerReparto(id: string) {
       estado: p.estado,
       fecha: p.fecha.toISOString(),
       motivoFalla: p.motivoFalla ?? null,
-      cliente: mapPedidoCliente(p.domicilio),
+      cliente: mapClienteFromDomicilio(p.domicilio),
+      domicilio: mapDomicilioFromDomicilio(p.domicilio),
       items: p.items.map((pi: any) => ({
         id: pi.id,
         item: {
@@ -301,7 +320,8 @@ export async function obtenerRepartoAdmin(id: string) {
       estado: p.estado,
       fecha: p.fecha.toISOString(),
       motivoFalla: p.motivoFalla ?? null,
-      cliente: mapPedidoCliente(p.domicilio),
+      cliente: mapClienteFromDomicilio(p.domicilio),
+      domicilio: mapDomicilioFromDomicilio(p.domicilio),
       items: p.items.map((pi: any) => ({
         id: pi.id,
         item: {
@@ -361,7 +381,8 @@ export async function obtenerRepartoDelDia(repartidorId: string) {
       estado: p.estado,
       fecha: p.fecha.toISOString(),
       motivoFalla: p.motivoFalla ?? null,
-      cliente: mapPedidoCliente(p.domicilio),
+      cliente: mapClienteFromDomicilio(p.domicilio),
+      domicilio: mapDomicilioFromDomicilio(p.domicilio),
       items: p.items.map((pi: any) => ({
         id: pi.id,
         item: {
@@ -463,7 +484,8 @@ export async function crearReparto(data: {
       orden: p.orden,
       estado: p.estado,
       fecha: p.fecha.toISOString(),
-      cliente: mapPedidoCliente(p.domicilio),
+      cliente: mapClienteFromDomicilio(p.domicilio),
+      domicilio: mapDomicilioFromDomicilio(p.domicilio),
       items: p.items.map((pi: any) => ({
         id: pi.id,
         item: {
