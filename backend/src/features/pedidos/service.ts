@@ -7,7 +7,12 @@ import type { Prisma } from '../../../generated/prisma/client.js';
 
 type PedidoConRelaciones = Prisma.PedidoGetPayload<{
   include: {
-    cliente: true;
+    domicilio: {
+      include: {
+        cliente: true;
+        dias: { include: { horarios: true } };
+      };
+    };
     items: { include: { item: true } };
   };
 }>;
@@ -41,6 +46,8 @@ function formatPedido(pedido: PedidoConRelaciones) {
     0
   );
 
+  const dom = pedido.domicilio;
+
   return {
     id: pedido.id,
     numeroPedido: pedido.numeroPedido,
@@ -51,23 +58,31 @@ function formatPedido(pedido: PedidoConRelaciones) {
     total,
     itemsCount: pedido.items.length,
     cliente: {
-        id: pedido.cliente.id,
-        nombre: pedido.cliente.nombre,
-        apellido: pedido.cliente.apellido,
-        telefono: pedido.cliente.telefono,
-        domicilio: {
-          calle: pedido.cliente.calle,
-          numero: pedido.cliente.numero,
-          localidad: pedido.cliente.localidad,
-          latitud: pedido.cliente.latitud,
-          longitud: pedido.cliente.longitud,
-        },
-        horarioDesde: pedido.cliente.horarioDesde,
-        horarioHasta: pedido.cliente.horarioHasta,
-        diaEntrega: pedido.cliente.diaEntrega,
-        observaciones: pedido.cliente.observaciones ?? undefined,
-        activo: pedido.cliente.activo,
-      },
+      id: dom.cliente.id,
+      nombre: dom.cliente.nombre,
+      apellido: dom.cliente.apellido,
+      telefono: dom.cliente.telefono,
+      observaciones: dom.cliente.observaciones ?? undefined,
+      activo: dom.cliente.activo,
+    },
+    domicilio: {
+      id: dom.id,
+      calle: dom.calle,
+      numero: dom.numero,
+      localidad: dom.localidad,
+      latitud: dom.latitud ?? undefined,
+      longitud: dom.longitud ?? undefined,
+      principal: dom.principal,
+      dias: dom.dias.map((dia) => ({
+        id: dia.id,
+        nombre: dia.nombre as 'LUNES' | 'MARTES' | 'MIERCOLES' | 'JUEVES' | 'VIERNES' | 'SABADO',
+        horarios: dia.horarios.map((h) => ({
+          id: h.id,
+          inicio: h.inicio.toISOString().slice(11, 16),
+          fin: h.fin.toISOString().slice(11, 16),
+        })),
+      })),
+    },
     items: pedido.items.map((pi) => ({
       id: pi.id,
       item: {
@@ -97,7 +112,12 @@ export async function obtenerPedidosDisponiblesParaReparto(fechaParam: string) {
       deletedAt: null,
     },
     include: {
-      cliente: true,
+      domicilio: {
+        include: {
+          cliente: true,
+          dias: { include: { horarios: true } },
+        },
+      },
       items: { include: { item: true } },
     },
     orderBy: { orden: 'asc' },
@@ -112,7 +132,12 @@ async function findPedidoActivo(
   const pedido = await prisma.pedido.findUnique({
     where: { id },
     include: {
-      cliente: true,
+      domicilio: {
+        include: {
+          cliente: true,
+          dias: { include: { horarios: true } },
+        },
+      },
       items: { include: { item: true } },
     },
   });
@@ -146,7 +171,12 @@ export async function obtenerPedidosDelDia(repartidorId: string) {
       deletedAt: null,
     },
     include: {
-      cliente: true,
+      domicilio: {
+        include: {
+          cliente: true,
+          dias: { include: { horarios: true } },
+        },
+      },
       items: { include: { item: true } },
     },
     orderBy: { orden: 'asc' },
@@ -183,8 +213,8 @@ export async function listarPedidos(params?: {
 
   if (params?.clienteNombre) {
     where['OR'] = [
-      { cliente: { nombre: { contains: params.clienteNombre, mode: 'insensitive' as const } } },
-      { cliente: { apellido: { contains: params.clienteNombre, mode: 'insensitive' as const } } },
+      { domicilio: { cliente: { nombre: { contains: params.clienteNombre, mode: 'insensitive' as const } } } },
+      { domicilio: { cliente: { apellido: { contains: params.clienteNombre, mode: 'insensitive' as const } } } },
     ];
   }
 
@@ -197,7 +227,12 @@ export async function listarPedidos(params?: {
     prisma.pedido.findMany({
       where,
       include: {
-        cliente: true,
+        domicilio: {
+          include: {
+            cliente: true,
+            dias: { include: { horarios: true } },
+          },
+        },
         items: { include: { item: true } },
       },
       orderBy: { fecha: 'desc' },
@@ -260,7 +295,7 @@ async function autoCompletarRepartoSiCorresponde(pedidoId: string): Promise<void
 // =============================================================================
 
 /** PATCH /pedidos/:id/confirmar — PENDIENTE/EN_RUTA → ENTREGADO */
-export async function confirmarEntrega(id: string) {
+export async function confirmarEntrega(id: string, latitud?: number, longitud?: number) {
   const pedido = await prisma.pedido.findUnique({ where: { id } });
 
   if (!pedido) {
@@ -269,6 +304,24 @@ export async function confirmarEntrega(id: string) {
 
   if (pedido.estado !== 'PENDIENTE' && pedido.estado !== 'EN_RUTA') {
     throw ApiError.conflict('El pedido no puede ser entregado desde su estado actual');
+  }
+
+  // Si se recibió ubicación y el domicilio aún no tiene coordenadas, capturarlas
+  if ((latitud !== undefined || longitud !== undefined) && pedido.domicilioId) {
+    const domicilio = await prisma.domicilio.findUnique({
+      where: { id: pedido.domicilioId },
+      select: { latitud: true, longitud: true },
+    });
+
+    if (domicilio && (domicilio.latitud === null || domicilio.longitud === null)) {
+      await prisma.domicilio.update({
+        where: { id: pedido.domicilioId },
+        data: {
+          latitud: latitud ?? domicilio.latitud,
+          longitud: longitud ?? domicilio.longitud,
+        },
+      });
+    }
   }
 
   const updated = await prisma.pedido.update({
@@ -318,15 +371,32 @@ export async function cancelarPedidoRepartidor(id: string, motivo: string) {
 
 /** POST /pedidos */
 export async function crearPedido(data: {
-  clienteId: string;
+  clienteId?: string;
+  domicilioId?: string;
   fecha?: string;
   orden?: number;
   items: Array<{ itemId: string; cantidad: number }>;
 }) {
-  // Verificar cliente
-  const cliente = await prisma.cliente.findUnique({ where: { id: data.clienteId } });
-  if (!cliente) {
-    throw ApiError.notFound('Cliente no encontrado');
+  // Resolver domicilio: priorizar domicilioId explícito, fallback a principal del cliente
+  let domicilio;
+  if (data.domicilioId) {
+    domicilio = await prisma.domicilio.findUnique({
+      where: { id: data.domicilioId },
+      include: { cliente: true },
+    });
+    if (!domicilio) {
+      throw ApiError.notFound('Domicilio no encontrado');
+    }
+  } else if (data.clienteId) {
+    domicilio = await prisma.domicilio.findFirst({
+      where: { clienteId: data.clienteId, principal: true },
+      include: { cliente: true },
+    });
+    if (!domicilio) {
+      throw ApiError.notFound('Cliente no encontrado o sin domicilio principal');
+    }
+  } else {
+    throw ApiError.badRequest('Debe proporcionar domicilioId o clienteId');
   }
 
   // Verificar items
@@ -370,7 +440,7 @@ export async function crearPedido(data: {
     return tx.pedido.create({
       data: {
         numeroPedido,
-        clienteId: data.clienteId,
+        domicilioId: domicilio.id,
         fecha: fechaDate,
         orden,
         items: {
@@ -385,7 +455,12 @@ export async function crearPedido(data: {
         },
       },
       include: {
-        cliente: true,
+        domicilio: {
+          include: {
+            cliente: true,
+            dias: { include: { horarios: true } },
+          },
+        },
         items: { include: { item: true } },
       },
     });
