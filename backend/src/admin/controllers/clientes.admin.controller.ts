@@ -17,30 +17,57 @@ export async function index(req: Request, res: Response, next: NextFunction): Pr
         { apellido: { contains: nombre, mode: 'insensitive' as const } },
       ];
     }
-    if (dia) where['diaEntrega'] = dia;
+    if (dia) {
+      where['domicilios'] = {
+        some: {
+          dias: { some: { nombre: dia.toUpperCase() } },
+        },
+      };
+    }
 
-    const [raw, total] = await Promise.all([
-      prisma.cliente.findMany({
-        where,
-        orderBy: { apellido: 'asc' },
-        skip,
-        take: pageSize,
-      }),
-      prisma.cliente.count({ where }),
-    ]);
+    const raw = await prisma.cliente.findMany({
+      where,
+      include: {
+        domicilios: {
+          where: { principal: true },
+          take: 1,
+          include: {
+            dias: {
+              take: 1,
+              include: { horarios: { take: 1 } },
+            },
+          },
+        },
+      },
+      orderBy: { apellido: 'asc' },
+      skip,
+      take: pageSize,
+    });
+    const total = await prisma.cliente.count({ where });
 
-    const clientes = raw.map((c) => ({
-      id: c.id,
-      nombre: c.nombre,
-      apellido: c.apellido,
-      telefono: c.telefono,
-      domicilio: { calle: c.calle, numero: c.numero, localidad: c.localidad, latitud: c.latitud, longitud: c.longitud },
-      diaEntrega: c.diaEntrega,
-      horarioDesde: c.horarioDesde,
-      horarioHasta: c.horarioHasta,
-      observaciones: c.observaciones ?? undefined,
-      activo: c.activo,
-    }));
+    const clientes = raw.map((c: any) => {
+      const dom = c.domicilios?.[0];
+      const dia = dom?.dias?.[0];
+      const horario = dia?.horarios?.[0];
+      return {
+        id: c.id,
+        nombre: c.nombre,
+        apellido: c.apellido,
+        telefono: c.telefono,
+        domicilio: {
+          calle: dom?.calle ?? '',
+          numero: dom?.numero ?? '',
+          localidad: dom?.localidad ?? '',
+          latitud: dom?.latitud ?? undefined,
+          longitud: dom?.longitud ?? undefined,
+        },
+        diaEntrega: dia?.nombre ?? 'LUNES',
+        horarioDesde: horario ? horario.inicio.toISOString().slice(11, 16) : '08:00',
+        horarioHasta: horario ? horario.fin.toISOString().slice(11, 16) : '17:00',
+        observaciones: c.observaciones ?? undefined,
+        activo: c.activo,
+      };
+    });
 
     const diasSemana = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'];
     let qs = '';
@@ -91,15 +118,23 @@ export async function create(req: Request, res: Response, next: NextFunction): P
       nombre: b.nombre!,
       apellido: b.apellido!,
       telefono: b.telefono!,
-      calle: b.calle!,
-      numero: b.numero!,
-      localidad: b.localidad!,
-      latitud: parseFloat(b.latitud || '0'),
-      longitud: parseFloat(b.longitud || '0'),
-      diaEntrega: b.diaEntrega as any,
-      horarioDesde: b.horarioDesde || '',
-      horarioHasta: b.horarioHasta || '',
       observaciones: b.observaciones || '',
+      domicilios: [
+        {
+          calle: b.calle!,
+          numero: b.numero!,
+          localidad: b.localidad!,
+          latitud: parseFloat(b.latitud || '0') || undefined,
+          longitud: parseFloat(b.longitud || '0') || undefined,
+          principal: true,
+          dias: [
+            {
+              nombre: b.diaEntrega as any,
+              horarios: [{ inicio: b.horarioDesde || '08:00', fin: b.horarioHasta || '17:00' }],
+            },
+          ],
+        },
+      ],
     };
 
     await clientesService.crearCliente(data);
@@ -138,15 +173,27 @@ export async function update(req: Request, res: Response, next: NextFunction): P
     if (b.nombre) data.nombre = b.nombre;
     if (b.apellido) data.apellido = b.apellido;
     if (b.telefono) data.telefono = b.telefono;
-    if (b.calle) data.calle = b.calle;
-    if (b.numero) data.numero = b.numero;
-    if (b.localidad) data.localidad = b.localidad;
-    if (b.latitud) data.latitud = parseFloat(b.latitud);
-    if (b.longitud) data.longitud = parseFloat(b.longitud);
-    if (b.diaEntrega) data.diaEntrega = b.diaEntrega;
-    if (b.horarioDesde) data.horarioDesde = b.horarioDesde;
-    if (b.horarioHasta) data.horarioHasta = b.horarioHasta;
     if (b.observaciones !== undefined) data.observaciones = b.observaciones;
+
+    const hasDomFields = b.calle || b.numero || b.localidad || b.diaEntrega || b.horarioDesde || b.horarioHasta;
+    if (hasDomFields) {
+      data.domicilios = [
+        {
+          calle: b.calle || '',
+          numero: b.numero || '',
+          localidad: b.localidad || '',
+          latitud: b.latitud ? parseFloat(b.latitud) : undefined,
+          longitud: b.longitud ? parseFloat(b.longitud) : undefined,
+          principal: true,
+          dias: [
+            {
+              nombre: (b.diaEntrega || 'LUNES') as any,
+              horarios: [{ inicio: b.horarioDesde || '08:00', fin: b.horarioHasta || '17:00' }],
+            },
+          ],
+        },
+      ];
+    }
 
     await clientesService.actualizarCliente(req.params.id as string, data);
     req.session.success = 'Cliente actualizado exitosamente';
