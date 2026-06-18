@@ -162,7 +162,8 @@ function ProximaEntregaCard({
     Linking.openURL(url);
   }, []);
 
-  const handleOpenMaps = useCallback((lat: number, lng: number) => {
+  const handleOpenMaps = useCallback((lat: number | undefined, lng: number | undefined) => {
+    if (lat === undefined || lng === undefined) return;
     const url = Platform.select({
       ios: `maps:0,0?q=${lat},${lng}`,
       android: `geo:0,0?q=${lat},${lng}`,
@@ -191,8 +192,8 @@ function ProximaEntregaCard({
       </Text>
 
       <Text style={[styles.direccion, { color: theme.muted }]}>
-        {pedido.cliente.domicilio.calle} {pedido.cliente.domicilio.numero},{' '}
-        {pedido.cliente.domicilio.localidad}
+        {pedido.domicilio.calle} {pedido.domicilio.numero},{' '}
+        {pedido.domicilio.localidad}
       </Text>
 
       <View style={styles.infoRow}>
@@ -207,7 +208,7 @@ function ProximaEntregaCard({
       <View style={styles.infoRow}>
         <Text style={[styles.infoLabel, { color: theme.muted }]}>Horario</Text>
         <Text style={[styles.infoValue, { color: theme.text }]}>
-          {pedido.cliente.horarioDesde} - {pedido.cliente.horarioHasta}
+          {pedido.domicilio.dias[0]?.horarios[0]?.inicio ?? ''} - {pedido.domicilio.dias[0]?.horarios[0]?.fin ?? ''}
         </Text>
       </View>
 
@@ -233,8 +234,8 @@ function ProximaEntregaCard({
           variant="ghost"
           onPress={() =>
             handleOpenMaps(
-              pedido.cliente.domicilio.latitud,
-              pedido.cliente.domicilio.longitud
+              pedido.domicilio.latitud,
+              pedido.domicilio.longitud
             )
           }
           style={styles.actionButton}
@@ -312,10 +313,10 @@ function ProximasEntregasList({
                 {pedido.cliente.nombre} {pedido.cliente.apellido}
               </Text>
               <Text style={[styles.proximaDireccion, { color: theme.muted }]} numberOfLines={1}>
-                {pedido.cliente.domicilio.calle} {pedido.cliente.domicilio.numero}
+                {pedido.domicilio.calle} {pedido.domicilio.numero}
               </Text>
               <Text style={[styles.proximaHorario, { color: theme.info }]}>
-                {pedido.cliente.horarioDesde} - {pedido.cliente.horarioHasta}
+          {pedido.domicilio.dias[0]?.horarios[0]?.inicio ?? ''} - {pedido.domicilio.dias[0]?.horarios[0]?.fin ?? ''}
               </Text>
             </View>
             <View style={[styles.proximaBadge, { backgroundColor: estadoColor + '20' }]}>
@@ -473,7 +474,7 @@ export default function InicioScreen() {
   }, [iniciarEntrega, showToast]);
 
   const handleConfirmarEntrega = useCallback((pedidoId: string) => {
-    confirmarEntrega.mutate(pedidoId, {
+    confirmarEntrega.mutate({ pedidoId }, {
       onSuccess: () => {
         showToast('Entrega confirmada', 'success');
       },
