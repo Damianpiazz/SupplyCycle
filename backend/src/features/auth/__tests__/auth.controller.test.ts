@@ -105,7 +105,7 @@ describe('updateMeController', () => {
     expect(res.status).not.toHaveBeenCalled();
     expect(res.json).not.toHaveBeenCalled();
     expect(next).toHaveBeenCalledOnce();
-    expect(next.mock.calls[0][0]).toBeInstanceOf(ZodError);
+    expect(next.mock.calls[0]![0]).toBeInstanceOf(ZodError);
   });
 
   it('llama next con el error cuando el servicio falla', async () => {
@@ -121,6 +121,6 @@ describe('updateMeController', () => {
     expect(res.status).not.toHaveBeenCalled();
     expect(res.json).not.toHaveBeenCalled();
     expect(next).toHaveBeenCalledOnce();
-    expect(next.mock.calls[0][0]).toBe(serviceError);
+    expect(next.mock.calls[0]![0]).toBe(serviceError);
   });
 });
