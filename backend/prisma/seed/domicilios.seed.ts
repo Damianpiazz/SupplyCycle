@@ -28,6 +28,7 @@ export async function seedDomicilios(clientes: any[], ciudadId: string) {
         entreCalle2: (d as any).entreCalle2 || null,
         numero: d.numero,
         piso: (d as any).piso || null,
+        localidad: 'La Plata',
         clienteId: clientes[d.clienteIdx]!.id,
         ciudadId,
       },
