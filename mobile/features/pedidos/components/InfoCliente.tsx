@@ -4,14 +4,15 @@ import { LucideIcon } from '@/components/ui/lucide-icon';
 import { Colors, Spacing, FontSizes, BorderRadius } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { formatFechaLarga } from '@/utils/date';
-import type { Cliente } from '@/types';
+import type { Cliente, Domicilio } from '@/types';
 
 interface InfoClienteProps {
   cliente: Cliente;
+  domicilio: Domicilio;
   fecha: string;
 }
 
-export default function InfoCliente({ cliente, fecha }: InfoClienteProps) {
+export default function InfoCliente({ cliente, domicilio, fecha }: InfoClienteProps) {
   const colorScheme = useColorScheme() ?? 'light';
   const theme = Colors[colorScheme];
 
@@ -20,7 +21,8 @@ export default function InfoCliente({ cliente, fecha }: InfoClienteProps) {
     Linking.openURL(url);
   };
 
-  const handleOpenMaps = (lat: number, lng: number) => {
+  const handleOpenMaps = (lat: number | undefined, lng: number | undefined) => {
+    if (lat === undefined || lng === undefined) return;
     const url = Platform.select({
       ios: `maps:0,0?q=${lat},${lng}`,
       android: `geo:0,0?q=${lat},${lng}`,
@@ -30,6 +32,8 @@ export default function InfoCliente({ cliente, fecha }: InfoClienteProps) {
   };
 
   const primaryColor = theme.tint;
+  const primerDia = domicilio.dias[0];
+  const primerHorario = primerDia?.horarios[0];
 
   return (
     <Card>
@@ -40,11 +44,11 @@ export default function InfoCliente({ cliente, fecha }: InfoClienteProps) {
       <View style={styles.infoRow}>
         <Text style={[styles.infoLabel, { color: theme.muted }]}>Dirección</Text>
         <Text style={[styles.infoValue, { color: theme.text }]}>
-          {cliente.domicilio.calle} {cliente.domicilio.numero}, {cliente.domicilio.localidad}
+          {domicilio.calle} {domicilio.numero}, {domicilio.localidad}
         </Text>
         <TouchableOpacity
           style={[styles.actionButton, { borderColor: primaryColor }]}
-          onPress={() => handleOpenMaps(cliente.domicilio.latitud, cliente.domicilio.longitud)}
+          onPress={() => handleOpenMaps(domicilio.latitud, domicilio.longitud)}
           activeOpacity={0.7}
         >
           <LucideIcon name="map-pin" size={16} strokeWidth={1.5} color={primaryColor} />
@@ -67,12 +71,14 @@ export default function InfoCliente({ cliente, fecha }: InfoClienteProps) {
         </TouchableOpacity>
       </View>
 
-      <View style={styles.infoRow}>
-        <Text style={[styles.infoLabel, { color: theme.muted }]}>Horario</Text>
-        <Text style={[styles.infoValue, { color: theme.text }]}>
-          {cliente.horarioDesde} - {cliente.horarioHasta}
-        </Text>
-      </View>
+      {primerDia && (
+        <View style={styles.infoRow}>
+          <Text style={[styles.infoLabel, { color: theme.muted }]}>Horario</Text>
+          <Text style={[styles.infoValue, { color: theme.text }]}>
+            {primerDia.nombre} {primerHorario ? `${primerHorario.inicio} - ${primerHorario.fin}` : ''}
+          </Text>
+        </View>
+      )}
 
       <View style={styles.infoRow}>
         <Text style={[styles.infoLabel, { color: theme.muted }]}>Fecha</Text>
