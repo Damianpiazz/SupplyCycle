@@ -1,5 +1,11 @@
 import { prisma } from '../../lib/prisma.js';
 import { ApiError } from '../../utils/api-error.js';
+import { timeStringToDate, dateToTimeString } from '../../lib/date-utils.js';
+import type { z } from 'zod';
+import type { clienteSchema, actualizarClienteSchema } from './schema.js';
+
+type ClienteInput = z.infer<typeof clienteSchema>;
+type ActualizarClienteInput = z.infer<typeof actualizarClienteSchema>;
 
 type ListarClientesParams = {
   nombre?: string;
@@ -7,59 +13,84 @@ type ListarClientesParams = {
   dia?: string;
 };
 
-type ClienteRow = {
+type ClienteWithRelations = {
   id: string;
   nombre: string;
   apellido: string;
   telefono: string;
-  calle: string;
-  numero: string;
-  localidad: string;
-  latitud: number;
-  longitud: number;
-  diaEntrega: string;
-  horarioDesde: string;
-  horarioHasta: string;
   observaciones: string | null;
   activo: boolean;
+  creadoEn: Date;
+  actualizadoEn: Date;
+  domicilios: Array<{
+    id: string;
+    calle: string;
+    numero: string;
+    localidad: string;
+    latitud: number | null;
+    longitud: number | null;
+    principal: boolean;
+    dias: Array<{
+      id: string;
+      nombre: string;
+      horarios: Array<{
+        id: string;
+        inicio: Date;
+        fin: Date;
+      }>;
+    }>;
+  }>;
 };
 
-type CrearClienteInput = {
-  nombre: string;
-  apellido: string;
-  telefono: string;
-  calle: string;
-  numero: string;
-  localidad: string;
-  latitud: number;
-  longitud: number;
-  diaEntrega: string;
-  horarioDesde: string;
-  horarioHasta: string;
-  observaciones?: string;
-};
+const clienteInclude = {
+  domicilios: {
+    include: {
+      dias: {
+        include: {
+          horarios: true,
+        },
+      },
+    },
+  },
+} as const;
 
-type ActualizarClienteInput = Partial<CrearClienteInput>;
-
-function toClienteResponse(cliente: ClienteRow) {
+function toClienteResponse(cliente: ClienteWithRelations) {
   return {
     id: cliente.id,
     nombre: cliente.nombre,
     apellido: cliente.apellido,
     telefono: cliente.telefono,
-    domicilio: {
-      calle: cliente.calle,
-      numero: cliente.numero,
-      localidad: cliente.localidad,
-      latitud: cliente.latitud,
-      longitud: cliente.longitud,
-    },
-    diaEntrega: cliente.diaEntrega,
-    horarioDesde: cliente.horarioDesde,
-    horarioHasta: cliente.horarioHasta,
     observaciones: cliente.observaciones ?? undefined,
     activo: cliente.activo,
+    domicilios: cliente.domicilios.map((dom) => ({
+      id: dom.id,
+      calle: dom.calle,
+      numero: dom.numero,
+      localidad: dom.localidad,
+      latitud: dom.latitud ?? undefined,
+      longitud: dom.longitud ?? undefined,
+      principal: dom.principal,
+      dias: dom.dias.map((dia) => ({
+        id: dia.id,
+        nombre: dia.nombre as 'LUNES' | 'MARTES' | 'MIERCOLES' | 'JUEVES' | 'VIERNES' | 'SABADO',
+        horarios: dia.horarios.map((h) => ({
+          id: h.id,
+          inicio: dateToTimeString(h.inicio),
+          fin: dateToTimeString(h.fin),
+        })),
+      })),
+    })),
   };
+}
+
+async function getOrCreateCiudad(localidad: string) {
+  let ciudad = await prisma.ciudad.findFirst({
+    where: { nombre: { equals: localidad, mode: 'insensitive' } },
+  });
+  if (!ciudad) {
+    ciudad = await prisma.ciudad.create({ data: { nombre: localidad } });
+  }
+  return ciudad;
 }
 
 export async function listarClientes(params?: ListarClientesParams) {
@@ -74,9 +105,19 @@ export async function listarClientes(params?: ListarClientesParams) {
     where['telefono'] = { contains: params.telefono };
   }
   if (params?.dia) {
-    where['diaEntrega'] = params.dia;
+    where['domicilios'] = {
+      some: {
+        dias: {
+          some: { nombre: params.dia },
+        },
+      },
+    };
   }
-  const clientes = await prisma.cliente.findMany({ where, orderBy: { apellido: 'asc' } });
+  const clientes = await prisma.cliente.findMany({
+    where,
+    include: clienteInclude,
+    orderBy: { apellido: 'asc' },
+  });
   return clientes.map(toClienteResponse);
 }
 
@@ -92,22 +133,34 @@ export async function listarTodosLosClientes(params?: ListarClientesParams) {
     where['telefono'] = { contains: params.telefono };
   }
   if (params?.dia) {
-    where['diaEntrega'] = params.dia;
+    where['domicilios'] = {
+      some: {
+        dias: {
+          some: { nombre: params.dia },
+        },
+      },
+    };
   }
-  const clientes = await prisma.cliente.findMany({ where, orderBy: { apellido: 'asc' } });
+  const clientes = await prisma.cliente.findMany({
+    where,
+    include: clienteInclude,
+    orderBy: { apellido: 'asc' },
+  });
   return clientes.map(toClienteResponse);
 }
 
 export async function obtenerCliente(id: string) {
-  const cliente = await prisma.cliente.findUnique({ where: { id } });
+  const cliente = await prisma.cliente.findUnique({
+    where: { id },
+    include: clienteInclude,
+  });
   if (!cliente) {
     throw ApiError.notFound('Cliente no encontrado');
   }
-  return toClienteResponse(cliente);
+  return toClienteResponse(cliente as unknown as ClienteWithRelations);
 }
 
-export async function crearCliente(input: CrearClienteInput) {
-  // Validar que no exista cliente con el mismo teléfono
+export async function crearCliente(input: ClienteInput) {
   const existente = await prisma.cliente.findFirst({
     where: { telefono: input.telefono, activo: true },
   });
@@ -120,31 +173,49 @@ export async function crearCliente(input: CrearClienteInput) {
       nombre: input.nombre,
       apellido: input.apellido,
       telefono: input.telefono,
-      calle: input.calle,
-      numero: input.numero,
-      localidad: input.localidad,
-      latitud: input.latitud,
-      longitud: input.longitud,
-      diaEntrega: input.diaEntrega as any,
-      horarioDesde: input.horarioDesde,
-      horarioHasta: input.horarioHasta,
       observaciones: input.observaciones ?? null,
       activo: true,
+      domicilios: {
+        create: await Promise.all(input.domicilios.map(async (dom) => {
+          const ciudad = await getOrCreateCiudad(dom.localidad);
+          return {
+            calle: dom.calle,
+            numero: dom.numero,
+            localidad: dom.localidad,
+            latitud: dom.latitud ?? null,
+            longitud: dom.longitud ?? null,
+            principal: dom.principal ?? true,
+            ciudadId: ciudad.id,
+            dias: {
+              create: dom.dias.map((dia) => ({
+                nombre: dia.nombre,
+                horarios: {
+                  create: dia.horarios.map((h) => ({
+                    inicio: timeStringToDate(h.inicio),
+                    fin: timeStringToDate(h.fin),
+                  })),
+                },
+              })),
+            },
+          };
+        })),
+      },
     },
+    include: clienteInclude,
   });
 
-  return toClienteResponse(cliente);
+  return toClienteResponse(cliente as unknown as ClienteWithRelations);
 }
 
 export async function actualizarCliente(id: string, input: ActualizarClienteInput) {
   const cliente = await prisma.cliente.findFirst({
     where: { id, activo: true },
+    include: { domicilios: { select: { id: true } } },
   });
   if (!cliente) {
     throw ApiError.notFound('Cliente no encontrado');
   }
 
-  // Validar unicidad de teléfono si cambia
   if (input.telefono && input.telefono !== cliente.telefono) {
     const existente = await prisma.cliente.findFirst({
       where: { telefono: input.telefono, activo: true, id: { not: id } },
@@ -154,25 +225,54 @@ export async function actualizarCliente(id: string, input: ActualizarClienteInpu
     }
   }
 
-  const updated = await prisma.cliente.update({
-    where: { id },
-    data: {
-      ...(input.nombre !== undefined && { nombre: input.nombre }),
-      ...(input.apellido !== undefined && { apellido: input.apellido }),
-      ...(input.telefono !== undefined && { telefono: input.telefono }),
-      ...(input.calle !== undefined && { calle: input.calle }),
-      ...(input.numero !== undefined && { numero: input.numero }),
-      ...(input.localidad !== undefined && { localidad: input.localidad }),
-      ...(input.latitud !== undefined && { latitud: input.latitud }),
-      ...(input.longitud !== undefined && { longitud: input.longitud }),
-      ...(input.diaEntrega !== undefined && { diaEntrega: input.diaEntrega as any }),
-      ...(input.horarioDesde !== undefined && { horarioDesde: input.horarioDesde }),
-      ...(input.horarioHasta !== undefined && { horarioHasta: input.horarioHasta }),
-      ...(input.observaciones !== undefined && { observaciones: input.observaciones ?? null }),
-    },
+  const flatData: Record<string, unknown> = {};
+  if (input.nombre !== undefined) flatData['nombre'] = input.nombre;
+  if (input.apellido !== undefined) flatData['apellido'] = input.apellido;
+  if (input.telefono !== undefined) flatData['telefono'] = input.telefono;
+  if (input.observaciones !== undefined) flatData['observaciones'] = input.observaciones ?? null;
+
+  await prisma.$transaction(async (tx) => {
+    if (Object.keys(flatData).length > 0) {
+      await tx.cliente.update({ where: { id }, data: flatData });
+    }
+
+    if (input.domicilios) {
+      await tx.domicilio.deleteMany({ where: { clienteId: id } });
+
+      for (const dom of input.domicilios) {
+        const ciudad = await getOrCreateCiudad(dom.localidad);
+        await tx.domicilio.create({
+          data: {
+            calle: dom.calle,
+            numero: dom.numero,
+            localidad: dom.localidad,
+            latitud: dom.latitud ?? null,
+            longitud: dom.longitud ?? null,
+            principal: dom.principal ?? true,
+            clienteId: id,
+            ciudadId: ciudad.id,
+            dias: {
+              create: dom.dias.map((dia) => ({
+                nombre: dia.nombre,
+                horarios: {
+                  create: dia.horarios.map((h) => ({
+                    inicio: timeStringToDate(h.inicio),
+                    fin: timeStringToDate(h.fin),
+                  })),
+                },
+              })),
+            },
+          },
+        });
+      }
+    }
   });
 
-  return toClienteResponse(updated);
+  const updated = await prisma.cliente.findUnique({
+    where: { id },
+    include: clienteInclude,
+  });
+  return toClienteResponse(updated as unknown as ClienteWithRelations);
 }
 
 export async function eliminarCliente(id: string) {
@@ -181,15 +281,13 @@ export async function eliminarCliente(id: string) {
     throw ApiError.notFound('Cliente no encontrado');
   }
 
-  // Si ya está inactivo, la operación es idempotente
   if (!cliente.activo) {
     return { message: 'El cliente ya estaba desactivado' };
   }
 
-  // Verificar que no tenga pedidos activos (PENDIENTE o EN_RUTA)
   const pedidosActivos = await prisma.pedido.count({
     where: {
-      clienteId: id,
+      domicilio: { clienteId: id },
       estado: { in: ['PENDIENTE', 'EN_RUTA'] },
       deletedAt: null,
     },
