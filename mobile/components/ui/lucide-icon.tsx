@@ -8,7 +8,7 @@
 import React from 'react';
 import Svg, { Circle, Path, Rect, type SvgProps } from 'react-native-svg';
 
-type IconName = 'house' | 'users' | 'truck' | 'clipboard-list' | 'map' | 'user-cog' | 'circle-user' | 'map-pin' | 'phone' | 'arrow-left';
+type IconName = 'house' | 'users' | 'truck' | 'clipboard-list' | 'map' | 'user-cog' | 'circle-user' | 'map-pin' | 'phone' | 'arrow-left' | 'bar-chart-3';
 
 interface LucideIconProps extends SvgProps {
   name: IconName;
@@ -85,6 +85,12 @@ const ICON_DATA: Record<IconName, SvgElement[]> = {
   'arrow-left': [
     ['path', { d: 'm12 19-7-7 7-7', key: '1l729n' }],
     ['path', { d: 'M19 12H5', key: 'x3x0zl' }],
+  ],
+  'bar-chart-3': [
+    ['path', { d: 'M3 3v18h18', key: 'bar-base' }],
+    ['path', { d: 'M18 17V9', key: 'bar-1' }],
+    ['path', { d: 'M13 17V5', key: 'bar-2' }],
+    ['path', { d: 'M8 17v-3', key: 'bar-3' }],
   ],
 };
 
