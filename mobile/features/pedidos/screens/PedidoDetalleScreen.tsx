@@ -54,7 +54,7 @@ export default function PedidoDetalleScreen({ id, onBack }: PedidoDetalleScreenP
   const [showConfirmModal, setShowConfirmModal] = useState(false);
 
   const handleConfirmar = () => {
-    confirmarMutation.mutate(id, {
+    confirmarMutation.mutate({ pedidoId: id }, {
       onSuccess: () => { showToast('Entrega confirmada', 'success'); router.back(); },
       onError: (err) => { showToast(handleApiError(err).message, 'error'); },
     });
@@ -175,7 +175,7 @@ export default function PedidoDetalleScreen({ id, onBack }: PedidoDetalleScreenP
       <Header onBack={onBack ?? (() => router.back())} />
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <EstadoBadge estado={pedido.estado} numeroPedido={pedido.numeroPedido} />
-        <InfoCliente cliente={pedido.cliente} fecha={pedido.fecha} />
+        <InfoCliente cliente={pedido.cliente} domicilio={pedido.domicilio} fecha={pedido.fecha} />
 
         <ItemsList
           items={modoEdicion ? itemsEdit : pedido.items}

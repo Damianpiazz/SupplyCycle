@@ -14,6 +14,11 @@ const mockPrisma = {
     create: vi.fn(),
     aggregate: vi.fn(),
   },
+  domicilio: {
+    findFirst: vi.fn(),
+    findUnique: vi.fn(),
+    update: vi.fn(),
+  },
   cliente: { findUnique: vi.fn() },
   reparto: { findUnique: vi.fn() },
   item: { findUnique: vi.fn() },
@@ -42,20 +47,40 @@ function buildMockPedido(overrides: Record<string, unknown> = {}) {
     actualizadoEn: now,
     deletedAt: null,
     motivoFalla: null,
-    clienteId: 'cli-001',
     repartoId: 'rep-001',
-    cliente: {
-      id: 'cli-001',
-      nombre: 'Juan',
-      apellido: 'Pérez',
-      telefono: '1145678901',
+    domicilioId: 'dom-001',
+    domicilio: {
+      id: 'dom-001',
       calle: 'Av. Corrientes',
       numero: '1234',
       localidad: 'CABA',
       latitud: -34.6037,
       longitud: -58.3816,
-      horarioDesde: '09:00',
-      horarioHasta: '11:00',
+      principal: true,
+      clienteId: 'cli-001',
+      cliente: {
+        id: 'cli-001',
+        nombre: 'Juan',
+        apellido: 'Pérez',
+        telefono: '1145678901',
+        observaciones: null,
+        activo: true,
+      },
+      dias: [
+        {
+          id: 'dia-1',
+          nombre: 'LUNES',
+          domicilioId: 'dom-001',
+          horarios: [
+            {
+              id: 'horario-1',
+              inicio: new Date('2024-01-01T09:00:00Z'),
+              fin: new Date('2024-01-01T11:00:00Z'),
+              diaId: 'dia-1',
+            },
+          ],
+        },
+      ],
     },
     reparto: { id: 'rep-001', fecha: now },
     items: [
@@ -98,7 +123,14 @@ describe('PedidosService', () => {
     };
 
     it('debe crear un pedido exitosamente', async () => {
-      mockPrisma.cliente.findUnique.mockResolvedValue({ id: 'cli-001', nombre: 'Juan', apellido: 'Pérez' });
+      mockPrisma.domicilio.findFirst.mockResolvedValue({
+        id: 'dom-001',
+        calle: 'Av. Corrientes',
+        numero: '1234',
+        localidad: 'CABA',
+        principal: true,
+        cliente: { id: 'cli-001', nombre: 'Juan', apellido: 'Pérez', telefono: '1145678901', observaciones: null, activo: true },
+      });
       mockPrisma.item.findUnique.mockResolvedValue({ id: 'prod-001', nombre: 'Bidón 20L', precio: 1500, activo: true });
       mockPrisma.pedido.aggregate.mockResolvedValue({ _max: { orden: 5 } });
       mockPrisma.pedido.count.mockResolvedValue(5); // Para generar numeroPedido PEDIDO #6
@@ -121,7 +153,7 @@ describe('PedidosService', () => {
     });
 
     it('debe rechazar si el cliente no existe', async () => {
-      mockPrisma.cliente.findUnique.mockResolvedValue(null);
+      mockPrisma.domicilio.findFirst.mockResolvedValue(null);
 
       await expect(service.crearPedido(validPayload))
         .rejects.toThrow(ApiError);
@@ -130,7 +162,14 @@ describe('PedidosService', () => {
     });
 
     it('debe rechazar si un item no existe', async () => {
-      mockPrisma.cliente.findUnique.mockResolvedValue({ id: 'cli-001' });
+      mockPrisma.domicilio.findFirst.mockResolvedValue({
+        id: 'dom-001',
+        calle: 'Av. Corrientes',
+        numero: '1234',
+        localidad: 'CABA',
+        principal: true,
+        cliente: { id: 'cli-001', nombre: 'Juan', apellido: 'Pérez' },
+      });
       mockPrisma.item.findUnique.mockResolvedValue(null);
 
       await expect(service.crearPedido(validPayload))
@@ -138,7 +177,14 @@ describe('PedidosService', () => {
     });
 
     it('debe rechazar si un item está inactivo', async () => {
-      mockPrisma.cliente.findUnique.mockResolvedValue({ id: 'cli-001' });
+      mockPrisma.domicilio.findFirst.mockResolvedValue({
+        id: 'dom-001',
+        calle: 'Av. Corrientes',
+        numero: '1234',
+        localidad: 'CABA',
+        principal: true,
+        cliente: { id: 'cli-001', nombre: 'Juan', apellido: 'Pérez' },
+      });
       mockPrisma.item.findUnique.mockResolvedValue({ id: 'prod-001', nombre: 'Bidón 20L', activo: false });
 
       await expect(service.crearPedido(validPayload))

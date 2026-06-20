@@ -29,7 +29,7 @@ import { getRepartosDisponiblesRequest } from '@/services/repartos';
 import PedidoAltaScreen from '@/features/pedidos/screens/PedidoAltaScreen';
 
 const mockClientes = [
-  { id: 'cli-1', nombre: 'María', apellido: 'González', telefono: '1155550101', domicilio: { calle: 'Av. Corrientes', numero: '1234', localidad: 'CABA', latitud: -34.6037, longitud: -58.3816 }, diaEntrega: 'LUNES', horarioDesde: '09:00', horarioHasta: '12:00' },
+  { id: 'cli-1', nombre: 'María', apellido: 'González', telefono: '1155550101', activo: true, domicilios: [{ id: 'dom-1', calle: 'Av. Corrientes', numero: '1234', localidad: 'CABA', latitud: -34.6037, longitud: -58.3816, principal: true, dias: [{ id: 'dia-1', nombre: 'LUNES', horarios: [{ id: 'hor-1', inicio: '09:00', fin: '12:00' }] }] }] },
 ];
 
 const mockItems = [
@@ -97,10 +97,9 @@ describe('PedidoAltaScreen', () => {
     expect(screen.getByText('Crear Pedido')).toBeTruthy();
   });
 
-  it('should show validation error when no cliente selected on submit', async () => {
+  it('should show validation toast when no cliente selected on submit', async () => {
     await loadData();
     fireEvent.press(screen.getByText('Crear Pedido'));
-    expect(screen.getByText('Debés seleccionar un cliente para el pedido')).toBeTruthy();
     expect(mockShowToast).toHaveBeenCalledWith('Seleccioná un cliente', 'warning');
   });
 
@@ -119,6 +118,9 @@ describe('PedidoAltaScreen', () => {
     await loadData();
     fireEvent.press(screen.getByText('Seleccionar cliente...'));
     fireEvent.press(screen.getByText('María González'));
+    await waitFor(() => expect(screen.getByText('Seleccionar domicilio...')).toBeTruthy());
+    fireEvent.press(screen.getByText('Seleccionar domicilio...'));
+    fireEvent.press(screen.getByText('Av. Corrientes 1234, CABA'));
     const agregarButtons = screen.getAllByText('Agregar');
     fireEvent.press(agregarButtons[0]);
     fireEvent.press(screen.getByText('Crear Pedido'));
@@ -141,6 +143,9 @@ describe('PedidoAltaScreen', () => {
     await waitFor(() => expect(screen.getByText('Seleccionar cliente...')).toBeTruthy());
     fireEvent.press(screen.getByText('Seleccionar cliente...'));
     fireEvent.press(screen.getByText('María González'));
+    await waitFor(() => expect(screen.getByText('Seleccionar domicilio...')).toBeTruthy());
+    fireEvent.press(screen.getByText('Seleccionar domicilio...'));
+    fireEvent.press(screen.getByText('Av. Corrientes 1234, CABA'));
     const agregarButtons = screen.getAllByText('Agregar');
     fireEvent.press(agregarButtons[0]);
     fireEvent.press(screen.getByText('Crear Pedido'));

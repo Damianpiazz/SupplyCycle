@@ -2,6 +2,7 @@ import type { Request, Response, NextFunction } from 'express';
 import {
   crearPedidoSchema,
   cancelarPedidoSchema,
+  confirmarPedidoSchema,
   actualizarEstadoSchema,
   agregarItemSchema,
   actualizarCantidadSchema,
@@ -78,7 +79,8 @@ export async function confirmarController(
 ): Promise<void> {
   try {
     const id = req.params['id'] as string;
-    const result = await pedidosService.confirmarEntrega(id);
+    const body = confirmarPedidoSchema.parse(req.body);
+    const result = await pedidosService.confirmarEntrega(id, body.latitud, body.longitud);
     sendSuccess(res, result);
   } catch (err) {
     next(err);

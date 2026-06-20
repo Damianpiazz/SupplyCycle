@@ -6,7 +6,12 @@ faker.seed(42);
 
 const ESTADOS_RET = ['RETENIDO', 'RETENIDO', 'RETENIDO', 'DEVUELTO', 'PERDIDO'] as const;
 
-export async function seedRetenidos(clientes: any[], items: any[], pedidos: any[]) {
+export async function seedRetenidos(clientes: any[], items: any[], pedidos: any[], domicilios: any[]) {
+  const domicilioClienteMap = new Map<string, string>();
+  for (const d of domicilios) {
+    domicilioClienteMap.set(d.id, d.clienteId);
+  }
+
   const data: any[] = [];
   const usados = new Set<string>();
 
@@ -33,7 +38,7 @@ export async function seedRetenidos(clientes: any[], items: any[], pedidos: any[
         inicio,
         fin,
         itemId: item.id,
-        clienteId: p.clienteId,
+        clienteId: domicilioClienteMap.get(p.domicilioId)!,
         pedidoId: p.id,
       });
 

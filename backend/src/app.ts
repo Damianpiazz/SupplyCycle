@@ -10,6 +10,7 @@ import { logger } from './lib/logger.js';
 import { env } from './config/env.js';
 import authRoutes from './features/auth/routes.js';
 import clientesRoutes from './features/clientes/routes.js';
+import domiciliosRoutes from './features/domicilios/routes.js';
 import itemsRoutes from './features/items/routes.js';
 import pedidosRoutes from './features/pedidos/routes.js';
 import repartosRoutes from './features/repartos/routes.js';
@@ -64,6 +65,7 @@ app.get('/health', (_req, res) => {
 // API v1 routes
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/clientes', clientesRoutes);
+app.use('/api/v1/domicilios', domiciliosRoutes);
 app.use('/api/v1/items', itemsRoutes);
 app.use('/api/v1/pedidos', pedidosRoutes);
 app.use('/api/v1/repartos', repartosRoutes);

@@ -41,6 +41,7 @@ export async function createForm(_req: Request, res: Response, next: NextFunctio
 export async function create(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const b = req.body as Record<string, string>;
+    const ciudad = await prisma.ciudad.findUniqueOrThrow({ where: { id: b.ciudadId! } });
     await prisma.domicilio.create({
       data: {
         calle: b.calle!,
@@ -48,6 +49,7 @@ export async function create(req: Request, res: Response, next: NextFunction): P
         entreCalle2: b.entreCalle2 || null,
         numero: b.numero!,
         piso: b.piso || null,
+        localidad: b.localidad || ciudad.nombre,
         clienteId: b.clienteId!,
         ciudadId: b.ciudadId!,
       },
@@ -80,17 +82,19 @@ export async function editForm(req: Request, res: Response, next: NextFunction):
 export async function update(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const b = req.body as Record<string, string>;
+    const data: Record<string, unknown> = {
+      calle: b.calle,
+      entreCalle1: b.entreCalle1 || null,
+      entreCalle2: b.entreCalle2 || null,
+      numero: b.numero,
+      piso: b.piso || null,
+      clienteId: b.clienteId,
+      ciudadId: b.ciudadId,
+    };
+    if (b.localidad) data['localidad'] = b.localidad;
     await prisma.domicilio.update({
       where: { id: req.params.id as string },
-      data: {
-        calle: b.calle,
-        entreCalle1: b.entreCalle1 || null,
-        entreCalle2: b.entreCalle2 || null,
-        numero: b.numero,
-        piso: b.piso || null,
-        clienteId: b.clienteId,
-        ciudadId: b.ciudadId,
-      },
+      data,
     });
     req.session.success = 'Domicilio actualizado exitosamente';
     res.redirect('/admin/domicilios');

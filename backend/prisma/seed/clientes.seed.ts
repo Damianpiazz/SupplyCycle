@@ -33,14 +33,6 @@ export function generateClientes(count: number) {
       nombre: faker.person.firstName(),
       apellido: faker.person.lastName(),
       telefono: tel,
-      calle: faker.helpers.arrayElement(CALLES_LP),
-      numero: String(faker.number.int({ min: 100, max: 9999 })),
-      localidad: 'La Plata',
-      latitud: faker.number.float({ min: -34.95, max: -34.88, fractionDigits: 4 }),
-      longitud: faker.number.float({ min: -57.98, max: -57.90, fractionDigits: 4 }),
-      diaEntrega: faker.helpers.arrayElement(DIAS),
-      horarioDesde: `${String(faker.number.int({ min: 7, max: 12 })).padStart(2, '0')}:00`,
-      horarioHasta: `${String(faker.number.int({ min: 13, max: 18 })).padStart(2, '0')}:00`,
       observaciones: faker.helpers.maybe(() => faker.lorem.sentence(), { probability: 0.3 }),
       activo: faker.helpers.maybe(() => false, { probability: 0.05 }) ?? true,
     };
@@ -54,6 +46,7 @@ export function generateDomicilios(clientes: any[], ciudadId: string) {
     entreCalle2: faker.helpers.maybe(() => faker.helpers.arrayElement(CALLES_LP)) ?? null,
     numero: c.numero,
     piso: faker.helpers.maybe(() => String(faker.number.int({ min: 1, max: 15 }))) ?? null,
+    localidad: c.localidad,
     clienteId: c.id ?? `placeholder-${i}`,
     ciudadId,
   }));
@@ -85,12 +78,13 @@ export async function seedClientes(count = 1000) {
 
 export async function seedDomicilios(clientes: any[], ciudadId: string) {
   const clientesIds = clientes.map(c => c.id);
-  const data = clientes.map((c, i) => ({
-    calle: c.calle,
+  const data = clientes.map((_, i) => ({
+    calle: faker.helpers.arrayElement(CALLES_LP),
     entreCalle1: faker.helpers.maybe(() => faker.helpers.arrayElement(CALLES_LP)) ?? null,
     entreCalle2: faker.helpers.maybe(() => faker.helpers.arrayElement(CALLES_LP)) ?? null,
-    numero: c.numero,
+    numero: String(faker.number.int({ min: 100, max: 9999 })),
     piso: faker.helpers.maybe(() => String(faker.number.int({ min: 1, max: 15 }))) ?? null,
+    localidad: 'La Plata',
     clienteId: clientesIds[i]!,
     ciudadId,
   }));

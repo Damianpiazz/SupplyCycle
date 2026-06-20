@@ -25,6 +25,7 @@ import { apiClient } from '@/services/api';
 
 const mockPedido: Pedido = {
   id: 'pedido-1',
+  numeroPedido: 'PEDIDO #1',
   orden: 1,
   estado: 'PENDIENTE',
   fecha: '2026-05-25',
@@ -34,16 +35,35 @@ const mockPedido: Pedido = {
     nombre: 'Juan',
     apellido: 'Pérez',
     telefono: '1234567890',
-    domicilio: {
+    activo: true,
+    domicilios: [{
+      id: 'dom-cliente-1',
       calle: 'Av. Siempre Viva',
       numero: '123',
       localidad: 'Springfield',
       latitud: -34.0,
       longitud: -58.0,
-    },
-    diaEntrega: 'LUNES',
-    horarioDesde: '09:00',
-    horarioHasta: '18:00',
+      principal: true,
+      dias: [{
+        id: 'dia-1',
+        nombre: 'LUNES',
+        horarios: [{ id: 'hor-1', inicio: '09:00', fin: '18:00' }],
+      }],
+    }],
+  },
+  domicilio: {
+    id: 'dom-pedido-1',
+    calle: 'Av. Siempre Viva',
+    numero: '123',
+    localidad: 'Springfield',
+    latitud: -34.0,
+    longitud: -58.0,
+    principal: true,
+    dias: [{
+      id: 'dia-1',
+      nombre: 'LUNES',
+      horarios: [{ id: 'hor-1', inicio: '09:00', fin: '18:00' }],
+    }],
   },
   items: [
     {
@@ -108,7 +128,7 @@ describe('pedidoService', () => {
 
       const result = await confirmarEntregaRequest('pedido-1');
 
-      expect(apiClient.patch).toHaveBeenCalledWith('/pedidos/pedido-1/confirmar');
+      expect(apiClient.patch).toHaveBeenCalledWith('/pedidos/pedido-1/confirmar', {});
       expect(result).toEqual(expected);
     });
   });

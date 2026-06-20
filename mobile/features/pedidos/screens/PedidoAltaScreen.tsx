@@ -22,7 +22,7 @@ import { getItemsRequest } from '@/services/items';
 import { handleApiError } from '@/services/handleApiError';
 import { useToast } from '@/hooks/useToast';
 import { ddmmyyyyToISO } from '@/utils/date';
-import type { Cliente } from '@/types/cliente';
+import type { Cliente, Domicilio } from '@/types/cliente';
 import type { Item } from '@/types/item';
 
 interface ItemSeleccionado {
@@ -46,6 +46,7 @@ export default function PedidoAltaScreen() {
 
   // ─── Form state ────────────────────────────────────────────────────────────
   const [selectedCliente, setSelectedCliente] = useState<Cliente | null>(null);
+  const [selectedDom, setSelectedDom] = useState<Domicilio | null>(null);
   const [selectedItems, setSelectedItems] = useState<ItemSeleccionado[]>([]);
   const [validationError, setValidationError] = useState<string | null>(null);
   const today = new Date();
@@ -56,6 +57,7 @@ export default function PedidoAltaScreen() {
 
   // ─── Modal state ───────────────────────────────────────────────────────────
   const [showClienteModal, setShowClienteModal] = useState(false);
+  const [showDomModal, setShowDomModal] = useState(false);
   const [searchCliente, setSearchCliente] = useState('');
 
   // ─── Submit ────────────────────────────────────────────────────────────────
@@ -79,6 +81,11 @@ export default function PedidoAltaScreen() {
     }
     loadData();
   }, []);
+
+  // Reset domicilio when client changes
+  useEffect(() => {
+    setSelectedDom(null);
+  }, [selectedCliente]);
 
   // ─── Handlers ──────────────────────────────────────────────────────────────
 
@@ -120,13 +127,17 @@ export default function PedidoAltaScreen() {
       showToast('Seleccioná un cliente', 'warning');
       return;
     }
+    if (!selectedDom) {
+      setValidationError('Debés seleccionar un domicilio de entrega');
+      showToast('Seleccioná un domicilio', 'warning');
+      return;
+    }
     if (selectedItems.length === 0) {
       setValidationError('Agregá al menos un ítem al pedido');
       showToast('Agregá al menos un ítem', 'warning');
       return;
     }
 
-    // Validar fecha
     const iso = ddmmyyyyToISO(fecha);
     if (!iso) {
       setValidationError('Formato de fecha inválido. Usá DD/MM/YYYY');
@@ -145,6 +156,7 @@ export default function PedidoAltaScreen() {
     setValidationError(null);
 
     const payload = {
+      domicilioId: selectedDom.id,
       clienteId: selectedCliente.id,
       fecha: iso,
       items: selectedItems.map((s) => ({
@@ -166,7 +178,22 @@ export default function PedidoAltaScreen() {
         showToast(parsed.message, 'error');
       },
     });
-  }, [selectedCliente, selectedItems, fecha, crearPedido, showToast]);
+  }, [selectedCliente, selectedDom, selectedItems, fecha, crearPedido, showToast]);
+
+  const selectCliente = useCallback((cliente: Cliente) => {
+    setSelectedCliente(cliente);
+    setSelectedDom(null);
+    setValidationError(null);
+    setShowClienteModal(false);
+    setSearchCliente('');
+    // If only one domicilio, auto-select
+    if (cliente.domicilios.length === 1) {
+      setSelectedDom(cliente.domicilios[0]);
+    } else if (cliente.domicilios.length > 1) {
+      const principal = cliente.domicilios.find((d) => d.principal);
+      setSelectedDom(principal ?? cliente.domicilios[0]);
+    }
+  }, []);
 
   // ─── Loading / Error ───────────────────────────────────────────────────────
 
@@ -208,102 +235,70 @@ export default function PedidoAltaScreen() {
         keyboardShouldPersistTaps="handled"
       >
         {/* ─── Cliente ──────────────────────────────────────────────────── */}
-        <Text style={[styles.sectionTitle, { color: theme.text }]}>
-          Cliente
-        </Text>
+        <Text style={[styles.sectionTitle, { color: theme.text }]}>Cliente</Text>
         <TouchableOpacity
-          style={[
-            styles.selectField,
-            {
-              backgroundColor: theme.inputBackground,
-              borderColor: validationError && !selectedCliente ? theme.error : theme.border,
-            },
-          ]}
+          style={[styles.selectField, { backgroundColor: theme.inputBackground, borderColor: validationError && !selectedCliente ? theme.error : theme.border }]}
           onPress={() => { setValidationError(null); setShowClienteModal(true); }}
         >
           <Text style={[styles.selectFieldText, { color: selectedCliente ? theme.text : theme.muted }]}>
-            {selectedCliente
-              ? `${selectedCliente.nombre} ${selectedCliente.apellido}`
-              : 'Seleccionar cliente...'}
+            {selectedCliente ? `${selectedCliente.nombre} ${selectedCliente.apellido}` : 'Seleccionar cliente...'}
           </Text>
         </TouchableOpacity>
-        {validationError && !selectedCliente && (
-          <Text style={[styles.errorText, { color: theme.error }]}>
-            {validationError}
-          </Text>
+
+        {/* ─── Domicilio ────────────────────────────────────────────── */}
+        {selectedCliente && (
+          <>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>Domicilio de entrega</Text>
+            <TouchableOpacity
+              style={[styles.selectField, { backgroundColor: theme.inputBackground, borderColor: validationError && !selectedDom ? theme.error : theme.border }]}
+              onPress={() => { setValidationError(null); setShowDomModal(true); }}
+            >
+              <Text style={[styles.selectFieldText, { color: selectedDom ? theme.text : theme.muted }]}>
+                {selectedDom ? `${selectedDom.calle} ${selectedDom.numero}, ${selectedDom.localidad}` : 'Seleccionar domicilio...'}
+              </Text>
+            </TouchableOpacity>
+            {selectedDom && selectedDom.dias[0] && (
+              <Text style={[styles.hint, { color: theme.muted }]}>
+                Horario: {selectedDom.dias[0].nombre} {selectedDom.dias[0].horarios[0]?.inicio ?? ''} - {selectedDom.dias[0].horarios[0]?.fin ?? ''}
+              </Text>
+            )}
+          </>
         )}
 
         {/* ─── Fecha del pedido ─────────────────────────────────────────── */}
-        <Text style={[styles.sectionTitle, { color: theme.text }]}>
-          Fecha del pedido
-        </Text>
+        <Text style={[styles.sectionTitle, { color: theme.text }]}>Fecha del pedido</Text>
         <DatePickerField
           value={fecha}
           onChange={setFecha}
           minimumDate={new Date()}
           placeholder="DD/MM/YYYY"
-          error={
-            !!(
-              validationError &&
-              (!fecha || !ddmmyyyyToISO(fecha))
-            )
-          }
+          error={!!(validationError && (!fecha || !ddmmyyyyToISO(fecha)))}
           theme={theme}
         />
 
         {/* ─── Items ────────────────────────────────────────────────────── */}
-        <Text style={[styles.sectionTitle, { color: theme.text }]}>
-          Items del pedido
-        </Text>
+        <Text style={[styles.sectionTitle, { color: theme.text }]}>Items del pedido</Text>
         {items.map((item) => {
           const sel = selectedItems.find((s) => s.item.id === item.id);
           const isSelected = !!sel;
           return (
-            <View
-              key={item.id}
-              style={[
-                styles.itemRow,
-                {
-                  backgroundColor: isSelected ? theme.tint + '15' : theme.card,
-                  borderColor: isSelected ? theme.tint : theme.cardBorder,
-                },
-              ]}
-            >
-              <TouchableOpacity
-                style={styles.itemInfo}
-                onPress={() => toggleItem(item)}
-              >
-                <Text style={[styles.itemNombre, { color: theme.text }]}>
-                  {item.nombre}
-                </Text>
-                <Text style={[styles.itemPrecio, { color: theme.muted }]}>
-                  {item.precio ? formatTotal(item.precio) : '—'} / {item.unidad}
-                </Text>
+            <View key={item.id} style={[styles.itemRow, { backgroundColor: isSelected ? theme.tint + '15' : theme.card, borderColor: isSelected ? theme.tint : theme.cardBorder }]}>
+              <TouchableOpacity style={styles.itemInfo} onPress={() => toggleItem(item)}>
+                <Text style={[styles.itemNombre, { color: theme.text }]}>{item.nombre}</Text>
+                <Text style={[styles.itemPrecio, { color: theme.muted }]}>{item.precio ? formatTotal(item.precio) : '—'} / {item.unidad}</Text>
               </TouchableOpacity>
-
               {isSelected ? (
                 <View style={styles.stepper}>
-                  <TouchableOpacity
-                    style={[styles.stepperBtn, { backgroundColor: theme.surface }]}
-                    onPress={() => updateCantidad(item.id, -1)}
-                  >
+                  <TouchableOpacity style={[styles.stepperBtn, { backgroundColor: theme.surface }]} onPress={() => updateCantidad(item.id, -1)}>
                     <Text style={[styles.stepperBtnText, { color: theme.text }]}>−</Text>
                   </TouchableOpacity>
-                  <Text style={[styles.stepperValue, { color: theme.text }]}>
-                    {sel!.cantidad}
-                  </Text>
-                  <TouchableOpacity
-                    style={[styles.stepperBtn, { backgroundColor: theme.surface }]}
-                    onPress={() => updateCantidad(item.id, 1)}
-                  >
+                  <Text style={[styles.stepperValue, { color: theme.text }]}>{sel!.cantidad}</Text>
+                  <TouchableOpacity style={[styles.stepperBtn, { backgroundColor: theme.surface }]} onPress={() => updateCantidad(item.id, 1)}>
                     <Text style={[styles.stepperBtnText, { color: theme.text }]}>+</Text>
                   </TouchableOpacity>
                 </View>
               ) : (
-                <TouchableOpacity
-                  style={[styles.addItemBtn, { backgroundColor: theme.buttonPrimary }]}
-                  onPress={() => toggleItem(item)}
-                >
+                <TouchableOpacity style={[styles.addItemBtn, { backgroundColor: theme.buttonPrimary }]} onPress={() => toggleItem(item)}>
                   <Text style={[styles.addItemBtnText, { color: theme.headerText }]}>Agregar</Text>
                 </TouchableOpacity>
               )}
@@ -311,22 +306,12 @@ export default function PedidoAltaScreen() {
           );
         })}
 
-        {/* ─── Total y submit ────────────────────────────────────────────── */}
         <View style={[styles.totalContainer, { borderTopColor: theme.border }]}>
-          <Text style={[styles.totalLabel, { color: theme.text }]}>
-            Total estimado
-          </Text>
-          <Text style={[styles.totalValue, { color: theme.tint }]}>
-            {formatTotal(totalEstimado)}
-          </Text>
+          <Text style={[styles.totalLabel, { color: theme.text }]}>Total estimado</Text>
+          <Text style={[styles.totalValue, { color: theme.tint }]}>{formatTotal(totalEstimado)}</Text>
         </View>
 
-        <Button
-          title={crearPedido.isPending ? 'Creando...' : 'Crear Pedido'}
-          onPress={handleSubmit}
-          disabled={crearPedido.isPending}
-          style={styles.submitButton}
-        />
+        <Button title={crearPedido.isPending ? 'Creando...' : 'Crear Pedido'} onPress={handleSubmit} disabled={crearPedido.isPending} style={styles.submitButton} />
       </ScrollView>
 
       {/* ─── Modal: Seleccionar Cliente ─────────────────────────────────── */}
@@ -334,70 +319,71 @@ export default function PedidoAltaScreen() {
         <View style={styles.modalOverlay}>
           <View style={[styles.modalContent, { backgroundColor: theme.card }]}>
             <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, { color: theme.text }]}>
-                Seleccionar Cliente
-              </Text>
+              <Text style={[styles.modalTitle, { color: theme.text }]}>Seleccionar Cliente</Text>
               <TouchableOpacity onPress={() => setShowClienteModal(false)}>
-                <Text style={[styles.modalClose, { color: theme.tint }]}>
-                  Cerrar
-                </Text>
+                <Text style={[styles.modalClose, { color: theme.tint }]}>Cerrar</Text>
               </TouchableOpacity>
             </View>
-
             <TextInput
-              style={[
-                styles.modalSearch,
-                {
-                  backgroundColor: theme.inputBackground,
-                  borderColor: theme.border,
-                  color: theme.text,
-                },
-              ]}
+              style={[styles.modalSearch, { backgroundColor: theme.inputBackground, borderColor: theme.border, color: theme.text }]}
               placeholder="Buscar cliente..."
               placeholderTextColor={theme.muted}
               value={searchCliente}
               onChangeText={setSearchCliente}
             />
-
             <FlatList
               data={filteredClientes}
               keyExtractor={(item) => item.id}
               renderItem={({ item }) => (
                 <TouchableOpacity
-                  style={[
-                    styles.modalItem,
-                    {
-                      backgroundColor:
-                        selectedCliente?.id === item.id
-                          ? theme.tint + '20'
-                          : 'transparent',
-                    },
-                  ]}
-                  onPress={() => {
-                    setSelectedCliente(item);
-                    setValidationError(null);
-                    setShowClienteModal(false);
-                    setSearchCliente('');
-                  }}
+                  style={[styles.modalItem, { backgroundColor: selectedCliente?.id === item.id ? theme.tint + '20' : 'transparent' }]}
+                  onPress={() => selectCliente(item)}
                 >
-                  <Text style={[styles.modalItemText, { color: theme.text }]}>
-                    {item.nombre} {item.apellido}
-                  </Text>
+                  <Text style={[styles.modalItemText, { color: theme.text }]}>{item.nombre} {item.apellido}</Text>
                   <Text style={[styles.modalItemSub, { color: theme.muted }]}>
-                    {item.domicilio.calle} {item.domicilio.numero},{' '}
-                    {item.domicilio.localidad}
+                    {item.domicilios[0]?.calle} {item.domicilios[0]?.numero}, {item.domicilios[0]?.localidad} ({item.domicilios.length} domicilio{item.domicilios.length !== 1 ? 's' : ''})
                   </Text>
                 </TouchableOpacity>
               )}
-              ListEmptyComponent={
-                <Text style={[styles.modalEmpty, { color: theme.muted }]}>
-                  No se encontraron clientes
-                </Text>
-              }
+              ListEmptyComponent={<Text style={[styles.modalEmpty, { color: theme.muted }]}>No se encontraron clientes</Text>}
             />
           </View>
         </View>
       </Modal>
+
+      {/* ─── Modal: Seleccionar Domicilio ───────────────────────────────── */}
+      {selectedCliente && (
+        <Modal visible={showDomModal} animationType="slide" transparent>
+          <View style={styles.modalOverlay}>
+            <View style={[styles.modalContent, { backgroundColor: theme.card }]}>
+              <View style={styles.modalHeader}>
+                <Text style={[styles.modalTitle, { color: theme.text }]}>Seleccionar Domicilio</Text>
+                <TouchableOpacity onPress={() => setShowDomModal(false)}>
+                  <Text style={[styles.modalClose, { color: theme.tint }]}>Cerrar</Text>
+                </TouchableOpacity>
+              </View>
+              <FlatList
+                data={selectedCliente.domicilios}
+                keyExtractor={(item) => item.id}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    style={[styles.modalItem, { backgroundColor: selectedDom?.id === item.id ? theme.tint + '20' : 'transparent' }]}
+                    onPress={() => { setSelectedDom(item); setShowDomModal(false); }}
+                  >
+                    <Text style={[styles.modalItemText, { color: theme.text }]}>
+                      {item.calle} {item.numero}, {item.localidad}
+                    </Text>
+                    <Text style={[styles.modalItemSub, { color: theme.muted }]}>
+                      {item.principal ? 'Principal' : 'Secundario'} — {item.dias.length} día{item.dias.length !== 1 ? 's' : ''}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+                ListEmptyComponent={<Text style={[styles.modalEmpty, { color: theme.muted }]}>Sin domicilios</Text>}
+              />
+            </View>
+          </View>
+        </Modal>
+      )}
 
     </ThemedView>
   );
@@ -503,6 +489,10 @@ const styles = StyleSheet.create({
     marginTop: Spacing.lg,
   },
 
+  hint: {
+    fontSize: FontSizes.sm,
+    marginTop: Spacing.xs,
+  },
   errorText: {
     fontSize: FontSizes.sm,
     marginTop: Spacing.xs,

@@ -159,14 +159,20 @@ export const altaFlow = addKeyword<Provider, Database>('alta')
             nombre: st.nombre as string,
             apellido: st.apellido as string,
             telefono: st.telefono as string,
-            calle: st.calle as string,
-            numero: st.numero as string,
-            localidad: st.localidad as string,
-            latitud: 0,
-            longitud: 0,
-            diaEntrega: st.diaEntrega as string,
-            horarioDesde: st.horarioDesde as string,
-            horarioHasta: st.horarioHasta as string,
+            domicilios: [{
+              calle: st.calle as string,
+              numero: st.numero as string,
+              localidad: st.localidad as string,
+              latitud: 0,
+              longitud: 0,
+              principal: true,
+              dias: [{
+                nombre: st.diaEntrega as string,
+                horarios: [
+                  { inicio: st.horarioDesde as string, fin: st.horarioHasta as string },
+                ],
+              }],
+            }],
             observaciones: (st.observaciones as string) || undefined,
           })
           await flowDynamic(

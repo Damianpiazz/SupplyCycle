@@ -1,7 +1,8 @@
 import { z } from 'zod';
 
 export const crearPedidoSchema = z.object({
-  clienteId: z.string().uuid(),
+  clienteId: z.string().uuid().optional(),
+  domicilioId: z.string().uuid().optional(),
   fecha: z.string().optional(),
   orden: z.number().int().min(1).optional(),
   items: z
@@ -12,7 +13,10 @@ export const crearPedidoSchema = z.object({
       })
     )
     .min(1, 'El pedido debe tener al menos un ítem'),
-});
+}).refine(
+  (data) => data.domicilioId || data.clienteId,
+  { message: 'Debe proporcionar domicilioId o clienteId', path: ['domicilioId'] }
+);
 
 export const actualizarEstadoSchema = z.object({
   estado: z.enum(['EN_RUTA', 'ENTREGADO', 'NO_ENTREGADO', 'CANCELADO']),
@@ -34,4 +38,9 @@ export const cancelarPedidoSchema = z.object({
     'ACCESO_DENEGADO',
     'OTRO',
   ]),
+});
+
+export const confirmarPedidoSchema = z.object({
+  latitud: z.number().min(-90).max(90).optional(),
+  longitud: z.number().min(-180).max(180).optional(),
 });

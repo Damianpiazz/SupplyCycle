@@ -1,6 +1,6 @@
 // TDD-0003: Pedido types
 
-import type { Cliente } from './cliente';
+import type { Cliente, Domicilio } from './cliente';
 import type { PedidoItem } from './item';
 
 export type EstadoPedido = 'PENDIENTE' | 'EN_RUTA' | 'ENTREGADO' | 'NO_ENTREGADO' | 'CANCELADO';
@@ -21,5 +21,6 @@ export interface Pedido {
   total?: number;
   itemsCount?: number;
   cliente: Cliente;
+  domicilio: Domicilio;
   items: PedidoItem[];
 }

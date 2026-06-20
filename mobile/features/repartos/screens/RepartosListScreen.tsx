@@ -50,10 +50,10 @@ function EntregaCard({
         </View>
       </View>
       <Text style={[styles.cardDireccion, { color: theme.muted }]}>
-        {pedido.cliente.domicilio.calle} {pedido.cliente.domicilio.numero}
+        {pedido.domicilio.calle} {pedido.domicilio.numero}
       </Text>
       <Text style={[styles.cardHorario, { color: theme.info }]}>
-        {pedido.cliente.horarioDesde} - {pedido.cliente.horarioHasta}
+        {pedido.domicilio.dias[0]?.horarios[0]?.inicio ?? ''} - {pedido.domicilio.dias[0]?.horarios[0]?.fin ?? ''}
       </Text>
     </Card>
   );

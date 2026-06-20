@@ -122,7 +122,7 @@ export default function CrearRepartoScreen() {
                 {item.numeroPedido} — {item.cliente.nombre} {item.cliente.apellido}
               </Text>
               <Text style={[styles.pedidoCliente, { color: theme.muted }]}>
-                {item.cliente.domicilio.calle} {item.cliente.domicilio.numero}, {item.cliente.domicilio.localidad}
+                {item.domicilio.calle} {item.domicilio.numero}, {item.domicilio.localidad}
               </Text>
               <Text style={[styles.pedidoItems, { color: theme.muted }]}>
                 {item.itemsCount} ítem{item.itemsCount !== 1 ? 's' : ''} — ${item.total?.toFixed(2)}

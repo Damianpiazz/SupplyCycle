@@ -56,30 +56,40 @@ describe('Types - Usuario', () => {
 });
 
 describe('Types - Cliente', () => {
-  it('should have domicilio with coordinates', () => {
+  it('should have domicilios with coordinates', () => {
     const cliente = {
       id: '1',
       nombre: 'María',
       apellido: 'González',
       telefono: '1145678901',
-      domicilio: {
-        calle: 'Av. Corrientes',
-        numero: '1234',
-        localidad: 'CABA',
-        latitud: -34.6037,
-        longitud: -58.3816,
-      },
-      diaEntrega: 'LUNES' as const,
-      horarioDesde: '09:00',
-      horarioHasta: '11:00',
+      domicilios: [
+        {
+          id: 'dom-1',
+          calle: 'Av. Corrientes',
+          numero: '1234',
+          localidad: 'CABA',
+          latitud: -34.6037,
+          longitud: -58.3816,
+          principal: true,
+          dias: [
+            {
+              id: 'dia-1',
+              nombre: 'LUNES' as const,
+              horarios: [
+                { id: 'hor-1', inicio: '09:00', fin: '11:00' },
+              ],
+            },
+          ],
+        },
+      ],
     };
-    expect(cliente.domicilio.latitud).toBeGreaterThanOrEqual(-90);
-    expect(cliente.domicilio.latitud).toBeLessThanOrEqual(90);
-    expect(cliente.domicilio.longitud).toBeGreaterThanOrEqual(-180);
-    expect(cliente.domicilio.longitud).toBeLessThanOrEqual(180);
+    expect(cliente.domicilios[0].latitud).toBeGreaterThanOrEqual(-90);
+    expect(cliente.domicilios[0].latitud).toBeLessThanOrEqual(90);
+    expect(cliente.domicilios[0].longitud).toBeGreaterThanOrEqual(-180);
+    expect(cliente.domicilios[0].longitud).toBeLessThanOrEqual(180);
   });
 
-  it('should accept all diaEntrega values', () => {
+  it('should accept all diaSemana values', () => {
     const dias = ['LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES', 'SABADO'] as const;
     dias.forEach((dia) => {
       expect(['LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES', 'SABADO']).toContain(dia);
