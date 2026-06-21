@@ -3,6 +3,7 @@ import * as ctrl from '../controllers/retenidos.admin.controller.js';
 
 const router = Router();
 router.get('/', ctrl.index);
+router.get('/demorados', ctrl.listDemorados);
 router.get('/nuevo', ctrl.createForm);
 router.post('/', ctrl.create);
 router.get('/:id/editar', ctrl.editForm);

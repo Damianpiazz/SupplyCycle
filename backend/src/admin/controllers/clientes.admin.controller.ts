@@ -92,9 +92,36 @@ export async function index(req: Request, res: Response, next: NextFunction): Pr
 export async function show(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const cliente = await clientesService.obtenerCliente(req.params.id as string);
+
+    const retenidos = await prisma.retenido.findMany({
+      where: { clienteId: req.params.id as string },
+      include: {
+        item: { select: { id: true, nombre: true } },
+        pedido: { select: { id: true, numeroPedido: true } },
+      },
+      orderBy: { inicio: 'desc' },
+    });
+
+    // Consolidar saldo pendiente por tipo de item
+    const saldoMap = new Map<string, { itemNombre: string; cantidad: number }>();
+    for (const r of retenidos) {
+      if (r.estado === 'RETENIDO') {
+        const key = r.itemId;
+        const existing = saldoMap.get(key);
+        if (existing) {
+          existing.cantidad++;
+        } else {
+          saldoMap.set(key, { itemNombre: r.item.nombre, cantidad: 1 });
+        }
+      }
+    }
+    const saldoEnvases = Array.from(saldoMap.values());
+
     res.render('clientes/show', {
       title: `${cliente.apellido}, ${cliente.nombre}`,
       cliente,
+      retenidos,
+      saldoEnvases,
     });
   } catch (err) {
     next(err);

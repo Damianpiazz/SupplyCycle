@@ -2,6 +2,65 @@ import type { Request, Response, NextFunction } from 'express';
 import { prisma } from '../../lib/prisma.js';
 
 const ESTADOS = ['RETENIDO', 'DEVUELTO', 'PERDIDO'] as const;
+const DIAS_LIMITE_DEMORA = 15;
+
+export async function listDemorados(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const nombre = req.query.nombre as string | undefined;
+
+    const fechaLimite = new Date();
+    fechaLimite.setDate(fechaLimite.getDate() - DIAS_LIMITE_DEMORA);
+
+    const whereCliente: Record<string, unknown> = {
+      activo: true,
+      retenidos: {
+        some: {
+          estado: 'RETENIDO' as const,
+          inicio: { lte: fechaLimite },
+        },
+      },
+    };
+
+    if (nombre) {
+      whereCliente['OR'] = [
+        { nombre: { contains: nombre, mode: 'insensitive' as const } },
+        { apellido: { contains: nombre, mode: 'insensitive' as const } },
+      ];
+    }
+
+    const clientes = await prisma.cliente.findMany({
+      where: whereCliente,
+      include: {
+        retenidos: {
+          where: { estado: 'RETENIDO' as const },
+          select: {
+            id: true,
+            inicio: true,
+            item: { select: { nombre: true } },
+          },
+          orderBy: { inicio: 'desc' },
+        },
+      },
+      orderBy: { apellido: 'asc' },
+    });
+
+    const demorados = clientes.map((c) => ({
+      id: c.id,
+      nombre: c.nombre,
+      apellido: c.apellido,
+      telefono: c.telefono,
+      cantidadPendientes: c.retenidos.length,
+      ultimaEntrega: c.retenidos.length > 0 ? c.retenidos[0]!.inicio : null,
+    }));
+
+    res.render('retenidos/demorados', {
+      title: 'Envases Demorados',
+      demorados,
+      filtroNombre: nombre || '',
+      DIAS_LIMITE_DEMORA,
+    });
+  } catch (err) { next(err); }
+}
 
 export async function index(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {

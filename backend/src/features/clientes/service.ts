@@ -1,6 +1,7 @@
 import { prisma } from '../../lib/prisma.js';
 import { ApiError } from '../../utils/api-error.js';
 import { timeStringToDate, dateToTimeString } from '../../lib/date-utils.js';
+import { calcularDatosDemora } from '../../lib/retenidos-utils.js';
 import type { z } from 'zod';
 import type { clienteSchema, actualizarClienteSchema } from './schema.js';
 
@@ -40,6 +41,10 @@ type ClienteWithRelations = {
       }>;
     }>;
   }>;
+  retenidos: Array<{
+    estado: string;
+    inicio: Date;
+  }>;
 };
 
 const clienteInclude = {
@@ -52,9 +57,17 @@ const clienteInclude = {
       },
     },
   },
+  retenidos: {
+    where: { estado: 'RETENIDO' as const },
+    select: { estado: true, inicio: true },
+    orderBy: { inicio: 'desc' as const },
+  },
 } as const;
 
 function toClienteResponse(cliente: ClienteWithRelations) {
+  const { tieneDemora, cantidadEnvasesPendientes, fechaUltimaEntrega } =
+    calcularDatosDemora(cliente.retenidos);
+
   return {
     id: cliente.id,
     nombre: cliente.nombre,
@@ -62,6 +75,9 @@ function toClienteResponse(cliente: ClienteWithRelations) {
     telefono: cliente.telefono,
     observaciones: cliente.observaciones ?? undefined,
     activo: cliente.activo,
+    tieneDemora,
+    cantidadEnvasesPendientes,
+    fechaUltimaEntrega,
     domicilios: cliente.domicilios.map((dom) => ({
       id: dom.id,
       calle: dom.calle,
