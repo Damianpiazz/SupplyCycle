@@ -33,6 +33,10 @@ export interface Cliente {
   observaciones?: string;
   activo?: boolean;
   domicilios: Domicilio[];
+  // RF-06: Datos de demora de envases
+  tieneDemora?: boolean;
+  cantidadEnvasesPendientes?: number;
+  fechaUltimaEntrega?: string | null;
 }
 
 export interface HorarioInput {

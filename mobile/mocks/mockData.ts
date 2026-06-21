@@ -3,6 +3,13 @@ import type { Reparto } from '@/types/reparto';
 import type { Cliente } from '@/types/cliente';
 import type { Item, PedidoItem } from '@/types/item';
 
+// Helper: fecha ISO relativa a hoy
+function daysAgo(days: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() - days);
+  return d.toISOString();
+}
+
 export const MOCK_CLIENTES: Cliente[] = [
   {
     id: 'cliente-001',
@@ -10,6 +17,9 @@ export const MOCK_CLIENTES: Cliente[] = [
     apellido: 'González',
     telefono: '1145678901',
     observaciones: 'Timbre 3B',
+    tieneDemora: true,
+    cantidadEnvasesPendientes: 4,
+    fechaUltimaEntrega: daysAgo(18),
     domicilios: [
       {
         id: 'dom-cliente-001',
@@ -36,6 +46,9 @@ export const MOCK_CLIENTES: Cliente[] = [
     nombre: 'Carlos',
     apellido: 'López',
     telefono: '1156789012',
+    tieneDemora: true,
+    cantidadEnvasesPendientes: 2,
+    fechaUltimaEntrega: daysAgo(16),
     domicilios: [
       {
         id: 'dom-cliente-002',
@@ -63,6 +76,9 @@ export const MOCK_CLIENTES: Cliente[] = [
     apellido: 'Martínez',
     telefono: '1167890123',
     observaciones: 'Edificio blanco, piso 5',
+    tieneDemora: false,
+    cantidadEnvasesPendientes: 0,
+    fechaUltimaEntrega: null,
     domicilios: [
       {
         id: 'dom-cliente-003',
@@ -89,6 +105,9 @@ export const MOCK_CLIENTES: Cliente[] = [
     nombre: 'Pedro',
     apellido: 'Ramírez',
     telefono: '1178901234',
+    tieneDemora: false,
+    cantidadEnvasesPendientes: 0,
+    fechaUltimaEntrega: daysAgo(5),
     domicilios: [
       {
         id: 'dom-cliente-004',
@@ -115,6 +134,9 @@ export const MOCK_CLIENTES: Cliente[] = [
     nombre: 'Laura',
     apellido: 'Fernández',
     telefono: '1189012345',
+    tieneDemora: false,
+    cantidadEnvasesPendientes: 0,
+    fechaUltimaEntrega: null,
     domicilios: [
       {
         id: 'dom-cliente-005',
@@ -141,6 +163,9 @@ export const MOCK_CLIENTES: Cliente[] = [
     nombre: 'Roberto',
     apellido: 'Díaz',
     telefono: '1190123456',
+    tieneDemora: false,
+    cantidadEnvasesPendientes: 0,
+    fechaUltimaEntrega: null,
     domicilios: [
       {
         id: 'dom-cliente-006',

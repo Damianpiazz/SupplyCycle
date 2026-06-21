@@ -15,6 +15,7 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useToast } from '@/hooks/useToast';
 import { handleApiError } from '@/services/handleApiError';
 import { confirmAction } from '@/utils/confirmAction';
+import DemoraBadge from '@/features/clientes/components/DemoraBadge';
 import {
   useClientes,
   useEliminarCliente,
@@ -44,6 +45,7 @@ export default function ClientesListScreen() {
   const theme = Colors[colorScheme];
   const [search, setSearch] = useState('');
   const [filtroDia, setFiltroDia] = useState<DiaSemana | null>(null);
+  const [filtroDemora, setFiltroDemora] = useState(false);
   const { showToast } = useToast();
 
   const { data: clientes, isLoading, isError, error } = useClientes();
@@ -54,6 +56,9 @@ export default function ClientesListScreen() {
     const term = search.trim().toLowerCase();
 
     return list.filter((c) => {
+      // Filtro por demora
+      if (filtroDemora && !c.tieneDemora) return false;
+      // Filtro por día
       if (filtroDia) {
         const hasDia = c.domicilios.some((d) => d.dias.some((dia) => dia.nombre === filtroDia));
         if (!hasDia) return false;
@@ -62,7 +67,7 @@ export default function ClientesListScreen() {
       const fullName = `${c.nombre} ${c.apellido}`.toLowerCase();
       return fullName.includes(term) || c.telefono.includes(term);
     });
-  }, [clientes, search, filtroDia]);
+  }, [clientes, search, filtroDia, filtroDemora]);
 
   const handleEliminar = (cliente: Cliente) => {
     confirmAction(
@@ -151,6 +156,24 @@ export default function ClientesListScreen() {
             </Text>
           </TouchableOpacity>
         ))}
+        <TouchableOpacity
+          style={[
+            styles.filtroButton,
+            {
+              backgroundColor: filtroDemora ? theme.warning : theme.surface,
+            },
+          ]}
+          onPress={() => setFiltroDemora(!filtroDemora)}
+        >
+          <Text
+            style={[
+              styles.filtroText,
+              { color: filtroDemora ? '#FFFFFF' : theme.text },
+            ]}
+          >
+            Con demora
+          </Text>
+        </TouchableOpacity>
       </View>
 
       {isLoading ? (
@@ -194,6 +217,12 @@ export default function ClientesListScreen() {
                     </View>
                   )}
                 </View>
+                {item.tieneDemora && (
+                  <DemoraBadge
+                    cantidadEnvasesPendientes={item.cantidadEnvasesPendientes ?? 0}
+                    fechaUltimaEntrega={item.fechaUltimaEntrega}
+                  />
+                )}
               </TouchableOpacity>
 
               <View style={[styles.cardActions, { borderTopColor: theme.border }]}>
