@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { ThemedView } from '@/components/themed-view';
@@ -262,53 +262,6 @@ export default function ClienteEditarScreen() {
     <ThemedView style={styles.container}>
       <Header title="Editar cliente" onBack={() => router.back()} />
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        {/* RF-06: Saldo de envases pendientes */}
-        {cliente && (
-          <View
-            style={[
-              styles.demoraCard,
-              {
-                backgroundColor: cliente.tieneDemora
-                  ? theme.warning + '18'
-                  : theme.success + '18',
-                borderColor: cliente.tieneDemora
-                  ? theme.warning
-                  : theme.success,
-              },
-            ]}
-          >
-            <Text
-              style={[
-                styles.demoraTitle,
-                {
-                  color: cliente.tieneDemora
-                    ? theme.warning
-                    : theme.success,
-                },
-              ]}
-            >
-              {cliente.tieneDemora
-                ? `Envases pendientes: ${cliente.cantidadEnvasesPendientes ?? 0}`
-                : 'Envases al día'}
-            </Text>
-            {cliente.tieneDemora && (
-              <Text style={[styles.demoraSubtitle, { color: theme.text }]}>
-                Este cliente tiene envases retenidos sin devolver hace más de 15 días.
-              </Text>
-            )}
-            {cliente.fechaUltimaEntrega && (
-              <Text style={[styles.demoraFecha, { color: theme.muted }]}>
-                Última entrega:{' '}
-                {new Date(cliente.fechaUltimaEntrega).toLocaleDateString('es-AR', {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
-                })}
-              </Text>
-            )}
-          </View>
-        )}
-
         <Input label="Nombre" value={nombre} onChangeText={setNombre} autoCapitalize="words" />
         <Input label="Apellido" value={apellido} onChangeText={setApellido} autoCapitalize="words" />
         <Input label="Teléfono" value={telefono} onChangeText={setTelefono} keyboardType="phone-pad" />
@@ -410,23 +363,4 @@ const styles = StyleSheet.create({
   error: { fontSize: FontSizes.sm, marginBottom: Spacing.md },
   submit: { marginTop: Spacing.md },
   deleteButton: { marginTop: Spacing.md },
-  // RF-06: Demora envases
-  demoraCard: {
-    borderWidth: 1,
-    borderRadius: BorderRadius.md,
-    padding: Spacing.md,
-    marginBottom: Spacing.lg,
-  },
-  demoraTitle: {
-    fontSize: FontSizes.md,
-    fontWeight: '700',
-    marginBottom: Spacing.xs,
-  },
-  demoraSubtitle: {
-    fontSize: FontSizes.sm,
-    marginBottom: Spacing.xs,
-  },
-  demoraFecha: {
-    fontSize: FontSizes.xs,
-  },
 });
