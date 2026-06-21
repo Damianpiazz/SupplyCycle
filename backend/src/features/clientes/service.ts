@@ -41,7 +41,10 @@ type ClienteWithRelations = {
       }>;
     }>;
   }>;
-  retenidos?: Array<{ estado: string; inicio: Date }>;
+  retenidos: Array<{
+    estado: string;
+    inicio: Date;
+  }>;
 };
 
 const clienteInclude = {
@@ -55,13 +58,16 @@ const clienteInclude = {
     },
   },
   retenidos: {
-    where: { estado: 'RETENIDO' },
+    where: { estado: 'RETENIDO' as const },
     select: { estado: true, inicio: true },
+    orderBy: { inicio: 'desc' as const },
   },
 } as const;
 
 function toClienteResponse(cliente: ClienteWithRelations) {
-  const datosDemora = calcularDatosDemora(cliente.retenidos ?? []);
+  const { tieneDemora, cantidadEnvasesPendientes, fechaUltimaEntrega } =
+    calcularDatosDemora(cliente.retenidos);
+
   return {
     id: cliente.id,
     nombre: cliente.nombre,
@@ -69,9 +75,9 @@ function toClienteResponse(cliente: ClienteWithRelations) {
     telefono: cliente.telefono,
     observaciones: cliente.observaciones ?? undefined,
     activo: cliente.activo,
-    tieneDemora: datosDemora.tieneDemora,
-    cantidadEnvasesPendientes: datosDemora.cantidadEnvasesPendientes,
-    fechaUltimaEntrega: datosDemora.fechaUltimaEntrega,
+    tieneDemora,
+    cantidadEnvasesPendientes,
+    fechaUltimaEntrega,
     domicilios: cliente.domicilios.map((dom) => ({
       id: dom.id,
       calle: dom.calle,

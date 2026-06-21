@@ -41,8 +41,9 @@ const clienteInclude = {
     },
   },
   retenidos: {
-    where: { estado: 'RETENIDO' },
+    where: { estado: 'RETENIDO' as const },
     select: { estado: true, inicio: true },
+    orderBy: { inicio: 'desc' as const },
   },
 };
 
