@@ -2,7 +2,7 @@
 
 **Session ID:** ses_mobile-rf06 (consolidado)
 **Created:** 20/6/2026
-**Updated:** 21/6/2026
+**Updated:** 21/6/2026 (sesión backend: verificación historial + endpoints consumo y pedidos)
 **Requerimiento:** RF-06
 **Ámbito:** mobile (app React Native + Expo) + backend (REST API)
 
@@ -82,7 +82,79 @@ router.get('/:id/historial', apiKeyAuth, authenticate, historialController);
 
 **Importante**: la ruta `/:id/historial` se ubicó **antes** de `/:id` para evitar conflictos de matching.
 
-### 1.4 Tests actualizados
+### 1.4 Verificación de shape del endpoint `GET /api/v1/clientes/:id/historial`
+
+Se verificó que el endpoint existente responde exactamente con la shape esperada por el mobile:
+
+| Campo | Shape esperada | Real | Estado |
+|---|---|---|---|
+| `saldoEnvases` | `Array` | `Array<{itemId, nombre, cantidad}>` | ✅ |
+| `historial[].id` | `string` | `` `${r.id}-entrega` / `${r.id}-devolucion` `` | ✅ |
+| `historial[].fecha` | `string` (ISO) | `r.inicio.toISOString()` / `r.fin!.toISOString()` | ✅ |
+| `historial[].tipo` | `'ENTREGA' \| 'DEVOLUCION'` | `'ENTREGA'` / `'DEVOLUCION'` | ✅ |
+| `historial[].cantidad` | `number` | `1` | ✅ |
+| `historial[].tipoEnvase` | `string` | `r.item.nombre` | ✅ |
+| `historial[].pedidoId` | `string \| null` | `r.pedido.numeroPedido` | ✅ |
+
+**Conclusión:** No se requirieron correcciones.
+
+### 1.5 Nuevo endpoint `GET /api/v1/clientes/:id/consumo` (RF-07.5)
+
+**Archivo:** `backend/src/features/clientes/service.ts` — Nueva función `obtenerConsumoCliente`
+
+```typescript
+GET /api/v1/clientes/:id/consumo
+
+Response Shape:
+{
+  totalPedidos: number;
+  totalBidones: number;          // suma de PedidoItem.cantidad de todos los pedidos
+  promedioBidonesPorPedido: number;
+}
+```
+
+- Consulta los `Pedido` asociados al cliente via `domicilio.clienteId`, excluyendo `deletedAt != null`.
+- `totalBidones` suma `PedidoItem.cantidad` de todos los pedidos del cliente.
+- Si el cliente no tiene pedidos: `{ totalPedidos: 0, totalBidones: 0, promedioBidonesPorPedido: 0 }`.
+- Si el cliente no existe, responde `404 NOT_FOUND`.
+
+**Archivo:** `backend/src/features/clientes/controller.ts` — Nuevo `consumoController`
+
+**Archivo:** `backend/src/features/clientes/routes.ts` — Nueva ruta:
+```typescript
+router.get('/:id/consumo', apiKeyAuth, authenticate, consumoController);
+```
+Ubicada **antes** de `/:id` para evitar conflictos de matching.
+
+### 1.6 Nuevo endpoint `GET /api/v1/clientes/:id/pedidos` (RF-07.1)
+
+**Archivo:** `backend/src/features/clientes/service.ts` — Nueva función `obtenerPedidosCliente`
+
+```typescript
+GET /api/v1/clientes/:id/pedidos
+
+Response Shape:
+Array<{
+  id: string;
+  fecha: string;       // ISO date
+  estado: string;
+  totalBidones: number; // suma de PedidoItem.cantidad del pedido
+}>
+```
+
+- Ordenado por `fecha` descendente.
+- Filtra pedidos eliminados (`deletedAt: null`).
+- Si el cliente no existe, responde `404 NOT_FOUND`.
+
+**Archivo:** `backend/src/features/clientes/controller.ts` — Nuevo `pedidosClienteController`
+
+**Archivo:** `backend/src/features/clientes/routes.ts` — Nueva ruta:
+```typescript
+router.get('/:id/pedidos', apiKeyAuth, authenticate, pedidosClienteController);
+```
+Ubicada **antes** de `/:id` para evitar conflictos de matching.
+
+### 1.7 Tests actualizados
 
 **Archivo:** `backend/src/features/clientes/__tests__/clientes.service.test.ts`
 - Agregado `retenidos: []` a `baseClienteRow`
@@ -94,9 +166,11 @@ router.get('/:id/historial', apiKeyAuth, authenticate, historialController);
 | Comprobación | Resultado |
 |---|---|
 | `npx tsc --noEmit` | ✅ Sin errores |
-| `vitest run src/features/clientes/__tests__/` | ✅ 27/27 tests pasan |
+| `vitest run src/features/clientes/__tests__/` | ✅ 27/27 tests pasan (sesión inicial) |
+| `vitest run` (todo el backend) | ✅ 90/90 tests pasan (7 suites) — sin regresión |
 | No se modificaron rutas `/admin/` | ✅ |
 | `verbatimModuleSyntax` respetado | ✅ |
+| Rutas nuevas antes de `/:id` para evitar conflictos | ✅ |
 
 ---
 

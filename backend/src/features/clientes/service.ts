@@ -357,6 +357,57 @@ export async function obtenerHistorialEnvases(clienteId: string) {
   return { saldoEnvases, historial };
 }
 
+export async function obtenerConsumoCliente(clienteId: string) {
+  const cliente = await prisma.cliente.findUnique({ where: { id: clienteId } });
+  if (!cliente) {
+    throw ApiError.notFound('Cliente no encontrado');
+  }
+
+  const pedidos = await prisma.pedido.findMany({
+    where: {
+      domicilio: { clienteId },
+      deletedAt: null,
+    },
+    include: {
+      items: { select: { cantidad: true } },
+    },
+  });
+
+  const totalPedidos = pedidos.length;
+  const totalBidones = pedidos.reduce(
+    (sum, p) => sum + p.items.reduce((s, i) => s + i.cantidad, 0),
+    0,
+  );
+  const promedioBidonesPorPedido = totalPedidos > 0 ? totalBidones / totalPedidos : 0;
+
+  return { totalPedidos, totalBidones, promedioBidonesPorPedido };
+}
+
+export async function obtenerPedidosCliente(clienteId: string) {
+  const cliente = await prisma.cliente.findUnique({ where: { id: clienteId } });
+  if (!cliente) {
+    throw ApiError.notFound('Cliente no encontrado');
+  }
+
+  const pedidos = await prisma.pedido.findMany({
+    where: {
+      domicilio: { clienteId },
+      deletedAt: null,
+    },
+    include: {
+      items: { select: { cantidad: true } },
+    },
+    orderBy: { fecha: 'desc' },
+  });
+
+  return pedidos.map((p) => ({
+    id: p.id,
+    fecha: p.fecha.toISOString(),
+    estado: p.estado,
+    totalBidones: p.items.reduce((s, i) => s + i.cantidad, 0),
+  }));
+}
+
 export async function eliminarCliente(id: string) {
   const cliente = await prisma.cliente.findUnique({ where: { id } });
   if (!cliente) {
