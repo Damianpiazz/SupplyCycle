@@ -40,6 +40,11 @@ const clienteInclude = {
       dias: { include: { horarios: true } },
     },
   },
+  retenidos: {
+    where: { estado: 'RETENIDO' as const },
+    select: { estado: true, inicio: true },
+    orderBy: { inicio: 'desc' as const },
+  },
 };
 
 const baseDomRow = {
@@ -73,6 +78,7 @@ const baseClienteRow = {
   creadoEn: new Date(),
   actualizadoEn: new Date(),
   domicilios: [baseDomRow],
+  retenidos: [],
 };
 
 const expectedResponse = {
@@ -82,6 +88,9 @@ const expectedResponse = {
   telefono: '1122334455',
   observaciones: undefined,
   activo: true,
+  tieneDemora: false,
+  cantidadEnvasesPendientes: 0,
+  fechaUltimaEntrega: null,
   domicilios: [
     {
       id: 'dom-1',
