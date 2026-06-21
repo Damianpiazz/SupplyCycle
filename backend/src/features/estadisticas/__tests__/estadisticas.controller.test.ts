@@ -81,6 +81,28 @@ describe('diariasController', () => {
     expect(res.status).not.toHaveBeenCalled();
   });
 
+  it('llama a next con ZodError cuando la fecha no es real (ej. mes 13)', async () => {
+    const req = mockReq({ fecha: '2026-13-01' }); // mes 13 no existe
+    const res = mockRes();
+    const next = mockNext();
+
+    await diariasController(req, res, next);
+
+    expect(next).toHaveBeenCalledWith(expect.any(ZodError));
+    expect(res.status).not.toHaveBeenCalled();
+  });
+
+  it('llama a next con ZodError cuando el día no existe en el mes (ej. 30 feb)', async () => {
+    const req = mockReq({ fecha: '2026-02-30' }); // febrero no tiene 30 días
+    const res = mockRes();
+    const next = mockNext();
+
+    await diariasController(req, res, next);
+
+    expect(next).toHaveBeenCalledWith(expect.any(ZodError));
+    expect(res.status).not.toHaveBeenCalled();
+  });
+
   it('llama a next con ZodError cuando falta la fecha', async () => {
     const req = mockReq({}); // sin fecha
     const res = mockRes();
