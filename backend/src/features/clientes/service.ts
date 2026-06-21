@@ -1,6 +1,7 @@
 import { prisma } from '../../lib/prisma.js';
 import { ApiError } from '../../utils/api-error.js';
 import { timeStringToDate, dateToTimeString } from '../../lib/date-utils.js';
+import { calcularDatosDemora } from '../../lib/retenidos-utils.js';
 import type { z } from 'zod';
 import type { clienteSchema, actualizarClienteSchema } from './schema.js';
 
@@ -40,6 +41,7 @@ type ClienteWithRelations = {
       }>;
     }>;
   }>;
+  retenidos?: Array<{ estado: string; inicio: Date }>;
 };
 
 const clienteInclude = {
@@ -52,9 +54,14 @@ const clienteInclude = {
       },
     },
   },
+  retenidos: {
+    where: { estado: 'RETENIDO' },
+    select: { estado: true, inicio: true },
+  },
 } as const;
 
 function toClienteResponse(cliente: ClienteWithRelations) {
+  const datosDemora = calcularDatosDemora(cliente.retenidos ?? []);
   return {
     id: cliente.id,
     nombre: cliente.nombre,
@@ -62,6 +69,9 @@ function toClienteResponse(cliente: ClienteWithRelations) {
     telefono: cliente.telefono,
     observaciones: cliente.observaciones ?? undefined,
     activo: cliente.activo,
+    tieneDemora: datosDemora.tieneDemora,
+    cantidadEnvasesPendientes: datosDemora.cantidadEnvasesPendientes,
+    fechaUltimaEntrega: datosDemora.fechaUltimaEntrega,
     domicilios: cliente.domicilios.map((dom) => ({
       id: dom.id,
       calle: dom.calle,
@@ -273,6 +283,72 @@ export async function actualizarCliente(id: string, input: ActualizarClienteInpu
     include: clienteInclude,
   });
   return toClienteResponse(updated as unknown as ClienteWithRelations);
+}
+
+export async function obtenerHistorialEnvases(clienteId: string) {
+  const retenidos = await prisma.retenido.findMany({
+    where: { clienteId },
+    include: {
+      item: { select: { id: true, nombre: true } },
+      pedido: { select: { id: true, numeroPedido: true } },
+    },
+    orderBy: { inicio: 'desc' },
+  });
+
+  // Consolidar saldo pendiente por tipo de item
+  const saldoMap = new Map<string, { itemId: string; nombre: string; cantidad: number }>();
+  for (const r of retenidos) {
+    if (r.estado === 'RETENIDO') {
+      const key = r.itemId;
+      const existing = saldoMap.get(key);
+      if (existing) {
+        existing.cantidad++;
+      } else {
+        saldoMap.set(key, { itemId: r.item.id, nombre: r.item.nombre, cantidad: 1 });
+      }
+    }
+  }
+  const saldoEnvases = Array.from(saldoMap.values());
+
+  // Historial cronológico: cada Retenido genera una entrada ENTREGA al inicio,
+  // y una entrada DEVOLUCION al fin (si tiene fecha de devolución).
+  const historial = retenidos.flatMap((r) => {
+    const entries: Array<{
+      id: string;
+      fecha: string;
+      tipo: 'ENTREGA' | 'DEVOLUCION';
+      cantidad: number;
+      tipoEnvase: string;
+      pedidoId: string | null;
+    }> = [];
+
+    entries.push({
+      id: `${r.id}-entrega`,
+      fecha: r.inicio.toISOString(),
+      tipo: 'ENTREGA',
+      cantidad: 1,
+      tipoEnvase: r.item.nombre,
+      pedidoId: r.pedido.numeroPedido,
+    });
+
+    if (r.fin) {
+      entries.push({
+        id: `${r.id}-devolucion`,
+        fecha: r.fin.toISOString(),
+        tipo: 'DEVOLUCION',
+        cantidad: 1,
+        tipoEnvase: r.item.nombre,
+        pedidoId: r.pedido.numeroPedido,
+      });
+    }
+
+    return entries;
+  });
+
+  // Ordenar por fecha descendente (más reciente primero)
+  historial.sort((a, b) => b.fecha.localeCompare(a.fecha));
+
+  return { saldoEnvases, historial };
 }
 
 export async function eliminarCliente(id: string) {

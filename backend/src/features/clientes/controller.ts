@@ -65,6 +65,20 @@ export async function actualizarController(
   }
 }
 
+export async function historialController(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const id = req.params['id'] as string;
+    const result = await clientesService.obtenerHistorialEnvases(id);
+    sendSuccess(res, result);
+  } catch (err) {
+    next(err);
+  }
+}
+
 export async function eliminarController(
   req: Request,
   res: Response,
