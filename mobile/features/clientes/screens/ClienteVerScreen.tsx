@@ -123,7 +123,19 @@ export default function ClienteVerScreen() {
               params: { id: cliente.id },
             })
           }
-          style={styles.editButton}
+          style={styles.actionButton}
+        />
+
+        {/* Botón Abrir Historial — RF-06.3 */}
+        <Button
+          title="Abrir Historial"
+          onPress={() =>
+            router.push({
+              pathname: '/clientes/historial/[id]',
+              params: { id: cliente.id },
+            })
+          }
+          style={styles.actionButton}
         />
       </ScrollView>
     </ThemedView>
@@ -146,5 +158,5 @@ const styles = StyleSheet.create({
   domText: { fontSize: FontSizes.sm, marginBottom: Spacing.xs },
   domDia: { fontSize: FontSizes.xs, marginBottom: 2 },
   placeholder: { fontSize: FontSizes.sm, fontStyle: 'italic' },
-  editButton: { marginTop: Spacing.xl },
+  actionButton: { marginTop: Spacing.xl },
 });

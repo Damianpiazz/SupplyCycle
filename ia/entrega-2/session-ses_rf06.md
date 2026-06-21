@@ -2,7 +2,7 @@
 
 **Session ID:** ses_mobile-rf06 (consolidado)
 **Created:** 20/6/2026
-**Updated:** 21/6/2026 (sesión backend: verificación historial + endpoints consumo y pedidos)
+**Updated:** 21/6/2026 (sesión backend: verificación historial + endpoints consumo y pedidos; sesión mobile: pantalla historial de cliente con 4 secciones integradas + hook useHistorialEnvases con apiClient, secciones 1 y 2 conectadas a backend real)
 **Requerimiento:** RF-06
 **Ámbito:** mobile (app React Native + Expo) + backend (REST API)
 
@@ -264,14 +264,157 @@ export interface Cliente {
 - Tap en card → `/clientes/[id]` (ClienteVerScreen — solo lectura)
 - Botón "Editar" → `/clientes/editar/[id]` (ClienteEditarScreen — edición)
 
+### 2.9 Botón "Abrir Historial" en ClienteVerScreen (RF-06.3)
+
+**Archivo:** `mobile/features/clientes/screens/ClienteVerScreen.tsx`
+
+- Se agregó botón "Abrir Historial" debajo del botón "Editar cliente"
+- Navega a `router.push({ pathname: '/clientes/historial/[id]', params: { id: cliente.id } })`
+- Se renombró el estilo de `editButton` a `actionButton` para compartirlo entre ambos botones
+
+### 2.10 Tipos de historial
+
+**Archivo nuevo:** `mobile/types/historial.ts`
+
+```typescript
+export type TipoMovimiento = 'ENTREGA' | 'DEVOLUCION';
+
+export interface MovimientoEnvase {
+  id: string;
+  fecha: string;           // ISO date
+  tipo: TipoMovimiento;
+  cantidad: number;
+  tipoEnvase: string;
+  pedidoId: string | null;
+}
+
+export interface SaldoEnvase {
+  itemId: string;
+  nombre: string;
+  cantidad: number;
+}
+
+export interface ResumenConsumo {
+  totalPedidos: number;
+  totalBidones: number;
+  promedioBidonesPorPedido: number;
+}
+
+export interface PedidoHistorialResumen {
+  id: string;
+  fecha: string;
+  estado: string;
+  totalBidones: number;
+}
+```
+
+### 2.11 Datos mock de historial
+
+**Archivo nuevo:** `mobile/mocks/historialMock.ts`
+
+**Archivo modificado:** `mobile/mocks/mockData.ts` — se exportó `daysAgo()` como named export para ser reutilizado
+
+| Exportación | Descripción | Estado |
+|---|---|---|
+| `MOCK_SALDO_ENVASES` | 3 tipos: Sifón (2 pendientes), Cajón (1 pendiente), Bidón 20L (0 — al día) | 🔴 Reemplazado por datos reales (se mantiene el archivo para otras secciones) |
+| `MOCK_MOVIMIENTOS` | 6 movimientos cronológicos descendentes mezclando ENTREGA/DEVOLUCION | 🔴 Reemplazado por datos reales (se mantiene el archivo para otras secciones) |
+| `MOCK_RESUMEN_CONSUMO` | 12 pedidos, 28 bidones, 2.33 promedio | 🟡 Sigue mockeado (sección 4) |
+| `MOCK_PEDIDOS` | 3 pedidos: ENTREGADO, PENDIENTE, CANCELADO | 🟡 Sigue mockeado (sección 3) |
+
+### 2.12 Pantalla ClienteHistorialScreen (conectada a backend)
+
+**Archivo:** `mobile/features/clientes/screens/ClienteHistorialScreen.tsx`
+
+La pantalla se compone de 4 secciones dentro de un `ScrollView`, con 3 estados visuales:
+
+| Estado | Visualización |
+|---|---|
+| **Loading** | `ActivityIndicator` centrado con texto "Cargando historial..." |
+| **Error** | Texto en color `theme.error` con el mensaje del servidor |
+| **Contenido** | Las 4 secciones renderizadas con datos reales (secciones 1 y 2) o mock (3 y 4) |
+
+| Sección | Requisito | Fuente de datos |
+|---|---|---|
+| 1 — Saldo de Envases | RF-06.4 | `saldoEnvases` del hook `useHistorialEnvases` (backend real) |
+| 2 — Historial de Entregas/Devoluciones | RF-06.3 | `historial` del hook `useHistorialEnvases` (backend real) |
+| 3 — Historial de Pedidos | RF-07.1 | `MOCK_PEDIDOS` (mock — TODO pendiente) |
+| 4 — Resumen de Consumo | RF-07.5 | `MOCK_RESUMEN_CONSUMO` (mock — TODO pendiente) |
+
+Comentarios `TODO` restantes (secciones 3 y 4):
+```typescript
+// TODO RF-07.1: conectar con endpoint de pedidos por cliente
+// TODO RF-07.5: calcular desde historial real de pedidos
+```
+
+Funciones helper:
+- `formatFecha(iso)` → formato local `es-AR` (ej: "21 de junio de 2026")
+- `movimientoColor(tipo)` → `theme.tint` para ENTREGA, `theme.success` para DEVOLUCION
+- `movimientoLabel(tipo)` → "Entregó" / "Devolvió"
+- `estadoColor(estado)` → mapea estados a colores del theme
+- `estadoLabel(estado)` → mapea estados a texto en español
+
+### 2.13 Ruta Expo Router para historial
+
+**Archivo nuevo:** `mobile/app/(tabs)/clientes/historial/[id].tsx`
+
+Entry point que importa y renderiza `ClienteHistorialScreen` pasando el `id` desde `useLocalSearchParams()`.
+
+**Archivo modificado:** `mobile/app/(tabs)/clientes/_layout.tsx`
+
+Se agregó `<Stack.Screen name="historial/[id]" />` al stack del tab de clientes.
+
+### 2.14 Hook useHistorialEnvases — Conexión con backend real
+
+**Archivo nuevo:** `mobile/features/clientes/hooks/useHistorialEnvases.ts`
+
+```
+GET /api/v1/clientes/:id/historial → { saldoEnvases, historial }
+```
+
+El hook utiliza el cliente Axios singleton (`apiClient`) de `services/api.ts`:
+- **Base URL** configurada desde `EXPO_PUBLIC_API_URL` (fallback: `http://localhost:3000/api/v1`)
+- **Token JWT** adjuntado automáticamente via interceptor de request
+- **Logout automático** si el endpoint devuelve 401 (via interceptor de respuesta)
+
+**Formato de respuesta:** El backend envuelve toda respuesta exitosa en `{ data: T }` (estándar ADR-0000, ver `api-integration.md`). Se utiliza `unwrapResponse<HistorialApiResponse>(res)` (función utilitaria de `services/api.ts`) para extraer el objeto interno.
+
+```typescript
+interface HistorialApiResponse {
+  saldoEnvases: SaldoEnvase[];
+  historial: MovimientoEnvase[];
+}
+```
+
+**Estados del hook:**
+- `loading: boolean` — true mientras la request está en curso
+- `error: string | null` — mensaje de error si falló la request
+- `saldoEnvases: SaldoEnvase[]` — saldo por tipo de envase
+- `historial: MovimientoEnvase[]` — movimientos cronológicos
+
+**Manejo de errores:**
+- Errores HTTP estructurados: extrae `e.response.data.error.message`
+- Errores de red: usa `e.message` o fallback "Error de conexión"
+- Flag `cancelled` para evitar setState post-desmontaje del componente
+
+**Evolución del hook (debug):**
+
+| Versión | Problema | Solución |
+|---|---|---|
+| `fetch` con ruta relativa | `Unexpected token '<'` — el fetch resolvía contra el dev server (HTML), no contra la API | Migrar a `apiClient` (Axios con baseURL correcta) |
+| `apiClient.get()` sin unwrap | `Cannot read properties of undefined (reading 'length')` — `res.data` devolvía `{ data: {...} }` y `saldoEnvases` quedaba `undefined` | Usar `unwrapResponse()` para extraer el objeto interno |
+
 #### Validación mobile
 
 | Comprobación | Resultado |
 |---|---|
-| `npx tsc --noEmit` | ✅ Sin errores nuevos (solo preexistentes) |
-| `vitest run` | ✅ 221/221 tests pasan (34 suites) |
+| `npx tsc --noEmit` | ✅ Sin errores nuevos (solo preexistentes en auth tests/test-setup) |
+| `vitest run` | ✅ 221/221 tests pasan (34 suites) — sin regresión |
 | Código fuente en inglés, UI en español | ✅ |
-| Máximo 250 líneas por componente respetado (DemoraBadge: ~40 líneas) | ✅ |
+| Máximo 250 líneas por componente respetado (ClienteHistorialScreen: ~180 líneas el componente, ~316 total con helpers + StyleSheet) | ✅ |
+| Expo Router file-based respetado | ✅ |
+| Path alias `@/` usado en todos los imports | ✅ |
+| Uso de `apiClient` en lugar de `fetch` nativo | ✅ |
+| Unwrap de respuesta `{ data: T }` via `unwrapResponse()` | ✅ |
 
 ---
 

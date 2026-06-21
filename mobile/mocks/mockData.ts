@@ -4,7 +4,7 @@ import type { Cliente } from '@/types/cliente';
 import type { Item, PedidoItem } from '@/types/item';
 
 // Helper: fecha ISO relativa a hoy
-function daysAgo(days: number): string {
+export function daysAgo(days: number): string {
   const d = new Date();
   d.setDate(d.getDate() - days);
   return d.toISOString();
