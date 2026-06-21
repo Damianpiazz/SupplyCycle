@@ -1,6 +1,5 @@
 import { prisma } from '../../lib/prisma.js';
 import { ApiError } from '../../utils/api-error.js';
-import { dateFromISODate } from '../../utils/dates.js';
 import type { EstadisticasDiarias, EstadisticasMensuales } from './types.js';
 
 // ─── Constantes ──────────────────────────────────────────────────────────────
@@ -13,18 +12,22 @@ const ESTADOS_REPARTO_INICIADO = new Set(['EN_CURSO', 'COMPLETADO']);
 export async function obtenerEstadisticasDiarias(
   fecha: string
 ): Promise<EstadisticasDiarias> {
-  const fechaDate = dateFromISODate(fecha);
+  // Usamos rango [00:00 — 23:59] del día en timezone local para coincidir
+  // con cómo se almacenan las fechas en Pedido (DateTime) y Reparto (@db.Date).
+  const [y, m, d] = fecha.split('-').map(Number);
+  const startOfDay = new Date(y!, m! - 1, d!, 0, 0, 0, 0);
+  const endOfDay = new Date(y!, m! - 1, d!, 23, 59, 59, 999);
 
   const [pedidos, itemsData, repartos] = await Promise.all([
     // 1. Pedidos del día (sin soft-delete)
     prisma.pedido.findMany({
-      where: { fecha: fechaDate, deletedAt: null },
+      where: { fecha: { gte: startOfDay, lte: endOfDay }, deletedAt: null },
       select: { estado: true },
     }),
 
     // 2. Items de pedidos del día (volumen de productos)
     prisma.pedidoItem.findMany({
-      where: { pedido: { fecha: fechaDate, deletedAt: null } },
+      where: { pedido: { fecha: { gte: startOfDay, lte: endOfDay }, deletedAt: null } },
       select: {
         cantidad: true,
         item: { select: { id: true, nombre: true, unidad: true } },
@@ -33,7 +36,7 @@ export async function obtenerEstadisticasDiarias(
 
     // 3. Repartos del día
     prisma.reparto.findMany({
-      where: { fecha: fechaDate },
+      where: { fecha: { gte: startOfDay, lte: endOfDay } },
       select: { estado: true },
     }),
   ]);
@@ -98,9 +101,9 @@ export async function obtenerEstadisticasMensuales(
     throw ApiError.badRequest('El mes debe estar entre 1 y 12');
   }
 
-  // Rango del mes (usamos mediodía UTC para evitar problemas de zona horaria)
-  const primerDia = new Date(anio, mes - 1, 1, 12, 0, 0);
-  const ultimoDia = new Date(anio, mes, 0, 12, 0, 0); // día 0 del mes siguiente = último día
+  // Rango del mes [00:00 día 1 — 23:59 último día]
+  const primerDia = new Date(anio, mes - 1, 1, 0, 0, 0, 0);
+  const ultimoDia = new Date(anio, mes, 0, 23, 59, 59, 999); // día 0 del mes siguiente = último día
 
   const [pedidos, repartos] = await Promise.all([
     prisma.pedido.findMany({

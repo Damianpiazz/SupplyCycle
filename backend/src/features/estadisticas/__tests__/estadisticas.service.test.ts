@@ -42,6 +42,20 @@ function buildReparto(estado: string) {
   return { estado };
 }
 
+// ─── Helpers de verificación ─────────────────────────────────────────────────
+
+function assertDiariasWhere(where: unknown) {
+  // Verifica que el where use gte/lte (rango) en vez de comparación exacta
+  expect(where).toHaveProperty('fecha.gte');
+  expect(where).toHaveProperty('fecha.lte');
+  // Verifica que fecha NO sea un Date (descartamos el antiguo exact match)
+  if (where && typeof where === 'object') {
+    const w = where as Record<string, unknown>;
+    expect(w.fecha).toBeInstanceOf(Object);
+    expect(w.fecha).not.toBeInstanceOf(Date);
+  }
+}
+
 // ─── Tests: obtenerEstadisticasDiarias ─────────────────────────────────────────
 
 describe('obtenerEstadisticasDiarias', () => {
@@ -87,6 +101,20 @@ describe('obtenerEstadisticasDiarias', () => {
     expect(result.desempenioRepartos.total).toBe(3);
     expect(result.desempenioRepartos.iniciados).toBe(3); // COMPLETADO + EN_CURSO
     expect(result.desempenioRepartos.finalizados).toBe(2);
+
+    // Verifica que las 3 queries se hicieron con rango gte/lte y no exact match
+    expect(mockPrisma.pedido.findMany).toHaveBeenCalled();
+    expect(mockPrisma.pedidoItem.findMany).toHaveBeenCalled();
+    expect(mockPrisma.reparto.findMany).toHaveBeenCalled();
+
+    const pedidoCall = mockPrisma.pedido.findMany.mock.calls[0]?.[0];
+    assertDiariasWhere(pedidoCall?.where);
+
+    const itemCall = mockPrisma.pedidoItem.findMany.mock.calls[0]?.[0];
+    assertDiariasWhere(itemCall?.where?.pedido);
+
+    const repartoCall = mockPrisma.reparto.findMany.mock.calls[0]?.[0];
+    assertDiariasWhere(repartoCall?.where);
   });
 
   it('incluye CANCELADO como entrega no realizada', async () => {
@@ -208,6 +236,16 @@ describe('obtenerEstadisticasMensuales', () => {
     for (const dia of result.dias) {
       expect(dia.totalPedidos).toBe(0);
     }
+
+    // Verifica que la query mensual use rango con gte/lte
+    const pedidoCall = mockPrisma.pedido.findMany.mock.calls[0]?.[0];
+    expect(pedidoCall?.where?.fecha?.gte).toBeInstanceOf(Date);
+    expect(pedidoCall?.where?.fecha?.lte).toBeInstanceOf(Date);
+
+    const eneroStart = new Date(2026, 0, 1, 0, 0, 0, 0);
+    const eneroEnd = new Date(2026, 0, 31, 23, 59, 59, 999);
+    expect(pedidoCall?.where?.fecha?.gte.getTime()).toBe(eneroStart.getTime());
+    expect(pedidoCall?.where?.fecha?.lte.getTime()).toBe(eneroEnd.getTime());
   });
 
   it('lanza error si el mes es inválido', async () => {
