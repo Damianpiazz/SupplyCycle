@@ -56,8 +56,8 @@ export default function ClientesListScreen() {
     const term = search.trim().toLowerCase();
 
     return list.filter((c) => {
-      // Filtro por demora
-      if (filtroDemora && !c.tieneDemora) return false;
+      // Filtro por demora: tratar undefined como false
+      if (filtroDemora && c.tieneDemora !== true) return false;
       // Filtro por día
       if (filtroDia) {
         const hasDia = c.domicilios.some((d) => d.dias.some((dia) => dia.nombre === filtroDia));
@@ -229,7 +229,7 @@ export default function ClientesListScreen() {
                 <TouchableOpacity
                   onPress={() =>
                     router.push({
-                      pathname: '/clientes/[id]',
+                      pathname: '/clientes/editar/[id]',
                       params: { id: item.id },
                     })
                   }
@@ -253,8 +253,8 @@ export default function ClientesListScreen() {
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <Text style={[styles.emptyText, { color: theme.muted }]}>
-                {search || filtroDia
-                  ? 'No se encontraron clientes'
+                {search || filtroDia || filtroDemora
+                  ? 'No se encontraron clientes con los filtros seleccionados'
                   : 'No hay clientes registrados'}
               </Text>
             </View>

@@ -1,7 +1,7 @@
 import { useLocalSearchParams } from 'expo-router';
-import ClienteEditarScreen from '@/features/clientes/screens/ClienteEditarScreen';
+import ClienteVerScreen from '@/features/clientes/screens/ClienteVerScreen';
 
-export default function ClienteEditarRoute() {
+export default function ClienteVerRoute() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  return <ClienteEditarScreen key={id} />;
+  return <ClienteVerScreen key={id} />;
 }
