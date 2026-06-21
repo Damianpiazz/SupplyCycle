@@ -18,6 +18,7 @@ import CalendarModal from '@/components/ui/CalendarModal';
 import { Colors, FontFamily, FontSizes, Spacing, BorderRadius } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useEstadisticasDiarias } from '@/features/estadisticas/hooks/useEstadisticas';
+import { LucideIcon } from '@/components/ui/lucide-icon';
 import StatCard from '@/features/estadisticas/components/StatCard';
 import DesempenioCard from '@/features/estadisticas/components/DesempenioCard';
 import VolumenList from '@/features/estadisticas/components/VolumenList';
@@ -87,8 +88,9 @@ export default function EstadisticasDiariasScreen() {
   }, []);
 
   const goToMonth = useCallback(() => {
-    router.push('/estadisticas/mensual');
-  }, []);
+    const [y, m] = fecha.split('-').map(Number);
+    router.push({ pathname: '/estadisticas/mensual', params: { anio: y, mes: m } });
+  }, [fecha]);
 
   const isToday = fecha === todayISO();
 
@@ -140,7 +142,7 @@ export default function EstadisticasDiariasScreen() {
           activeOpacity={0.7}
         >
           <Text style={[styles.actionBtnText, { color: theme.text }]}>
-            📅 Seleccionar fecha
+            <LucideIcon name="calendar" size={16} color={theme.text} />{' '}Seleccionar fecha
           </Text>
         </TouchableOpacity>
 
@@ -171,19 +173,19 @@ export default function EstadisticasDiariasScreen() {
         >
           {/* Main stat cards */}
           <StatCard
-            icon="📦"
+            icon={<LucideIcon name="package" size={28} color={theme.tint} />}
             label="Pedidos totales"
             value={data.totalPedidos}
             color={theme.text}
           />
           <StatCard
-            icon="✅"
+            icon={<LucideIcon name="check-circle" size={28} color={theme.entregado} />}
             label="Entregas realizadas"
             value={data.entregasRealizadas}
             color={theme.entregado}
           />
           <StatCard
-            icon="❌"
+            icon={<LucideIcon name="x-circle" size={28} color={theme.noEntregado} />}
             label="Entregas no realizadas"
             value={data.entregasNoRealizadas}
             color={theme.noEntregado}
@@ -199,7 +201,14 @@ export default function EstadisticasDiariasScreen() {
           {/* Product volume */}
           <VolumenList items={data.volumenProductos} />
         </ScrollView>
-      ) : null}
+      ) : (
+        <View style={styles.emptyContainer}>
+          <LucideIcon name="bar-chart-3" size={48} color={theme.muted} />
+          <Text style={[styles.emptyText, { color: theme.muted }]}>
+            No hay datos disponibles para esta fecha
+          </Text>
+        </View>
+      )}
 
       {/* Calendar modal */}
       <CalendarModal
@@ -283,5 +292,17 @@ const styles = StyleSheet.create({
   scrollPadding: {
     padding: Spacing.lg,
     paddingBottom: Spacing.xxxl,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: Spacing.xxl,
+  },
+  emptyText: {
+    fontSize: FontSizes.md,
+    fontFamily: FontFamily.inter,
+    textAlign: 'center',
+    marginTop: Spacing.md,
   },
 });

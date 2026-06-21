@@ -1,5 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { Card } from '@/components/ui';
+import { LucideIcon } from '@/components/ui/lucide-icon';
 import { Colors, FontFamily, FontSizes, Spacing } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
@@ -22,7 +23,7 @@ export default function DesempenioCard({
   return (
     <Card style={styles.card}>
       <View style={styles.headerRow}>
-        <Text style={styles.icon}>🚚</Text>
+        <LucideIcon name="truck" size={24} color={theme.text} />
         <Text style={[styles.title, { color: theme.text }]}>
           Desempeño de repartos
         </Text>
@@ -82,9 +83,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.sm,
     marginBottom: Spacing.md,
-  },
-  icon: {
-    fontSize: 24,
   },
   title: {
     fontSize: FontSizes.md,

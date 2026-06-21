@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { ThemedView } from '@/components/themed-view';
 import { Card, Header, LoadingSpinner, ErrorMessage } from '@/components/ui';
 import { Colors, FontFamily, FontSizes, Spacing, BorderRadius } from '@/constants/theme';
@@ -29,7 +29,11 @@ export default function EstadisticasMensualesScreen() {
   const colorScheme = useColorScheme() ?? 'light';
   const theme = Colors[colorScheme];
 
-  const [{ anio, mes }, setFecha] = useState(getCurrentMonth);
+  const params = useLocalSearchParams<{ anio?: string; mes?: string }>();
+  const [{ anio, mes }, setFecha] = useState(() => ({
+    anio: params.anio ? parseInt(params.anio, 10) : getCurrentMonth().anio,
+    mes: params.mes ? parseInt(params.mes, 10) : getCurrentMonth().mes,
+  }));
 
   const { data, isLoading, isError, error, refetch } = useEstadisticasMensuales(anio, mes);
 

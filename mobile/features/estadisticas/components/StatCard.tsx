@@ -1,10 +1,11 @@
+import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Card } from '@/components/ui';
 import { Colors, FontFamily, FontSizes, Spacing } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
 interface StatCardProps {
-  icon: string;
+  icon: React.ReactNode;
   label: string;
   value: number | string;
   color?: string;
@@ -25,7 +26,7 @@ export default function StatCard({
   return (
     <Card style={styles.card}>
       <View style={styles.row}>
-        <Text style={styles.icon}>{icon}</Text>
+        <View style={styles.iconContainer}>{icon}</View>
         <View style={styles.textContainer}>
           <Text style={[styles.label, { color: theme.muted }]}>{label}</Text>
           {loading ? (
@@ -50,8 +51,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.md,
   },
-  icon: {
-    fontSize: 28,
+  iconContainer: {
+    width: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   textContainer: {
     flex: 1,
