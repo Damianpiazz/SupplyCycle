@@ -1,0 +1,501 @@
+# Implementación RF-06: Visualizar Demoras de Envases — Consolidado
+
+**Session ID:** ses_mobile-rf06 (consolidado)
+**Created:** 20/6/2026
+**Updated:** 21/6/2026 (sesión backend: verificación historial + endpoints consumo y pedidos; sesión mobile: pantalla historial de cliente con 4 secciones integradas + hook useHistorialEnvases con apiClient, secciones 1 y 2 conectadas a backend real)
+**Requerimiento:** RF-06
+**Ámbito:** mobile (app React Native + Expo) + backend (REST API)
+
+---
+
+## Resumen de Cambios - Agente Mobile
+
+---
+
+## 1. BACKEND — REST API
+
+### 1.1 Helper compartido `retenidos-utils.ts`
+
+**Archivo:** `backend/src/lib/retenidos-utils.ts`
+
+| Exportación | Descripción |
+|---|---|
+| `DIAS_LIMITE_DEMORA = 15` | Constante de umbral (días) |
+| `calcularFechaDemora()` | `new Date(now - 15 days)` |
+| `calcularDatosDemora(retenidos)` | => `{ tieneDemora, cantidadEnvasesPendientes, fechaUltimaEntrega }` |
+
+### 1.2 Extensión de `GET /api/v1/clientes` — Datos de demora en listado
+
+**Archivo:** `backend/src/features/clientes/service.ts`
+
+Se modificó `toClienteResponse` para incluir los campos de demora en cada cliente:
+
+```typescript
+function toClienteResponse(cliente: ClienteWithRelations) {
+  const datosDemora = calcularDatosDemora(cliente.retenidos ?? []);
+  return {
+    // ...campos existentes...
+    tieneDemora: datosDemora.tieneDemora,
+    cantidadEnvasesPendientes: datosDemora.cantidadEnvasesPendientes,
+    fechaUltimaEntrega: datosDemora.fechaUltimaEntrega,
+    // ...domicilios...
+  };
+}
+```
+
+Cambios específicos:
+- `ClienteWithRelations`: se agregó `retenidos?: Array<{ estado: string; inicio: Date }>`
+- `clienteInclude`: se agregó `retenidos: { where: { estado: 'RETENIDO' }, select: { estado: true, inicio: true } }`
+- `toClienteResponse`: ahora llama `calcularDatosDemora()` e incluye los 3 campos nuevos
+
+### 1.3 Nuevo endpoint `GET /api/v1/clientes/:id/historial`
+
+**Archivo:** `backend/src/features/clientes/service.ts` — Nueva función `obtenerHistorialEnvases`
+
+```typescript
+GET /api/v1/clientes/:id/historial
+
+Response Shape:
+{
+  saldoEnvases: Array<{
+    itemId: string;
+    nombre: string;       // nombre del tipo de envase
+    cantidad: number;     // pendientes de devolución
+  }>;
+  historial: Array<{
+    id: string;           // "{retenidoId}-entrega" | "{retenidoId}-devolucion"
+    fecha: string;        // ISO date
+    tipo: 'ENTREGA' | 'DEVOLUCION';
+    cantidad: number;     // 1 (cada Retenido = 1 envase)
+    tipoEnvase: string;
+    pedidoId: string | null;  // número de pedido
+  }>;
+}
+```
+
+**Archivo:** `backend/src/features/clientes/controller.ts` — Nuevo `historialController`
+
+**Archivo:** `backend/src/features/clientes/routes.ts` — Nueva ruta:
+```typescript
+router.get('/:id/historial', apiKeyAuth, authenticate, historialController);
+```
+
+**Importante**: la ruta `/:id/historial` se ubicó **antes** de `/:id` para evitar conflictos de matching.
+
+### 1.4 Verificación de shape del endpoint `GET /api/v1/clientes/:id/historial`
+
+Se verificó que el endpoint existente responde exactamente con la shape esperada por el mobile:
+
+| Campo | Shape esperada | Real | Estado |
+|---|---|---|---|
+| `saldoEnvases` | `Array` | `Array<{itemId, nombre, cantidad}>` | ✅ |
+| `historial[].id` | `string` | `` `${r.id}-entrega` / `${r.id}-devolucion` `` | ✅ |
+| `historial[].fecha` | `string` (ISO) | `r.inicio.toISOString()` / `r.fin!.toISOString()` | ✅ |
+| `historial[].tipo` | `'ENTREGA' \| 'DEVOLUCION'` | `'ENTREGA'` / `'DEVOLUCION'` | ✅ |
+| `historial[].cantidad` | `number` | `1` | ✅ |
+| `historial[].tipoEnvase` | `string` | `r.item.nombre` | ✅ |
+| `historial[].pedidoId` | `string \| null` | `r.pedido.numeroPedido` | ✅ |
+
+**Conclusión:** No se requirieron correcciones.
+
+### 1.5 Nuevo endpoint `GET /api/v1/clientes/:id/consumo` (RF-07.5)
+
+**Archivo:** `backend/src/features/clientes/service.ts` — Nueva función `obtenerConsumoCliente`
+
+```typescript
+GET /api/v1/clientes/:id/consumo
+
+Response Shape:
+{
+  totalPedidos: number;
+  totalBidones: number;          // suma de PedidoItem.cantidad de todos los pedidos
+  promedioBidonesPorPedido: number;
+}
+```
+
+- Consulta los `Pedido` asociados al cliente via `domicilio.clienteId`, excluyendo `deletedAt != null`.
+- `totalBidones` suma `PedidoItem.cantidad` de todos los pedidos del cliente.
+- Si el cliente no tiene pedidos: `{ totalPedidos: 0, totalBidones: 0, promedioBidonesPorPedido: 0 }`.
+- Si el cliente no existe, responde `404 NOT_FOUND`.
+
+**Archivo:** `backend/src/features/clientes/controller.ts` — Nuevo `consumoController`
+
+**Archivo:** `backend/src/features/clientes/routes.ts` — Nueva ruta:
+```typescript
+router.get('/:id/consumo', apiKeyAuth, authenticate, consumoController);
+```
+Ubicada **antes** de `/:id` para evitar conflictos de matching.
+
+### 1.6 Nuevo endpoint `GET /api/v1/clientes/:id/pedidos` (RF-07.1)
+
+**Archivo:** `backend/src/features/clientes/service.ts` — Nueva función `obtenerPedidosCliente`
+
+```typescript
+GET /api/v1/clientes/:id/pedidos
+
+Response Shape:
+Array<{
+  id: string;
+  fecha: string;       // ISO date
+  estado: string;
+  totalBidones: number; // suma de PedidoItem.cantidad del pedido
+}>
+```
+
+- Ordenado por `fecha` descendente.
+- Filtra pedidos eliminados (`deletedAt: null`).
+- Si el cliente no existe, responde `404 NOT_FOUND`.
+
+**Archivo:** `backend/src/features/clientes/controller.ts` — Nuevo `pedidosClienteController`
+
+**Archivo:** `backend/src/features/clientes/routes.ts` — Nueva ruta:
+```typescript
+router.get('/:id/pedidos', apiKeyAuth, authenticate, pedidosClienteController);
+```
+Ubicada **antes** de `/:id` para evitar conflictos de matching.
+
+### 1.7 Tests actualizados
+
+**Archivo:** `backend/src/features/clientes/__tests__/clientes.service.test.ts`
+- Agregado `retenidos: []` a `baseClienteRow`
+- Agregado `tieneDemora: false`, `cantidadEnvasesPendientes: 0`, `fechaUltimaEntrega: null` a `expectedResponse`
+- Agregado `retenidos` al mock de `clienteInclude`
+
+#### Validación backend
+
+| Comprobación | Resultado |
+|---|---|
+| `npx tsc --noEmit` | ✅ Sin errores |
+| `vitest run src/features/clientes/__tests__/` | ✅ 27/27 tests pasan (sesión inicial) |
+| `vitest run` (todo el backend) | ✅ 90/90 tests pasan (7 suites) — sin regresión |
+| No se modificaron rutas `/admin/` | ✅ |
+| `verbatimModuleSyntax` respetado | ✅ |
+| Rutas nuevas antes de `/:id` para evitar conflictos | ✅ |
+
+---
+
+## 2. MOBILE — App React Native + Expo
+
+### 2.1 Tipo `Cliente` actualizado
+
+**Archivo:** `mobile/types/cliente.ts`
+
+```typescript
+export interface Cliente {
+  // ...campos existentes...
+  tieneDemora?: boolean;
+  cantidadEnvasesPendientes?: number;
+  fechaUltimaEntrega?: string | null;
+}
+```
+
+### 2.2 Datos mock con demora
+
+**Archivo:** `mobile/mocks/mockData.ts`
+
+- Helper `daysAgo(days)` para generar fechas ISO relativas.
+- `MOCK_CLIENTES[0]` (María González): `tieneDemora: true`, `cantidadEnvasesPendientes: 4`, `fechaUltimaEntrega: daysAgo(18)`
+- `MOCK_CLIENTES[1]` (Carlos López): `tieneDemora: true`, `cantidadEnvasesPendientes: 2`, `fechaUltimaEntrega: daysAgo(16)`
+- Resto: `tieneDemora: false`, `cantidadEnvasesPendientes: 0`
+
+### 2.3 Tests de mock data
+
+**Archivo:** `mobile/mocks/__tests__/mockData.test.ts`
+
+3 nuevos tests:
+- Cada cliente tiene los 3 campos de demora con tipos correctos
+- Existe al menos un cliente con demora para testing
+- Los clientes sin demora tienen `cantidadEnvasesPendientes === 0`
+
+### 2.4 Componente DemoraBadge
+
+**Archivo:** `mobile/features/clientes/components/DemoraBadge.tsx`
+
+- Badge anaranjado (color `theme.warning`) que muestra "X envases pendientes"
+- Solo se renderiza si `cantidadEnvasesPendientes > 0`
+- Props tipadas: `cantidadEnvasesPendientes`, `fechaUltimaEntrega`
+
+### 2.5 Lista de clientes con indicador de demora
+
+**Archivo:** `mobile/features/clientes/screens/ClientesListScreen.tsx`
+
+- Cada card renderiza `DemoraBadge` si `tieneDemora === true`
+- Chip de filtro **"Con demora"** en la barra de filtros (junto a los filtros por día)
+- Al activar el filtro, solo se muestran clientes con `tieneDemora === true`
+- Bug corregido: `c.tieneDemora !== true` en vez de `!c.tieneDemora` para tratar `undefined` correctamente
+- Mensaje de empty actualizado para considerar el filtro de demora
+
+### 2.6 Refactor de rutas — Separación de ver/editar cliente
+
+**Contexto:** Originalmente `/clientes/[id]` renderizaba `ClienteEditarScreen`. Se separó en dos rutas:
+
+| Ruta | Componente | Función |
+|---|---|---|
+| `/clientes/[id]` | `ClienteVerScreen` | Solo lectura |
+| `/clientes/editar/[id]` | `ClienteEditarScreen` | Edición |
+
+**Archivos modificados/creados:**
+
+| Archivo | Cambio |
+|---|---|
+| `app/(tabs)/clientes/_layout.tsx` | Agregado `Stack.Screen name="editar/[id]"` |
+| `app/(tabs)/clientes/[id].tsx` | Ahora renderiza `ClienteVerScreen` (antes `ClienteEditarScreen`) |
+| `app/(tabs)/clientes/editar/[id].tsx` | **Nuevo** — entry point que renderiza `ClienteEditarScreen` |
+| `features/clientes/screens/ClienteVerScreen.tsx` | **Nuevo** — pantalla solo lectura |
+
+### 2.7 ClienteVerScreen — Pantalla de solo lectura
+
+**Archivo:** `mobile/features/clientes/screens/ClienteVerScreen.tsx`
+
+- Muestra datos del cliente en modo solo lectura (Text en vez de Inputs)
+- Badge de demora (`DemoraBadge`) si `tieneDemora === true`
+- Fecha de última entrega formateada en español
+- Domicilios con días y horarios
+- Botón "Editar cliente" que navega a `/clientes/editar/[id]`
+- Placeholder comentado para RF-06.3:
+  ```
+  {/* TODO RF-06.3: Historial de entregas y devoluciones de envases */}
+  ```
+
+### 2.8 Navegación desde lista
+
+**Archivo:** `mobile/features/clientes/screens/ClientesListScreen.tsx`
+
+- Tap en card → `/clientes/[id]` (ClienteVerScreen — solo lectura)
+- Botón "Editar" → `/clientes/editar/[id]` (ClienteEditarScreen — edición)
+
+### 2.9 Botón "Abrir Historial" en ClienteVerScreen (RF-06.3)
+
+**Archivo:** `mobile/features/clientes/screens/ClienteVerScreen.tsx`
+
+- Se agregó botón "Abrir Historial" debajo del botón "Editar cliente"
+- Navega a `router.push({ pathname: '/clientes/historial/[id]', params: { id: cliente.id } })`
+- Se renombró el estilo de `editButton` a `actionButton` para compartirlo entre ambos botones
+
+### 2.10 Tipos de historial
+
+**Archivo nuevo:** `mobile/types/historial.ts`
+
+```typescript
+export type TipoMovimiento = 'ENTREGA' | 'DEVOLUCION';
+
+export interface MovimientoEnvase {
+  id: string;
+  fecha: string;           // ISO date
+  tipo: TipoMovimiento;
+  cantidad: number;
+  tipoEnvase: string;
+  pedidoId: string | null;
+}
+
+export interface SaldoEnvase {
+  itemId: string;
+  nombre: string;
+  cantidad: number;
+}
+
+export interface ResumenConsumo {
+  totalPedidos: number;
+  totalBidones: number;
+  promedioBidonesPorPedido: number;
+}
+
+export interface PedidoHistorialResumen {
+  id: string;
+  fecha: string;
+  estado: string;
+  totalBidones: number;
+}
+```
+
+### 2.11 Datos mock de historial
+
+**Archivo nuevo:** `mobile/mocks/historialMock.ts`
+
+**Archivo modificado:** `mobile/mocks/mockData.ts` — se exportó `daysAgo()` como named export para ser reutilizado
+
+| Exportación | Descripción | Estado |
+|---|---|---|
+| `MOCK_SALDO_ENVASES` | 3 tipos: Sifón (2 pendientes), Cajón (1 pendiente), Bidón 20L (0 — al día) | 🔴 Reemplazado por datos reales (se mantiene el archivo para otras secciones) |
+| `MOCK_MOVIMIENTOS` | 6 movimientos cronológicos descendentes mezclando ENTREGA/DEVOLUCION | 🔴 Reemplazado por datos reales (se mantiene el archivo para otras secciones) |
+| `MOCK_RESUMEN_CONSUMO` | 12 pedidos, 28 bidones, 2.33 promedio | 🟡 Sigue mockeado (sección 4) |
+| `MOCK_PEDIDOS` | 3 pedidos: ENTREGADO, PENDIENTE, CANCELADO | 🟡 Sigue mockeado (sección 3) |
+
+### 2.12 Pantalla ClienteHistorialScreen (conectada a backend)
+
+**Archivo:** `mobile/features/clientes/screens/ClienteHistorialScreen.tsx`
+
+La pantalla se compone de 4 secciones dentro de un `ScrollView`, con 3 estados visuales:
+
+| Estado | Visualización |
+|---|---|
+| **Loading** | `ActivityIndicator` centrado con texto "Cargando historial..." |
+| **Error** | Texto en color `theme.error` con el mensaje del servidor |
+| **Contenido** | Las 4 secciones renderizadas con datos reales (secciones 1 y 2) o mock (3 y 4) |
+
+| Sección | Requisito | Fuente de datos |
+|---|---|---|
+| 1 — Saldo de Envases | RF-06.4 | `saldoEnvases` del hook `useHistorialEnvases` (backend real) |
+| 2 — Historial de Entregas/Devoluciones | RF-06.3 | `historial` del hook `useHistorialEnvases` (backend real) |
+| 3 — Historial de Pedidos | RF-07.1 | `MOCK_PEDIDOS` (mock — TODO pendiente) |
+| 4 — Resumen de Consumo | RF-07.5 | `MOCK_RESUMEN_CONSUMO` (mock — TODO pendiente) |
+
+Comentarios `TODO` restantes (secciones 3 y 4):
+```typescript
+// TODO RF-07.1: conectar con endpoint de pedidos por cliente
+// TODO RF-07.5: calcular desde historial real de pedidos
+```
+
+Funciones helper:
+- `formatFecha(iso)` → formato local `es-AR` (ej: "21 de junio de 2026")
+- `movimientoColor(tipo)` → `theme.tint` para ENTREGA, `theme.success` para DEVOLUCION
+- `movimientoLabel(tipo)` → "Entregó" / "Devolvió"
+- `estadoColor(estado)` → mapea estados a colores del theme
+- `estadoLabel(estado)` → mapea estados a texto en español
+
+### 2.13 Ruta Expo Router para historial
+
+**Archivo nuevo:** `mobile/app/(tabs)/clientes/historial/[id].tsx`
+
+Entry point que importa y renderiza `ClienteHistorialScreen` pasando el `id` desde `useLocalSearchParams()`.
+
+**Archivo modificado:** `mobile/app/(tabs)/clientes/_layout.tsx`
+
+Se agregó `<Stack.Screen name="historial/[id]" />` al stack del tab de clientes.
+
+### 2.14 Hook useHistorialEnvases — Conexión con backend real
+
+**Archivo nuevo:** `mobile/features/clientes/hooks/useHistorialEnvases.ts`
+
+```
+GET /api/v1/clientes/:id/historial → { saldoEnvases, historial }
+```
+
+El hook utiliza el cliente Axios singleton (`apiClient`) de `services/api.ts`:
+- **Base URL** configurada desde `EXPO_PUBLIC_API_URL` (fallback: `http://localhost:3000/api/v1`)
+- **Token JWT** adjuntado automáticamente via interceptor de request
+- **Logout automático** si el endpoint devuelve 401 (via interceptor de respuesta)
+
+**Formato de respuesta:** El backend envuelve toda respuesta exitosa en `{ data: T }` (estándar ADR-0000, ver `api-integration.md`). Se utiliza `unwrapResponse<HistorialApiResponse>(res)` (función utilitaria de `services/api.ts`) para extraer el objeto interno.
+
+```typescript
+interface HistorialApiResponse {
+  saldoEnvases: SaldoEnvase[];
+  historial: MovimientoEnvase[];
+}
+```
+
+**Estados del hook:**
+- `loading: boolean` — true mientras la request está en curso
+- `error: string | null` — mensaje de error si falló la request
+- `saldoEnvases: SaldoEnvase[]` — saldo por tipo de envase
+- `historial: MovimientoEnvase[]` — movimientos cronológicos
+
+**Manejo de errores:**
+- Errores HTTP estructurados: extrae `e.response.data.error.message`
+- Errores de red: usa `e.message` o fallback "Error de conexión"
+- Flag `cancelled` para evitar setState post-desmontaje del componente
+
+**Evolución del hook (debug):**
+
+| Versión | Problema | Solución |
+|---|---|---|
+| `fetch` con ruta relativa | `Unexpected token '<'` — el fetch resolvía contra el dev server (HTML), no contra la API | Migrar a `apiClient` (Axios con baseURL correcta) |
+| `apiClient.get()` sin unwrap | `Cannot read properties of undefined (reading 'length')` — `res.data` devolvía `{ data: {...} }` y `saldoEnvases` quedaba `undefined` | Usar `unwrapResponse()` para extraer el objeto interno |
+
+#### Validación mobile
+
+| Comprobación | Resultado |
+|---|---|
+| `npx tsc --noEmit` | ✅ Sin errores nuevos (solo preexistentes en auth tests/test-setup) |
+| `vitest run` | ✅ 221/221 tests pasan (34 suites) — sin regresión |
+| Código fuente en inglés, UI en español | ✅ |
+| Máximo 250 líneas por componente respetado (ClienteHistorialScreen: ~180 líneas el componente, ~316 total con helpers + StyleSheet) | ✅ |
+| Expo Router file-based respetado | ✅ |
+| Path alias `@/` usado en todos los imports | ✅ |
+| Uso de `apiClient` en lugar de `fetch` nativo | ✅ |
+| Unwrap de respuesta `{ data: T }` via `unwrapResponse()` | ✅ |
+
+---
+
+## Resumen de Cambios - Agente Backend
+
+### 1. Ruta GET /demorados
+**Archivo:** `backend/src/admin/routes/retenidos.admin.routes.ts`
+- Se agregó la ruta `router.get('/demorados', ctrl.listDemorados)` **antes** de las rutas parametrizadas (`/:id/editar`, `/:id`) para evitar conflictos de matching.
+
+### 2. Controlador listDemorados
+**Archivo:** `backend/src/admin/controllers/retenidos.admin.controller.ts`
+- Se definió la constante `DIAS_LIMITE_DEMORA = 15` al inicio del archivo.
+- Se implementó `listDemorados` que:
+  - Captura un filtro opcional `?nombre=` desde query params.
+  - Calcula la fecha límite (hoy - 15 días).
+  - Consulta clientes activos que tengan al menos un `Retenido` en estado `'RETENIDO'` con `inicio <= fechaLimite`.
+  - Si hay filtro de nombre, agrega búsqueda insensible por `OR` en `nombre`/`apellido`.
+  - Calcula `cantidadPendientes` (total de retenidos activos del cliente) y `ultimaEntrega` (fecha del retenido más reciente).
+  - Renderiza la vista `retenidos/demorados`.
+
+### 3. Nueva Vista EJS: demorados.ejs
+**Archivo creado:** `backend/src/admin/views/retenidos/demorados.ejs`
+- Tabla con columnas: Cliente, Teléfono (con enlace WhatsApp), Envases Pendientes, Última Entrega, Acciones.
+- Formulario GET de búsqueda por nombre/apellido.
+- Botón "Ver Detalle" que redirige a `/admin/clientes/:id` (reutiliza la vista extendida del cliente).
+
+### 4. Enlace en Sidebar
+**Archivo:** `backend/src/admin/views/layouts/header.ejs`
+- Se agregó el item "Envases Demorados" en la navegación lateral, apuntando a `/admin/retenidos/demorados`.
+
+### 5. Extensión del Detalle del Cliente (RF-06.3 + RF-07)
+**Archivo:** `backend/src/admin/controllers/clientes.admin.controller.ts`
+- Se modificó la función `show` para consultar el historial completo de `Retenido` del cliente (con `Item` y `Pedido` asociados).
+- Se consolidó en memoria el **Saldo de Envases Pendientes** (agrupando por `itemId` los registros con estado `'RETENIDO'`).
+- Se pasan los objetos `retenidos` (historial completo) y `saldoEnvases` (saldo agrupado) a la vista.
+
+**Archivo:** `backend/src/admin/views/clientes/show.ejs`
+- Se agregaron dos nuevas secciones debajo de los datos de contacto:
+  - **Saldo de Envases Pendientes**: tabla con tipo de envase y cantidad pendiente.
+  - **Historial de Envases**: tabla cronológica con tipo de envase, fecha de entrega, fecha de devolución, estado y pedido de origen.
+
+### Validación
+- `npx tsc --noEmit` → Sin errores de tipo.
+- Todos los imports respetan `verbatimModuleSyntax` (uso de `import type`).
+- Los patrones de código son consistentes con el resto del admin (mismo manejo de errores, mismo formato de vistas EJS).
+
+---
+
+### 📡 Extensión REST API — Clientes con datos de demora (20/6/2026)
+
+Se extendió el **endpoint REST** `GET /api/v1/clientes` (consumido por la app mobile) para que cada cliente incluya los campos `tieneDemora`, `cantidadEnvasesPendientes` y `fechaUltimaEntrega`.
+
+#### 🆕 `src/lib/retenidos-utils.ts` — Helper compartido
+- Se extrajo la lógica de demora a un archivo común para evitar duplicación entre admin y REST API.
+- Exporta:
+  - `DIAS_LIMITE_DEMORA = 15`
+  - `calcularFechaDemora()` → hoy - 15 días
+  - `calcularDatosDemora(retenidos)` → `{ tieneDemora, cantidadEnvasesPendientes, fechaUltimaEntrega }`
+
+#### ✏️ `src/features/clientes/service.ts` — REST API service
+- **Import**: se agregó `calcularDatosDemora` desde el nuevo helper.
+- **`ClienteWithRelations`**: se agregó `retenidos: Array<{ estado: string; inicio: Date }>`.
+- **`clienteInclude`**: se agregó `retenidos` al `include` con filtro `{ where: { estado: 'RETENIDO' } }` — se trae en la misma query, sin roundtrips extra.
+- **`toClienteResponse`**: ahora computa y retorna los 3 campos nuevos:
+  ```typescript
+  tieneDemora: boolean
+  cantidadEnvasesPendientes: number
+  fechaUltimaEntrega: string | null  // ISO date
+  ```
+
+#### ✏️ `src/features/clientes/__tests__/clientes.service.test.ts` — Tests actualizados
+- `clienteInclude` mock: se agregó `retenidos` con el mismo shape.
+- `baseClienteRow`: se agregó `retenidos: []`.
+- `expectedResponse`: incluye `tieneDemora: false`, `cantidadEnvasesPendientes: 0`, `fechaUltimaEntrega: null`.
+
+#### Validación
+| Comprobación | Resultado |
+|---|---|
+| `npx tsc --noEmit` | ✅ Sin errores |
+| `vitest run clientes.service.test.ts` | ✅ 17/17 tests pasan |
+| `vitest run clientes.controller.test.ts` | ✅ 10/10 tests pasan |
+| No se modificaron rutas `/admin/` | ✅ |
+| `verbatimModuleSyntax` respetado | ✅ |
+| Lógica de demora extraída a helper compartido | ✅ |
