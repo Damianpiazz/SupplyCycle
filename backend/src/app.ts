@@ -15,6 +15,7 @@ import itemsRoutes from './features/items/routes.js';
 import pedidosRoutes from './features/pedidos/routes.js';
 import repartosRoutes from './features/repartos/routes.js';
 import usuariosRoutes from './features/usuarios/routes.js';
+import estadisticasRoutes from './features/estadisticas/routes.js';
 import adminRoutes from './admin/routes/index.js';
 import { errorHandler } from './middleware/error-handler.js';
 
@@ -70,6 +71,7 @@ app.use('/api/v1/items', itemsRoutes);
 app.use('/api/v1/pedidos', pedidosRoutes);
 app.use('/api/v1/repartos', repartosRoutes);
 app.use('/api/v1/usuarios', usuariosRoutes);
+app.use('/api/v1/estadisticas', estadisticasRoutes);
 
 // Admin EJS routes
 app.use('/admin', adminRoutes);
