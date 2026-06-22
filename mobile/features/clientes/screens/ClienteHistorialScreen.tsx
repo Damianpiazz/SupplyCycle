@@ -5,11 +5,9 @@ import { Header, Card } from '@/components/ui';
 import { Colors, Spacing, FontSizes, BorderRadius } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useHistorialEnvases } from '@/features/clientes/hooks/useHistorialEnvases';
-import {
-  MOCK_RESUMEN_CONSUMO,
-  MOCK_PEDIDOS,
-} from '@/mocks/historialMock';
-import type { MovimientoEnvase, PedidoHistorialResumen } from '@/types/historial';
+import { usePedidosCliente } from '@/features/clientes/hooks/usePedidosCliente';
+import { useConsumoCliente } from '@/features/clientes/hooks/useConsumoCliente';
+import type { MovimientoEnvase } from '@/types/historial';
 
 function formatFecha(iso: string): string {
   return new Date(iso).toLocaleDateString('es-AR', {
@@ -55,6 +53,8 @@ export default function ClienteHistorialScreen() {
   const theme = Colors[colorScheme];
 
   const { saldoEnvases, historial, loading, error } = useHistorialEnvases(id ?? '');
+  const { data: pedidos, isLoading: loadingPedidos, isError: errorPedidos } = usePedidosCliente(id ?? '');
+  const { data: consumo, isLoading: loadingConsumo, isError: errorConsumo } = useConsumoCliente(id ?? '');
 
   return (
     <ThemedView style={styles.container}>
@@ -168,12 +168,18 @@ export default function ClienteHistorialScreen() {
               Historial de Pedidos
             </Text>
             <Card>
-              {MOCK_PEDIDOS.length === 0 ? (
+              {loadingPedidos ? (
+                <ActivityIndicator size="small" color={theme.tint} />
+              ) : errorPedidos ? (
+                <Text style={[styles.emptyText, { color: theme.error }]}>
+                  Error al cargar pedidos
+                </Text>
+              ) : !pedidos || pedidos.length === 0 ? (
                 <Text style={[styles.emptyText, { color: theme.muted }]}>
                   Sin pedidos registrados
                 </Text>
               ) : (
-                MOCK_PEDIDOS.map((pedido: PedidoHistorialResumen) => (
+                pedidos.map((pedido) => (
                   <View key={pedido.id} style={styles.pedidoRow}>
                     <View style={styles.pedidoHeader}>
                       <Text style={[styles.pedidoEstado, { color: estadoColor(pedido.estado, theme) }]}>
@@ -190,39 +196,53 @@ export default function ClienteHistorialScreen() {
                 ))
               )}
             </Card>
-            {/* TODO RF-07.1: conectar con endpoint de pedidos por cliente */}
+            {/* CONECTADO: GET /api/v1/clientes/:id/pedidos */}
 
             {/* ── Sección 4: Resumen de Consumo (RF-07.5) ── */}
             <Text style={[styles.sectionTitle, { color: theme.text }]}>
               Resumen de Consumo
             </Text>
             <Card>
-              <View style={styles.resumenRow}>
-                <Text style={[styles.resumenLabel, { color: theme.muted }]}>
-                  Total de pedidos
+              {loadingConsumo ? (
+                <ActivityIndicator size="small" color={theme.tint} />
+              ) : errorConsumo ? (
+                <Text style={[styles.emptyText, { color: theme.error }]}>
+                  Error al cargar resumen de consumo
                 </Text>
-                <Text style={[styles.resumenValor, { color: theme.text }]}>
-                  {MOCK_RESUMEN_CONSUMO.totalPedidos}
+              ) : consumo ? (
+                <>
+                  <View style={styles.resumenRow}>
+                    <Text style={[styles.resumenLabel, { color: theme.muted }]}>
+                      Total de pedidos
+                    </Text>
+                    <Text style={[styles.resumenValor, { color: theme.text }]}>
+                      {consumo.totalPedidos}
+                    </Text>
+                  </View>
+                  <View style={styles.resumenRow}>
+                    <Text style={[styles.resumenLabel, { color: theme.muted }]}>
+                      Total de bidones consumidos
+                    </Text>
+                    <Text style={[styles.resumenValor, { color: theme.text }]}>
+                      {consumo.totalBidones}
+                    </Text>
+                  </View>
+                  <View style={styles.resumenRow}>
+                    <Text style={[styles.resumenLabel, { color: theme.muted }]}>
+                      Promedio de bidones por pedido
+                    </Text>
+                    <Text style={[styles.resumenValor, { color: theme.text }]}>
+                      {consumo.promedioBidonesPorPedido}
+                    </Text>
+                  </View>
+                </>
+              ) : (
+                <Text style={[styles.emptyText, { color: theme.muted }]}>
+                  Sin datos de consumo
                 </Text>
-              </View>
-              <View style={styles.resumenRow}>
-                <Text style={[styles.resumenLabel, { color: theme.muted }]}>
-                  Total de bidones consumidos
-                </Text>
-                <Text style={[styles.resumenValor, { color: theme.text }]}>
-                  {MOCK_RESUMEN_CONSUMO.totalBidones}
-                </Text>
-              </View>
-              <View style={styles.resumenRow}>
-                <Text style={[styles.resumenLabel, { color: theme.muted }]}>
-                  Promedio de bidones por pedido
-                </Text>
-                <Text style={[styles.resumenValor, { color: theme.text }]}>
-                  {MOCK_RESUMEN_CONSUMO.promedioBidonesPorPedido}
-                </Text>
-              </View>
+              )}
             </Card>
-            {/* TODO RF-07.5: calcular desde historial real de pedidos */}
+            {/* CONECTADO: GET /api/v1/clientes/:id/consumo */}
           </>
         )}
       </ScrollView>
