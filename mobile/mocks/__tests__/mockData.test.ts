@@ -26,6 +26,34 @@ describe('Mock Data - Clientes', () => {
       expect(cliente.domicilios[0].dias[0].horarios[0].fin).toBeTruthy();
     });
   });
+
+  // RF-06: Datos de demora de envases
+  it('each cliente should have demora fields', () => {
+    MOCK_CLIENTES.forEach((cliente) => {
+      expect(cliente).toHaveProperty('tieneDemora');
+      expect(cliente).toHaveProperty('cantidadEnvasesPendientes');
+      expect(cliente).toHaveProperty('fechaUltimaEntrega');
+      expect(typeof cliente.tieneDemora).toBe('boolean');
+      expect(typeof cliente.cantidadEnvasesPendientes).toBe('number');
+      expect(cliente.cantidadEnvasesPendientes).toBeGreaterThanOrEqual(0);
+    });
+  });
+
+  it('should have at least one cliente with demora for testing', () => {
+    const conDemora = MOCK_CLIENTES.filter((c) => c.tieneDemora);
+    expect(conDemora.length).toBeGreaterThan(0);
+    conDemora.forEach((c) => {
+      expect(c.cantidadEnvasesPendientes).toBeGreaterThan(0);
+      expect(c.fechaUltimaEntrega).toBeTruthy();
+    });
+  });
+
+  it('clientes without demora should have 0 pending envases', () => {
+    const sinDemora = MOCK_CLIENTES.filter((c) => !c.tieneDemora);
+    sinDemora.forEach((c) => {
+      expect(c.cantidadEnvasesPendientes).toBe(0);
+    });
+  });
 });
 
 describe('Mock Data - Items', () => {

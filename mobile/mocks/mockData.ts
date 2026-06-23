@@ -2,6 +2,14 @@ import type { Pedido } from '@/types/pedido';
 import type { Reparto } from '@/types/reparto';
 import type { Cliente } from '@/types/cliente';
 import type { Item, PedidoItem } from '@/types/item';
+import type { EstadisticasDiarias, EstadisticasMensuales } from '@/types/estadisticas';
+
+// Helper: fecha ISO relativa a hoy
+export function daysAgo(days: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() - days);
+  return d.toISOString();
+}
 
 export const MOCK_CLIENTES: Cliente[] = [
   {
@@ -10,6 +18,9 @@ export const MOCK_CLIENTES: Cliente[] = [
     apellido: 'González',
     telefono: '1145678901',
     observaciones: 'Timbre 3B',
+    tieneDemora: true,
+    cantidadEnvasesPendientes: 4,
+    fechaUltimaEntrega: daysAgo(18),
     domicilios: [
       {
         id: 'dom-cliente-001',
@@ -36,6 +47,9 @@ export const MOCK_CLIENTES: Cliente[] = [
     nombre: 'Carlos',
     apellido: 'López',
     telefono: '1156789012',
+    tieneDemora: true,
+    cantidadEnvasesPendientes: 2,
+    fechaUltimaEntrega: daysAgo(16),
     domicilios: [
       {
         id: 'dom-cliente-002',
@@ -63,6 +77,9 @@ export const MOCK_CLIENTES: Cliente[] = [
     apellido: 'Martínez',
     telefono: '1167890123',
     observaciones: 'Edificio blanco, piso 5',
+    tieneDemora: false,
+    cantidadEnvasesPendientes: 0,
+    fechaUltimaEntrega: null,
     domicilios: [
       {
         id: 'dom-cliente-003',
@@ -89,6 +106,9 @@ export const MOCK_CLIENTES: Cliente[] = [
     nombre: 'Pedro',
     apellido: 'Ramírez',
     telefono: '1178901234',
+    tieneDemora: false,
+    cantidadEnvasesPendientes: 0,
+    fechaUltimaEntrega: daysAgo(5),
     domicilios: [
       {
         id: 'dom-cliente-004',
@@ -115,6 +135,9 @@ export const MOCK_CLIENTES: Cliente[] = [
     nombre: 'Laura',
     apellido: 'Fernández',
     telefono: '1189012345',
+    tieneDemora: false,
+    cantidadEnvasesPendientes: 0,
+    fechaUltimaEntrega: null,
     domicilios: [
       {
         id: 'dom-cliente-005',
@@ -141,6 +164,9 @@ export const MOCK_CLIENTES: Cliente[] = [
     nombre: 'Roberto',
     apellido: 'Díaz',
     telefono: '1190123456',
+    tieneDemora: false,
+    cantidadEnvasesPendientes: 0,
+    fechaUltimaEntrega: null,
     domicilios: [
       {
         id: 'dom-cliente-006',
@@ -295,6 +321,53 @@ export const MOCK_REPARTO: Reparto = {
     completados: 2,
     pendientes: 3,
   },
+};
+
+function todayISO(): string {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, '0');
+  const d = String(now.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+export const MOCK_ESTADISTICAS_DIARIAS: EstadisticasDiarias = {
+  fecha: todayISO(),
+  totalPedidos: 6,
+  entregasRealizadas: 3,
+  entregasNoRealizadas: 2,
+  volumenProductos: [
+    { itemId: 'item-001', nombre: 'Bidón 20L', unidad: 'unidad', cantidadTotal: 8 },
+    { itemId: 'item-002', nombre: 'Bidón 12L', unidad: 'unidad', cantidadTotal: 3 },
+    { itemId: 'item-003', nombre: 'Bidón 6L', unidad: 'unidad', cantidadTotal: 5 },
+  ],
+  desempenioRepartos: {
+    total: 3,
+    iniciados: 2,
+    finalizados: 1,
+  },
+};
+
+export const MOCK_ESTADISTICAS_MENSUALES: EstadisticasMensuales = {
+  anio: 2026,
+  mes: 6,
+  totalPedidos: 180,
+  entregasRealizadas: 150,
+  entregasNoRealizadas: 20,
+  totalRepartosIniciados: 25,
+  totalRepartosFinalizados: 22,
+  dias: [
+    { dia: 1, totalPedidos: 8, entregasRealizadas: 7, entregasNoRealizadas: 1 },
+    { dia: 2, totalPedidos: 6, entregasRealizadas: 5, entregasNoRealizadas: 0 },
+    { dia: 3, totalPedidos: 10, entregasRealizadas: 8, entregasNoRealizadas: 2 },
+    { dia: 4, totalPedidos: 7, entregasRealizadas: 6, entregasNoRealizadas: 1 },
+    { dia: 5, totalPedidos: 9, entregasRealizadas: 7, entregasNoRealizadas: 2 },
+    { dia: 6, totalPedidos: 5, entregasRealizadas: 5, entregasNoRealizadas: 0 },
+    { dia: 7, totalPedidos: 4, entregasRealizadas: 4, entregasNoRealizadas: 0 },
+    { dia: 8, totalPedidos: 11, entregasRealizadas: 9, entregasNoRealizadas: 1 },
+    { dia: 9, totalPedidos: 6, entregasRealizadas: 5, entregasNoRealizadas: 1 },
+    { dia: 10, totalPedidos: 8, entregasRealizadas: 7, entregasNoRealizadas: 0 },
+  ],
 };
 
 

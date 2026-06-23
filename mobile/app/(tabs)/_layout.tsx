@@ -95,6 +95,16 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="estadisticas"
+        options={{
+          title: 'Estadísticas',
+          href: isAdmin ? undefined : null,
+          tabBarIcon: ({ color }) => (
+            <LucideIcon name="bar-chart-3" size={TAB_ICON_SIZE} strokeWidth={TAB_ICON_STROKE} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="usuarios"
         options={{
           title: 'Usuarios',

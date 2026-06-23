@@ -52,6 +52,9 @@
         <a href="/admin/retenidos" class="nav-link text-white <%= typeof currentPath !== 'undefined' && currentPath?.startsWith('/admin/retenidos') ? 'active' : '' %>">Retenidos</a>
       </li>
       <li class="nav-item">
+        <a href="/admin/retenidos/demorados" class="nav-link text-white <%= typeof currentPath !== 'undefined' && currentPath === '/admin/retenidos/demorados' ? 'active' : '' %>">Envases Demorados</a>
+      </li>
+      <li class="nav-item">
         <a href="/admin/reclamos" class="nav-link text-white <%= typeof currentPath !== 'undefined' && currentPath?.startsWith('/admin/reclamos') ? 'active' : '' %>">Reclamos</a>
       </li>
     </ul>

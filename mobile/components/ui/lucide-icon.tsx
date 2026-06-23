@@ -8,7 +8,7 @@
 import React from 'react';
 import Svg, { Circle, Path, Rect, type SvgProps } from 'react-native-svg';
 
-type IconName = 'house' | 'users' | 'truck' | 'clipboard-list' | 'map' | 'user-cog' | 'circle-user' | 'map-pin' | 'phone' | 'arrow-left';
+type IconName = 'house' | 'users' | 'truck' | 'clipboard-list' | 'map' | 'user-cog' | 'circle-user' | 'map-pin' | 'phone' | 'arrow-left' | 'bar-chart-3' | 'package' | 'check-circle' | 'x-circle' | 'calendar';
 
 interface LucideIconProps extends SvgProps {
   name: IconName;
@@ -85,6 +85,33 @@ const ICON_DATA: Record<IconName, SvgElement[]> = {
   'arrow-left': [
     ['path', { d: 'm12 19-7-7 7-7', key: '1l729n' }],
     ['path', { d: 'M19 12H5', key: 'x3x0zl' }],
+  ],
+  'bar-chart-3': [
+    ['path', { d: 'M3 3v18h18', key: 'bar-base' }],
+    ['path', { d: 'M18 17V9', key: 'bar-1' }],
+    ['path', { d: 'M13 17V5', key: 'bar-2' }],
+    ['path', { d: 'M8 17v-3', key: 'bar-3' }],
+  ],
+  'package': [
+    ['path', { d: 'M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z', key: 'pkg-1' }],
+    ['path', { d: 'M12 22V12', key: 'pkg-2' }],
+    ['path', { d: 'm3.3 7 8.7 5 8.7-5', key: 'pkg-3' }],
+    ['path', { d: 'M7.5 9.5 3 7', key: 'pkg-4' }],
+  ],
+  'check-circle': [
+    ['path', { d: 'M22 11.08V12a10 10 0 1 1-5.93-9.14', key: 'cc-1' }],
+    ['path', { d: 'm9 11 3 3L22 4', key: 'cc-2' }],
+  ],
+  'x-circle': [
+    ['path', { d: 'M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0Z', key: 'xc-1' }],
+    ['path', { d: 'm15 9-6 6', key: 'xc-2' }],
+    ['path', { d: 'm9 9 6 6', key: 'xc-3' }],
+  ],
+  'calendar': [
+    ['path', { d: 'M8 2v4', key: 'cal-1' }],
+    ['path', { d: 'M16 2v4', key: 'cal-2' }],
+    ['rect', { x: '3', y: '4', width: '18', height: '18', rx: '2', key: 'cal-3' }],
+    ['path', { d: 'M3 10h18', key: 'cal-4' }],
   ],
 };
 

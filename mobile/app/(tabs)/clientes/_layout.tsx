@@ -13,6 +13,8 @@ export default function ClientesLayout() {
       <Stack.Screen name="index" />
       <Stack.Screen name="alta" />
       <Stack.Screen name="[id]" />
+      <Stack.Screen name="editar/[id]" />
+      <Stack.Screen name="historial/[id]" />
     </Stack>
   );
 }
