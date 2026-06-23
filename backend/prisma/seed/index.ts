@@ -21,9 +21,9 @@ async function main() {
   await prisma.reclamo.deleteMany();
   await prisma.horario.deleteMany();
   await prisma.dia.deleteMany();
-  await prisma.domicilio.deleteMany();
   await prisma.pedidoItem.deleteMany();
   await prisma.pedido.deleteMany();
+  await prisma.domicilio.deleteMany();
   await prisma.reparto.deleteMany();
   await prisma.empleado.deleteMany();
   await prisma.ciudad.deleteMany();
