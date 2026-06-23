@@ -15,8 +15,8 @@ export async function seedRetenidos(clientes: any[], items: any[], pedidos: any[
   const data: any[] = [];
   const usados = new Set<string>();
 
-  // Generate ~1000 retenidos from a subset of pedidos
-  const pedidosSubset = pedidos.length > 1000 ? faker.helpers.arrayElements(pedidos, 1000) : pedidos;
+  // Generate ~50 retenidos from a subset of pedidos
+  const pedidosSubset = pedidos.length > 50 ? faker.helpers.arrayElements(pedidos, 50) : pedidos;
 
   for (const p of pedidosSubset) {
     const numRet = faker.number.int({ min: 1, max: 3 });
@@ -42,9 +42,9 @@ export async function seedRetenidos(clientes: any[], items: any[], pedidos: any[
         pedidoId: p.id,
       });
 
-      if (data.length >= 1000) break;
+      if (data.length >= 50) break;
     }
-    if (data.length >= 1000) break;
+    if (data.length >= 50) break;
   }
 
   await bulkCreate(prisma.retenido, data, 'retenidos');

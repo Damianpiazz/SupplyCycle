@@ -39,7 +39,7 @@ async function main() {
   const itemsList = await seedItems();
   const { repartidores } = await seedUsuarios();
   const empleadosList = await seedEmpleados();
-  const clientes = await seedClientes(1000);
+  const clientes = await seedClientes(50);
 
   const domicilios = await seedDomicilios(clientes, ciudad.id);
   const dias = await seedDias(domicilios);

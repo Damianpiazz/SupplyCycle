@@ -45,8 +45,8 @@ export async function seedPedidos(clientes: any[], items: any[], repartos: any[]
     }
   }
 
-  // Ensure we have at least 1000 pedidos
-  while (pedidosData.length < 1000) {
+  // Ensure we have at least 50 pedidos
+  while (pedidosData.length < 50) {
     const cliente = faker.helpers.arrayElement(clientes);
     const numItems = faker.number.int({ min: 1, max: 3 });
     const itemsSel = faker.helpers.arrayElements(items, numItems);
