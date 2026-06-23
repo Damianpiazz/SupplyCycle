@@ -10,6 +10,7 @@ import Inter_500Medium from '@expo-google-fonts/inter/500Medium/Inter_500Medium.
 import Inter_600SemiBold from '@expo-google-fonts/inter/600SemiBold/Inter_600SemiBold.ttf';
 import Inter_700Bold from '@expo-google-fonts/inter/700Bold/Inter_700Bold.ttf';
 import 'react-native-reanimated';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { QueryClientProvider } from '@tanstack/react-query';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -20,6 +21,7 @@ import ErrorBoundary from '@/components/error-boundary';
 import { queryClient } from '@/lib/queryClient';
 import useOfflineSync from '@/hooks/useOfflineSync';
 import { apiClient } from '@/services/api';
+import { initMapbox } from '@/lib/mapbox';
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -42,6 +44,11 @@ export default function RootLayout() {
   useEffect(() => {
     const timer = setTimeout(() => setFontsTimeout(true), 4000);
     return () => clearTimeout(timer);
+  }, []);
+
+  // Inicializar Mapbox
+  useEffect(() => {
+    initMapbox();
   }, []);
 
   // Inicializar sincronización offline
@@ -88,21 +95,23 @@ export default function RootLayout() {
   }
 
   return (
-    <ErrorBoundary>
-      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-        <QueryClientProvider client={queryClient}>
-          <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="login" options={{ animation: 'fade' }} />
-            <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
-            <Stack.Screen
-              name="modal"
-              options={{ presentation: 'modal', title: 'Modal' }}
-            />
-          </Stack>
-          <StatusBar style="auto" />
-          <Toast />
-        </QueryClientProvider>
-      </ThemeProvider>
-    </ErrorBoundary>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <ErrorBoundary>
+        <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+          <QueryClientProvider client={queryClient}>
+            <Stack screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="login" options={{ animation: 'fade' }} />
+              <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
+              <Stack.Screen
+                name="modal"
+                options={{ presentation: 'modal', title: 'Modal' }}
+              />
+            </Stack>
+            <StatusBar style="auto" />
+            <Toast />
+          </QueryClientProvider>
+        </ThemeProvider>
+      </ErrorBoundary>
+    </GestureHandlerRootView>
   );
 }

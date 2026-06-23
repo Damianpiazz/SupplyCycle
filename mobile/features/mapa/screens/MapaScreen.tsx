@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useState, useEffect, useRef } from 'react';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { router } from 'expo-router';
 import { ThemedView } from '@/components/themed-view';
 import { LoadingSpinner, ErrorMessage, Header } from '@/components/ui';
@@ -7,40 +7,34 @@ import { Colors, FontFamily, Spacing, FontSizes, BorderRadius } from '@/constant
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { usePedidosDelDia } from '@/features/pedidos/hooks/usePedidos';
 import { getEstadoColor, getEstadoLabel } from '@/features/pedidos/utils/estadoPedido';
-import type { Pedido } from '@/types';
-
-// Simple marker rendered as a colored dot with a label
-function MarkerPunto({
-  pedido,
-  theme,
-  isSelected,
-  onPress,
-}: {
-  pedido: Pedido;
-  theme: typeof Colors.light;
-  isSelected: boolean;
-  onPress: () => void;
-}) {
-  const color = getEstadoColor(pedido.estado, theme);
-
-  return (
-    <TouchableOpacity
-      style={[styles.markerContainer, isSelected && { backgroundColor: theme.tint + '26', borderWidth: 1, borderColor: theme.tint }]}
-      onPress={onPress}
-    >
-      <View style={[styles.markerDot, { backgroundColor: color }]} />
-      <Text style={[styles.markerLabel, { color: theme.text }]}>
-        {pedido.cliente.nombre}
-      </Text>
-    </TouchableOpacity>
-  );
-}
+import Mapbox, { MapView, Camera, PointAnnotation, ShapeSource, LineLayer } from '@rnmapbox/maps';
+import * as Location from 'expo-location';
+import { useRouteLine } from '@/features/mapa/hooks/useRouteLine';
 
 export default function MapaScreen() {
   const colorScheme = useColorScheme() ?? 'light';
   const theme = Colors[colorScheme];
   const [selectedPedidoId, setSelectedPedidoId] = useState<string | null>(null);
   const { data: pedidos, isLoading, isError, error } = usePedidosDelDia();
+
+  useEffect(() => {
+    (async () => {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status === 'granted' && !userLocationRef.current) {
+        const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
+        userLocationRef.current = [loc.coords.longitude, loc.coords.latitude];
+        setUserLocation([loc.coords.longitude, loc.coords.latitude]);
+      }
+    })();
+  }, []);
+
+  const pedidosConCoordenadas = pedidos?.filter(
+    (p) => p.domicilio.latitud && p.domicilio.longitud
+  ) ?? [];
+
+  const userLocationRef = useRef<[number, number] | null>(null);
+  const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
+  const { nearestPedido, routeGeoJSON } = useRouteLine(userLocation, pedidos);
 
   if (isLoading) {
     return (
@@ -66,28 +60,55 @@ export default function MapaScreen() {
     <ThemedView style={styles.container}>
       <Header />
       <View style={styles.mapContainer}>
-        {/* Map placeholder - real Google Maps integration will be added later */}
-        <View style={[styles.mapPlaceholder, { backgroundColor: theme.surface }]}>
-          <Text style={[styles.mapPlaceholderText, { color: theme.muted }]}>
-            Mapa de entregas
-          </Text>
-          <Text style={[styles.mapPlaceholderHint, { color: theme.muted }]}>
-            {pedidos?.length ?? 0} puntos de entrega
-          </Text>
-        </View>
+        <MapView
+          style={styles.map}
+          styleURL={
+            colorScheme === 'dark'
+              ? 'mapbox://styles/mapbox/dark-v11'
+              : 'mapbox://styles/mapbox/streets-v12'
+          }
+          compassEnabled
+          logoEnabled={false}
+          showUserLocation
+          onPress={() => setSelectedPedidoId(null)}
+        >
+          <Camera
+            defaultSettings={{
+              centerCoordinate: [-57.9546, -34.9215],
+              zoomLevel: 12,
+            }}
+          />
 
-        {/* Markers list as fallback (when map is not available) */}
-        <View style={styles.markersList}>
-          {pedidos?.map((pedido) => (
-            <MarkerPunto
+          {pedidosConCoordenadas.map((pedido) => (
+            <PointAnnotation
               key={pedido.id}
-              pedido={pedido}
-              theme={theme}
-              isSelected={selectedPedidoId === pedido.id}
-              onPress={() => setSelectedPedidoId(pedido.id)}
-            />
+              id={pedido.id}
+              coordinate={[pedido.domicilio.longitud!, pedido.domicilio.latitud!]}
+              onSelected={() => setSelectedPedidoId(pedido.id)}
+            >
+              <View style={[
+                styles.markerDot,
+                { backgroundColor: getEstadoColor(pedido.estado, theme) },
+                nearestPedido?.id === pedido.id && styles.markerNearest,
+              ]} />
+            </PointAnnotation>
           ))}
-        </View>
+
+          {routeGeoJSON && (
+            <ShapeSource id="routeSource" shape={routeGeoJSON}>
+              <LineLayer
+                id="routeLine"
+                style={{
+                  lineColor: '#3B82F6',
+                  lineWidth: 5,
+                  lineOpacity: 0.85,
+                  lineCap: 'round',
+                  lineJoin: 'round',
+                }}
+              />
+            </ShapeSource>
+          )}
+        </MapView>
 
         {/* Info card for selected pedido */}
         {selectedPedido && (
@@ -122,8 +143,6 @@ export default function MapaScreen() {
   );
 }
 
-const { width } = Dimensions.get('window');
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -132,48 +151,22 @@ const styles = StyleSheet.create({
     flex: 1,
     position: 'relative',
   },
-  mapPlaceholder: {
-    height: 200,
-    justifyContent: 'center',
-    alignItems: 'center',
-    margin: Spacing.lg,
-    borderRadius: BorderRadius.lg,
-  },
-  mapPlaceholderText: {
-    fontSize: FontSizes.lg,
-    fontFamily: FontFamily.interSemiBold,
-    fontWeight: '600',
-  },
-  mapPlaceholderHint: {
-    fontSize: FontSizes.sm,
-    fontFamily: FontFamily.inter,
-    marginTop: Spacing.xs,
-  },
-  markersList: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    paddingHorizontal: Spacing.lg,
-    gap: Spacing.sm,
-    marginBottom: Spacing.md,
-  },
-  markerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    borderRadius: BorderRadius.xl,
-    backgroundColor: 'rgba(0,0,0,0.05)',
-    gap: Spacing.sm,
+  map: {
+    flex: 1,
   },
   markerDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 3,
+    borderColor: '#fff',
   },
-  markerLabel: {
-    fontSize: FontSizes.xs,
-    fontFamily: FontFamily.inter,
-    fontWeight: '500',
+  markerNearest: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    borderWidth: 3,
+    borderColor: '#3B82F6',
   },
   // Info card at bottom
   infoCard: {

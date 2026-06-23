@@ -14,7 +14,8 @@
     "test:coverage": "vitest run --coverage",
     "db:seed": "npx prisma db seed",
     "db:studio": "npx prisma studio",
-    "scripts:limpiar-repartos": "npx tsx scripts/limpiar-repartos-colgados.ts"
+    "scripts:limpiar-repartos": "npx tsx scripts/limpiar-repartos-colgados.ts",
+    "seed:reparto": "tsx prisma/seed-reparto-diario.ts"
   },
   "keywords": [],
   "author": "",
