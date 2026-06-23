@@ -1,9 +1,14 @@
 # SupplyCycle
 
+**MVP** desarrollado para la materia **Desarrollo de Aplicaciones Móviles** de la **Universidad Nacional de La Plata**.
+
+El sistema está pensado para optimizar la logística de **distribución y reparto de envases de agua** en la región de La Plata. Permite gestionar pedidos, asignar repartos, visualizar rutas en mapa, y dar seguimiento al historial de entregas, tanto desde una app mobile para repartidores como desde un panel de administración web.
+
 Proyecto monorepo que contiene:
 
-* `backend/` → API (Express + TypeScript + Prisma)
-* `mobile/` → App mobile (React Native + Expo)
+* `backend/` → API REST (Express + TypeScript + Prisma + PostgreSQL)
+* `mobile/` → App mobile para repartidores (React Native + Expo)
+* `whatsapp-bot/` → Bot de WhatsApp para clientes (BuilderBot + Baileys)
 
 ---
 
