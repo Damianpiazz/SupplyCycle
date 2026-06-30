@@ -5,6 +5,18 @@
 
 import { vi } from 'vitest';
 
+// Define __DEV__ global required by expo-modules-core
+(globalThis as any).__DEV__ = true;
+process.env.EXPO_OS = 'ios';
+(globalThis as any).ExpoModulesCore = {
+  EventEmitter: class EventEmitterStub {
+    constructor() {}
+    addListener() {}
+    removeListener() {}
+    emit() {}
+  },
+};
+
 // ─── Mock react-native (prevents Rolldown Flow parse error) ──────────────────
 vi.mock('react-native', () => {
   var h = function (name) {
@@ -72,6 +84,10 @@ vi.mock('react-native', () => {
     },
     Keyboard: { addListener: function () { return { remove: function () {} }; }, removeListener: function () {} },
     NativeModules: {},
+    TurboModuleRegistry: {
+      getEnforcing: vi.fn(() => ({})),
+      get: vi.fn(() => ({})),
+    },
   };
 });
 
@@ -129,6 +145,17 @@ vi.mock('expo-constants', () => ({
     expoConfig: { extra: {} },
     manifest: {},
   },
+}));
+
+// ─── Mock expo-location ───────────────────────────────────────────────────────
+vi.mock('expo-location', () => ({
+  requestForegroundPermissionsAsync: vi.fn(() => Promise.resolve({ status: 'granted' })),
+  getCurrentPositionAsync: vi.fn(() =>
+    Promise.resolve({
+      coords: { latitude: -34.9215, longitude: -57.9546, accuracy: 10 },
+    }),
+  ),
+  Accuracy: { High: 5, Low: 1, Medium: 3 },
 }));
 
 // ─── Mock expo-linking ────────────────────────────────────────────────────────
@@ -318,6 +345,15 @@ vi.mock('@react-native-async-storage/async-storage', () => {
     }),
   };
 });
+
+// ─── Mock react-native-webview ─────────────────────────────────────────────────
+vi.mock('react-native-webview', () => ({
+  WebView: vi.fn(({ source, style, ...props }: any) => {
+    const React = require('react');
+    const { View } = require('react-native');
+    return React.createElement(View, { testID: 'webview', ...props }, null);
+  }),
+}));
 
 // ─── Mock expo-haptics ───────────────────────────────────────────────────────
 vi.mock('expo-haptics', () => ({

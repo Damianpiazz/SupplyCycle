@@ -21,7 +21,6 @@ import ErrorBoundary from '@/components/error-boundary';
 import { queryClient } from '@/lib/queryClient';
 import useOfflineSync from '@/hooks/useOfflineSync';
 import { apiClient } from '@/services/api';
-import { initMapbox } from '@/lib/mapbox';
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -44,11 +43,6 @@ export default function RootLayout() {
   useEffect(() => {
     const timer = setTimeout(() => setFontsTimeout(true), 4000);
     return () => clearTimeout(timer);
-  }, []);
-
-  // Inicializar Mapbox
-  useEffect(() => {
-    initMapbox();
   }, []);
 
   // Inicializar sincronización offline
