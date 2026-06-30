@@ -1,8 +1,27 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react-native';
 
+// Mock usePedidosDelDia
 vi.mock('@/features/pedidos/hooks/usePedidos', () => ({
   usePedidosDelDia: vi.fn(),
+}));
+
+// Mock MapWebView — renderiza un placeholder con los datos que recibe
+vi.mock('@/components/ui/MapWebView', () => ({
+  default: ({ pedidos, onSelectPedido }: any) => {
+    const { View, Text, TouchableOpacity } = require('react-native');
+    return (
+      <View testID="map-webview">
+        <Text>Mapa de entregas</Text>
+        <Text>{pedidos.length} puntos de entrega</Text>
+        {pedidos.map((p: any) => (
+          <TouchableOpacity key={p.id} onPress={() => onSelectPedido(p.id)}>
+            <Text>{p.clienteNombre}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+    );
+  },
 }));
 
 import { usePedidosDelDia } from '@/features/pedidos/hooks/usePedidos';
@@ -60,7 +79,10 @@ describe('MapaScreen', () => {
   });
 
   it('should show error state', () => {
-    vi.mocked(usePedidosDelDia).mockReturnValue({ data: undefined, isLoading: false, isError: true, error: { message: 'Error al cargar el mapa' } } as any);
+    vi.mocked(usePedidosDelDia).mockReturnValue({
+      data: undefined, isLoading: false, isError: true,
+      error: { message: 'Error al cargar el mapa' },
+    } as any);
     render(<MapaScreen />);
     expect(screen.getByText('Error al cargar el mapa')).toBeTruthy();
   });
