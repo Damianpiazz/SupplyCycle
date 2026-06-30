@@ -1,9 +1,14 @@
 # SupplyCycle
 
+**MVP** desarrollado para la materia **Desarrollo de Aplicaciones Móviles** de la **Universidad Nacional de La Plata**.
+
+El sistema está pensado para optimizar la logística de **distribución y reparto de envases de agua** en la región de La Plata. Permite gestionar pedidos, asignar repartos, visualizar rutas en mapa, y dar seguimiento al historial de entregas, tanto desde una app mobile para repartidores como desde un panel de administración web.
+
 Proyecto monorepo que contiene:
 
-* `backend/` → API (Express + TypeScript + Prisma)
-* `mobile/` → App mobile (React Native + Expo)
+* `backend/` → API REST (Express + TypeScript + Prisma + PostgreSQL)
+* `mobile/` → App mobile para repartidores (React Native + Expo)
+* `whatsapp-bot/` → Bot de WhatsApp para clientes (BuilderBot + Baileys)
 
 ---
 
@@ -229,3 +234,131 @@ Resumen del cambio y su propósito.
 ## Resultado
 - Estado final del sistema tras el cambio
 ```
+
+---
+
+## ⚙️ Prerrequisitos
+
+Antes de comenzar, instalá lo siguiente:
+
+| Herramienta | Versión | Notas |
+|---|---|---|
+| **Node.js** | ≥ 22.14 LTS | [nodejs.org](https://nodejs.org) |
+| **npm** | ≥ 10 | Viene con Node.js |
+| **Docker Desktop** | Última | [docker.com](https://docker.com) — para PostgreSQL |
+| **Android Studio** | Última | Con SDK 35, AVD configurado |
+| **Java JDK** | ≥ 17 | Necesario para React Native en Android |
+| **Expo CLI** | Incluida | Viene con el proyecto, no instalar globalmente |
+| **Git** | ≥ 2.40 | [git-scm.com](https://git-scm.com) |
+
+> 💡 Verificá las versiones con `node -v`, `npm -v`, `java -version`.
+
+---
+
+## 🔐 Variables de entorno
+
+Cada submódulo necesita su propio archivo `.env` copiado desde `.env.example`:
+
+### backend/
+
+```bash
+cp backend/.env.example backend/.env
+```
+
+| Variable | Descripción | Ejemplo |
+|---|---|---|
+| `NODE_ENV` | Entorno | `development` |
+| `PORT` | Puerto del servidor | `3000` |
+| `DATABASE_URL` | Conexión PostgreSQL | `postgresql://postgres:postgres@localhost:5432/supplycycle` |
+| `JWT_SECRET` | Secreto para firmar tokens | `supplycycle-dev-secret-key-2026` |
+| `JWT_EXPIRES_IN` | Expiración del token | `24h` |
+| `BCRYPT_SALT_ROUNDS` | Rondas de sal para bcrypt | `10` |
+| `CORS_ORIGIN` | Origen permitido CORS | `*` |
+| `LOG_LEVEL` | Nivel de log | `debug` |
+| `BOT_API_KEY` | API key del bot WhatsApp | `sc-bot-dev-key-change-in-production` |
+
+### mobile/
+
+```bash
+cp mobile/.env.example mobile/.env
+```
+
+| Variable | Descripción | Ejemplo |
+|---|---|---|
+| `EXPO_PUBLIC_API_URL` | URL del backend | `http://localhost:3000/api/v1` |
+| `EXPO_PUBLIC_API_TIMEOUT` | Timeout en ms | `10000` |
+| `EXPO_PUBLIC_AUTH_ENABLED` | Autenticación habilitada | `true` |
+| `EXPO_PUBLIC_USE_MOCKS` | Usar datos mock | `true` |
+| `EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN` | Token de Mapbox (requerido para mapa) | `pk.xxx...` |
+| `EXPO_PUBLIC_ENABLE_LOGS` | Logs en consola | `true` |
+| `EXPO_PUBLIC_FEATURE_DARK_MODE` | Modo oscuro | `true` |
+
+> Las variables con prefijo `EXPO_PUBLIC_` se exponen al cliente. No poner secrets acá.
+
+### whatsapp-bot/
+
+```bash
+cp whatsapp-bot/.env.example whatsapp-bot/.env
+```
+
+| Variable | Descripción | Ejemplo |
+|---|---|---|
+| `BACKEND_API_URL` | URL del backend | `http://localhost:3000/api/v1` |
+| `BOT_API_KEY` | API key compartida con backend | `sc-bot-dev-key-change-in-production` |
+
+> No existe `.env.example` todavía; creá el archivo con esas 2 variables.
+
+---
+
+## 🚀 Ejecución en Android / Emulador
+
+### 1. Levantar PostgreSQL
+
+```bash
+docker compose -f docker-compose.dev.yml up -d db
+```
+
+### 2. Backend
+
+```bash
+cd backend
+npm install
+npx prisma generate
+npx prisma migrate dev
+npm run dev
+```
+
+El servidor arranca en `http://localhost:3000`.
+
+### 3. Mobile en emulador Android
+
+```bash
+cd mobile
+npm install
+npm run android
+```
+
+Esto ejecuta `expo run:android`, compila la app y la despliega en el emulador activo.
+
+> Requiere tener un AVD corriendo en Android Studio o un dispositivo físico conectado con depuración USB.
+
+### Comandos útiles
+
+| Comando | Descripción |
+|---|---|
+| `npm run start` | Inicia Expo dev server (modo desarrollo) |
+| `npm run android` | Compila y corre en Android |
+| `npm run ios` | Compila y corre en iOS (solo macOS) |
+| `npm run web` | Corre versión web (limitado) |
+
+### 4. WhatsApp Bot (opcional)
+
+```bash
+cd whatsapp-bot
+npm install
+npm run dev
+```
+
+Escanea el QR con WhatsApp para conectar.
+
+---
