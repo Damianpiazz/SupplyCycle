@@ -5,7 +5,7 @@ import { bulkCreate } from './helpers.js';
 faker.seed(42);
 
 export async function seedReclamos(clientes: any[]) {
-  const data = Array.from({ length: Math.min(50, clientes.length * 2) }, () => ({
+  const data = Array.from({ length: Math.min(1000, clientes.length * 2) }, () => ({
     clienteId: faker.helpers.arrayElement(clientes).id,
   }));
 

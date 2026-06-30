@@ -13,9 +13,10 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "db:seed": "npx prisma db seed",
+    "seed:clean": "tsx prisma/seed/00-clean.seed.ts",
     "db:studio": "npx prisma studio",
     "scripts:limpiar-repartos": "npx tsx scripts/limpiar-repartos-colgados.ts",
-    "seed:reparto": "tsx prisma/seed-reparto-diario.ts"
+    "seed:reparto": "tsx prisma/seed/index.ts"
   },
   "keywords": [],
   "author": "",
@@ -55,6 +56,6 @@
     "vitest": "^4.1.7"
   },
   "prisma": {
-    "seed": "tsx prisma/seed.ts"
+    "seed": "tsx prisma/seed/index.ts"
   }
 }

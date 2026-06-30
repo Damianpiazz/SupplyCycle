@@ -27,13 +27,6 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
-      [
-        "@rnmapbox/maps",
-        {
-          "RNMapboxMapsDownloadServerToken": "",
-          "RNMapboxMapsDownloadServerUser": ""
-        }
-      ],
       "expo-router",
       [
         "expo-splash-screen",
@@ -50,8 +43,7 @@
       "@react-native-community/datetimepicker",
       "expo-secure-store",
       "expo-web-browser",
-      "expo-font",
-      "@rnmapbox/maps"
+      "expo-font"
     ],
     "experiments": {
       "typedRoutes": true,

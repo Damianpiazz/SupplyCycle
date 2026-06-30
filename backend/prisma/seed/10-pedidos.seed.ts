@@ -45,8 +45,8 @@ export async function seedPedidos(clientes: any[], items: any[], repartos: any[]
     }
   }
 
-  // Ensure we have at least 50 pedidos
-  while (pedidosData.length < 50) {
+  // Ensure we have at least 1000 pedidos
+  while (pedidosData.length < 1000) {
     const cliente = faker.helpers.arrayElement(clientes);
     const numItems = faker.number.int({ min: 1, max: 3 });
     const itemsSel = faker.helpers.arrayElements(items, numItems);
@@ -67,7 +67,7 @@ export async function seedPedidos(clientes: any[], items: any[], repartos: any[]
   }
 
   // Insert pedidos in batches
-  console.log(`  ── Insertando ${pedidosData.length} pedidos...`);
+  console.log(`  ÔöÇÔöÇ Insertando ${pedidosData.length} pedidos...`);
   let pedCount = 0;
   const allPedidos: any[] = [];
   for (let i = 0; i < pedidosData.length; i += 100) {
@@ -87,7 +87,7 @@ export async function seedPedidos(clientes: any[], items: any[], repartos: any[]
     console.log(`    ... ${pedCount}/${pedidosData.length} pedidos`);
   }
 
-  console.log(`  ✅ ${allPedidos.length} pedidos creados`);
+  console.log(`  Ô£à ${allPedidos.length} pedidos creados`);
   return allPedidos;
 }
 

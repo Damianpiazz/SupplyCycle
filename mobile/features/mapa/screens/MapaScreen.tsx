@@ -7,9 +7,12 @@ import { Colors, FontFamily, Spacing, FontSizes, BorderRadius } from '@/constant
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { usePedidosDelDia } from '@/features/pedidos/hooks/usePedidos';
 import { getEstadoColor, getEstadoLabel } from '@/features/pedidos/utils/estadoPedido';
-import Mapbox, { MapView, Camera, PointAnnotation, ShapeSource, LineLayer } from '@rnmapbox/maps';
 import * as Location from 'expo-location';
 import { useRouteLine } from '@/features/mapa/hooks/useRouteLine';
+import MapWebView from '@/components/ui/MapWebView';
+import type { MapPedido } from '@/components/ui/MapWebView.types';
+
+const DEFAULT_CENTER: [number, number] = [-57.9546, -34.9215]; // La Plata
 
 export default function MapaScreen() {
   const colorScheme = useColorScheme() ?? 'light';
@@ -17,24 +20,55 @@ export default function MapaScreen() {
   const [selectedPedidoId, setSelectedPedidoId] = useState<string | null>(null);
   const { data: pedidos, isLoading, isError, error } = usePedidosDelDia();
 
+  // Ubicación del usuario
+  const userLocationRef = useRef<[number, number] | null>(null);
+  const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
+
   useEffect(() => {
     (async () => {
       const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status === 'granted' && !userLocationRef.current) {
+      if (status === 'granted') {
         const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
-        userLocationRef.current = [loc.coords.longitude, loc.coords.latitude];
-        setUserLocation([loc.coords.longitude, loc.coords.latitude]);
+        const coords: [number, number] = [loc.coords.longitude, loc.coords.latitude];
+        userLocationRef.current = coords;
+        setUserLocation(coords);
       }
     })();
   }, []);
 
+  // Ruteo
+  const { nearestPedido, routeGeoJSON } = useRouteLine(userLocation, pedidos);
+
+  // Solo pedidos activos (no entregados) con coordenadas
+  const ESTADOS_ACTIVOS = ['PENDIENTE', 'EN_RUTA'];
+
   const pedidosConCoordenadas = pedidos?.filter(
-    (p) => p.domicilio.latitud && p.domicilio.longitud
+    (p) => ESTADOS_ACTIVOS.includes(p.estado) && p.domicilio.latitud && p.domicilio.longitud,
   ) ?? [];
 
-  const userLocationRef = useRef<[number, number] | null>(null);
-  const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
-  const { nearestPedido, routeGeoJSON } = useRouteLine(userLocation, pedidos);
+  // Mapear a formato simple para el WebView
+  const mapPedidos: MapPedido[] = pedidosConCoordenadas.map((p) => ({
+    id: p.id,
+    estado: p.estado,
+    numeroPedido: p.numeroPedido,
+    latitud: p.domicilio.latitud!,
+    longitud: p.domicilio.longitud!,
+    clienteNombre: p.cliente.nombre,
+    clienteApellido: p.cliente.apellido,
+    domicilioCalle: p.domicilio.calle,
+    domicilioNumero: p.domicilio.numero,
+  }));
+
+  // Mapa de colores por estado (sigue el theme actual)
+  const colorMap = {
+    PENDIENTE: getEstadoColor('PENDIENTE', theme),
+    EN_RUTA: getEstadoColor('EN_RUTA', theme),
+    ENTREGADO: getEstadoColor('ENTREGADO', theme),
+    NO_ENTREGADO: getEstadoColor('NO_ENTREGADO', theme),
+    CANCELADO: getEstadoColor('CANCELADO', theme),
+  };
+
+  /* ── Estados de carga / error ──────────────────────────── */
 
   if (isLoading) {
     return (
@@ -54,68 +88,48 @@ export default function MapaScreen() {
     );
   }
 
+  /* ── Render ────────────────────────────────────────────── */
+
   const selectedPedido = pedidos?.find((p) => p.id === selectedPedidoId) ?? null;
 
   return (
     <ThemedView style={styles.container}>
       <Header />
       <View style={styles.mapContainer}>
-        <MapView
-          style={styles.map}
-          styleURL={
-            colorScheme === 'dark'
-              ? 'mapbox://styles/mapbox/dark-v11'
-              : 'mapbox://styles/mapbox/streets-v12'
-          }
-          compassEnabled
-          logoEnabled={false}
-          showUserLocation
-          onPress={() => setSelectedPedidoId(null)}
-        >
-          <Camera
-            defaultSettings={{
-              centerCoordinate: [-57.9546, -34.9215],
-              zoomLevel: 12,
-            }}
-          />
+        <MapWebView
+          pedidos={mapPedidos}
+          routeGeoJSON={routeGeoJSON}
+          selectedPedidoId={selectedPedidoId}
+          darkMode={colorScheme === 'dark'}
+          colorMap={colorMap}
+          userLocation={userLocation}
+          onSelectPedido={setSelectedPedidoId}
+        />
 
-          {pedidosConCoordenadas.map((pedido) => (
-            <PointAnnotation
-              key={pedido.id}
-              id={pedido.id}
-              coordinate={[pedido.domicilio.longitud!, pedido.domicilio.latitud!]}
-              onSelected={() => setSelectedPedidoId(pedido.id)}
-            >
-              <View style={[
-                styles.markerDot,
-                { backgroundColor: getEstadoColor(pedido.estado, theme) },
-                nearestPedido?.id === pedido.id && styles.markerNearest,
-              ]} />
-            </PointAnnotation>
-          ))}
-
-          {routeGeoJSON && (
-            <ShapeSource id="routeSource" shape={routeGeoJSON}>
-              <LineLayer
-                id="routeLine"
-                style={{
-                  lineColor: '#3B82F6',
-                  lineWidth: 5,
-                  lineOpacity: 0.85,
-                  lineCap: 'round',
-                  lineJoin: 'round',
-                }}
-              />
-            </ShapeSource>
-          )}
-        </MapView>
-
-        {/* Info card for selected pedido */}
+        {/* Info card del pedido seleccionado */}
         {selectedPedido && (
-          <View style={[styles.infoCard, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
+          <View
+            style={[
+              styles.infoCard,
+              { backgroundColor: theme.card, borderColor: theme.cardBorder },
+            ]}
+          >
             <View style={styles.infoCardHeader}>
-              <View style={[styles.estadoBadge, { backgroundColor: getEstadoColor(selectedPedido.estado, theme) + '20' }]}>
-                <Text style={[styles.estadoBadgeText, { color: getEstadoColor(selectedPedido.estado, theme) }]}>
+              <View
+                style={[
+                  styles.estadoBadge,
+                  {
+                    backgroundColor:
+                      getEstadoColor(selectedPedido.estado, theme) + '20',
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.estadoBadgeText,
+                    { color: getEstadoColor(selectedPedido.estado, theme) },
+                  ]}
+                >
                   {getEstadoLabel(selectedPedido.estado)}
                 </Text>
               </View>
@@ -127,14 +141,18 @@ export default function MapaScreen() {
               {selectedPedido.cliente.nombre} {selectedPedido.cliente.apellido}
             </Text>
             <Text style={[styles.infoCardDireccion, { color: theme.muted }]}>
-              {selectedPedido.domicilio.calle}{' '}
-              {selectedPedido.domicilio.numero}
+              {selectedPedido.domicilio.calle} {selectedPedido.domicilio.numero}
             </Text>
             <TouchableOpacity
-              style={[styles.verDetalleButton, { backgroundColor: theme.buttonPrimary }]}
+              style={[
+                styles.verDetalleButton,
+                { backgroundColor: theme.buttonPrimary },
+              ]}
               onPress={() => router.push(`/mapa/${selectedPedido.id}`)}
             >
-              <Text style={[styles.verDetalleText, { color: theme.headerText }]}>Ver detalle</Text>
+              <Text style={[styles.verDetalleText, { color: theme.headerText }]}>
+                Ver detalle
+              </Text>
             </TouchableOpacity>
           </View>
         )}
@@ -150,9 +168,6 @@ const styles = StyleSheet.create({
   mapContainer: {
     flex: 1,
     position: 'relative',
-  },
-  map: {
-    flex: 1,
   },
   markerDot: {
     width: 22,
