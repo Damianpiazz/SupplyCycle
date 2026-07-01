@@ -1,99 +1,89 @@
 <%- include('../layouts/header') %>
 
-<div class="mb-3">
-  <a href="/admin/clientes" class="btn btn-outline-secondary btn-sm">&larr; Volver</a>
-</div>
+<a href="/admin/clientes" class="secondary outline small-btn" style="margin-bottom:1rem;display:inline-block;">&larr; Volver</a>
 
-<div class="card mb-4">
-  <div class="card-header d-flex justify-content-between align-items-center">
+<article style="margin-bottom:1rem;">
+  <header class="flex justify-between items-center">
     <span><strong><%= cliente.apellido %>, <%= cliente.nombre %></strong></span>
-    <span class="badge bg-<%= cliente.activo ? 'success' : 'danger' %> fs-6"><%= cliente.activo ? 'Activo' : 'Inactivo' %></span>
-  </div>
-  <div class="card-body">
-    <div class="row">
-      <div class="col-md-6">
-        <h6>Contacto</h6>
-        <p class="mb-1">Teléfono: <%= cliente.telefono %></p>
-      </div>
-      <div class="col-md-6">
-        <h6>Dirección</h6>
-        <p class="mb-1"><%= cliente.domicilio.calle %> <%= cliente.domicilio.numero %></p>
-        <p class="mb-1"><%= cliente.domicilio.localidad %></p>
-      </div>
+    <span class="<%= cliente.activo ? 'badge-activo' : 'badge-inactivo' %>" style="font-size:1rem;"><%= cliente.activo ? 'Activo' : 'Inactivo' %></span>
+  </header>
+  <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 1rem;">
+    <div>
+      <h6>Contacto</h6>
+      <p style="margin-bottom:0.25rem;">Teléfono: <strong><%= cliente.telefono %></strong></p>
     </div>
-    <hr>
-    <div class="row">
-      <div class="col-md-6">
-        <h6>Horarios de entrega</h6>
-        <p class="mb-1">Día: <%= cliente.diaEntrega ? cliente.diaEntrega.charAt(0).toUpperCase() + cliente.diaEntrega.slice(1) : '-' %></p>
-        <p class="mb-1">Horario: <%= cliente.horarioDesde %> - <%= cliente.horarioHasta %></p>
-      </div>
-      <div class="col-md-6">
-        <h6>Observaciones</h6>
-        <p class="mb-0"><%= cliente.observaciones || 'Sin observaciones' %></p>
-      </div>
+    <div>
+      <h6>Dirección</h6>
+      <% const dom = cliente.domicilios?.[0]; %>
+      <p style="margin-bottom:0.25rem;"><%= dom?.calle ?? '' %> <%= dom?.numero ?? '' %></p>
+      <p style="margin-bottom:0.25rem;"><%= dom?.localidad ?? '' %></p>
     </div>
   </div>
-</div>
+  <hr>
+  <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 1rem;">
+    <div>
+      <h6>Horarios de entrega</h6>
+      <% const dia = dom?.dias?.[0]; %>
+      <% const horario = dia?.horarios?.[0]; %>
+      <p style="margin-bottom:0.25rem;">Día: <strong><%= dia?.nombre ? dia.nombre.charAt(0).toUpperCase() + dia.nombre.slice(1).toLowerCase() : '-' %></strong></p>
+      <p style="margin-bottom:0.25rem;">Horario: <strong><%= horario?.inicio ?? '-' %> - <%= horario?.fin ?? '-' %></strong></p>
+    </div>
+    <div>
+      <h6>Observaciones</h6>
+      <p><%= cliente.observaciones || 'Sin observaciones' %></p>
+    </div>
+  </div>
+</article>
 
 <% if (typeof saldoEnvases !== 'undefined' && saldoEnvases.length > 0) { %>
-<div class="card mb-4">
-  <div class="card-header">
+<article style="margin-bottom:1rem;">
+  <header>
     <strong>Saldo de Envases Pendientes</strong>
-  </div>
-  <div class="card-body p-0">
-    <table class="table table-striped mb-0">
-      <thead class="table-light">
-        <tr><th>Tipo de Envase</th><th>Cantidad Pendiente</th></tr>
-      </thead>
-      <tbody>
-        <% saldoEnvases.forEach(s => { %>
-          <tr><td><%= s.itemNombre %></td><td><%= s.cantidad %></td></tr>
-        <% }) %>
-      </tbody>
-    </table>
-  </div>
-</div>
+  </header>
+  <table>
+    <thead><tr><th>Tipo de Envase</th><th>Cantidad Pendiente</th></tr></thead>
+    <tbody>
+      <% saldoEnvases.forEach(s => { %>
+        <tr><td><%= s.itemNombre %></td><td><%= s.cantidad %></td></tr>
+      <% }) %>
+    </tbody>
+  </table>
+</article>
 <% } %>
 
 <% if (typeof retenidos !== 'undefined' && retenidos.length > 0) { %>
-<div class="card mb-4">
-  <div class="card-header">
+<article style="margin-bottom:1rem;">
+  <header>
     <strong>Historial de Envases</strong>
-  </div>
-  <div class="card-body p-0">
-    <table class="table table-striped mb-0">
-      <thead class="table-light">
-        <tr><th>Tipo de Envase</th><th>Fecha de Entrega</th><th>Fecha de Devolución</th><th>Estado</th><th>Pedido</th></tr>
-      </thead>
-      <tbody>
-        <% retenidos.forEach(r => { %>
-          <tr>
-            <td><%= r.item.nombre %></td>
-            <td><%= r.inicio.toLocaleDateString() %></td>
-            <td><%= r.fin ? r.fin.toLocaleDateString() : '-' %></td>
-            <td>
-              <span class="badge bg-<%= r.estado === 'RETENIDO' ? 'warning' : (r.estado === 'DEVUELTO' ? 'success' : 'danger') %>">
-                <%= r.estado.charAt(0) + r.estado.slice(1).toLowerCase() %>
-              </span>
-            </td>
-            <td><%= r.pedido.numeroPedido %></td>
-          </tr>
-        <% }) %>
-      </tbody>
-    </table>
-  </div>
-</div>
+  </header>
+  <table>
+    <thead><tr><th>Tipo de Envase</th><th>Fecha de Entrega</th><th>Fecha de Devolución</th><th>Estado</th><th>Pedido</th></tr></thead>
+    <tbody>
+      <% retenidos.forEach(r => { %>
+        <tr>
+          <td><%= r.item.nombre %></td>
+          <td><%= r.inicio.toLocaleDateString() %></td>
+          <td><%= r.fin ? r.fin.toLocaleDateString() : '-' %></td>
+          <td>
+            <span class="<%= r.estado === 'RETENIDO' ? 'badge-pendiente' : (r.estado === 'DEVUELTO' ? 'badge-success' : 'badge-danger') %>" style="font-size:1rem;">
+              <%= r.estado.charAt(0) + r.estado.slice(1).toLowerCase() %>
+            </span>
+          </td>
+          <td><%= r.pedido.numeroPedido %></td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</article>
 <% } %>
 
-<div class="d-flex gap-2">
-  <a href="/admin/clientes/<%= cliente.id %>/editar" class="btn btn-primary">Editar</a>
+<footer class="flex gap-2">
+  <a href="/admin/clientes/<%= cliente.id %>/editar" role="button" class="primary">Editar</a>
   <% if (cliente.activo) { %>
     <form method="POST" action="/admin/clientes/<%= cliente.id %>/eliminar" data-confirm="¿Desactivar este cliente?">
-      <button type="submit" class="btn btn-danger">Desactivar</button>
+      <button type="submit" class="primary outline">Desactivar</button>
     </form>
   <% } %>
-  <a href="/admin/clientes" class="btn btn-outline-secondary">Volver</a>
-</div>
+</footer>
 
 <%- include('../layouts/footer') %>

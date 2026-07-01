@@ -4,82 +4,44 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><%= typeof title !== 'undefined' ? title + ' — ' : '' %>SupplyCycle Admin</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="/static/css/admin.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+  <link href="/static/css/supplycycle-theme.css" rel="stylesheet">
 </head>
 <body>
-<div class="d-flex">
-  <nav class="sidebar d-flex flex-column flex-shrink-0 p-3 text-white">
-    <a href="/admin" class="d-flex align-items-center mb-3 text-white text-decoration-none">
-      <span class="fs-5 fw-semibold">SupplyCycle</span>
-    </a>
-    <hr>
-    <ul class="nav nav-pills flex-column mb-auto">
-      <li class="nav-item">
-        <a href="/admin/pedidos" class="nav-link text-white <%= typeof currentPath !== 'undefined' && currentPath?.startsWith('/admin/pedidos') ? 'active' : '' %>">Pedidos</a>
-      </li>
-      <li class="nav-item">
-        <a href="/admin/clientes" class="nav-link text-white <%= typeof currentPath !== 'undefined' && currentPath?.startsWith('/admin/clientes') ? 'active' : '' %>">Clientes</a>
-      </li>
-      <li class="nav-item">
-        <a href="/admin/repartos" class="nav-link text-white <%= typeof currentPath !== 'undefined' && currentPath?.startsWith('/admin/repartos') ? 'active' : '' %>">Repartos</a>
-      </li>
-      <li class="nav-item">
-        <a href="/admin/items" class="nav-link text-white <%= typeof currentPath !== 'undefined' && currentPath?.startsWith('/admin/items') ? 'active' : '' %>">Items</a>
-      </li>
-      <li class="nav-item">
-        <a href="/admin/usuarios" class="nav-link text-white <%= typeof currentPath !== 'undefined' && currentPath?.startsWith('/admin/usuarios') ? 'active' : '' %>">Usuarios</a>
-      </li>
-      <li class="nav-item">
-        <a href="/admin/ciudades" class="nav-link text-white <%= typeof currentPath !== 'undefined' && currentPath?.startsWith('/admin/ciudades') ? 'active' : '' %>">Ciudades</a>
-      </li>
-      <li class="nav-item">
-        <a href="/admin/domicilios" class="nav-link text-white <%= typeof currentPath !== 'undefined' && currentPath?.startsWith('/admin/domicilios') ? 'active' : '' %>">Domicilios</a>
-      </li>
-      <li class="nav-item">
-        <a href="/admin/dias" class="nav-link text-white <%= typeof currentPath !== 'undefined' && currentPath?.startsWith('/admin/dias') ? 'active' : '' %>">Días</a>
-      </li>
-      <li class="nav-item">
-        <a href="/admin/horarios" class="nav-link text-white <%= typeof currentPath !== 'undefined' && currentPath?.startsWith('/admin/horarios') ? 'active' : '' %>">Horarios</a>
-      </li>
-      <li class="nav-item">
-        <a href="/admin/empleados" class="nav-link text-white <%= typeof currentPath !== 'undefined' && currentPath?.startsWith('/admin/empleados') ? 'active' : '' %>">Empleados</a>
-      </li>
-      <li class="nav-item">
-        <a href="/admin/visitas" class="nav-link text-white <%= typeof currentPath !== 'undefined' && currentPath?.startsWith('/admin/visitas') ? 'active' : '' %>">Visitas</a>
-      </li>
-      <li class="nav-item">
-        <a href="/admin/retenidos" class="nav-link text-white <%= typeof currentPath !== 'undefined' && currentPath?.startsWith('/admin/retenidos') ? 'active' : '' %>">Retenidos</a>
-      </li>
-      <li class="nav-item">
-        <a href="/admin/retenidos/demorados" class="nav-link text-white <%= typeof currentPath !== 'undefined' && currentPath === '/admin/retenidos/demorados' ? 'active' : '' %>">Envases Demorados</a>
-      </li>
-      <li class="nav-item">
-        <a href="/admin/reclamos" class="nav-link text-white <%= typeof currentPath !== 'undefined' && currentPath?.startsWith('/admin/reclamos') ? 'active' : '' %>">Reclamos</a>
-      </li>
+  <nav class="sidebar">
+    <div class="brand">SupplyCycle</div>
+    <ul>
+      <li><a href="/admin/pedidos" class="<%= typeof currentPath !== 'undefined' && currentPath?.startsWith('/admin/pedidos') ? 'active' : '' %>">Pedidos</a></li>
+      <li><a href="/admin/clientes" class="<%= typeof currentPath !== 'undefined' && currentPath?.startsWith('/admin/clientes') ? 'active' : '' %>">Clientes</a></li>
+      <li><a href="/admin/repartos" class="<%= typeof currentPath !== 'undefined' && currentPath?.startsWith('/admin/repartos') ? 'active' : '' %>">Repartos</a></li>
+      <li><a href="/admin/items" class="<%= typeof currentPath !== 'undefined' && currentPath?.startsWith('/admin/items') ? 'active' : '' %>">Items</a></li>
+      <li><a href="/admin/usuarios" class="<%= typeof currentPath !== 'undefined' && currentPath?.startsWith('/admin/usuarios') ? 'active' : '' %>">Usuarios</a></li>
+      <li><a href="/admin/ciudades" class="<%= typeof currentPath !== 'undefined' && currentPath?.startsWith('/admin/ciudades') ? 'active' : '' %>">Ciudades</a></li>
+      <li><a href="/admin/domicilios" class="<%= typeof currentPath !== 'undefined' && currentPath?.startsWith('/admin/domicilios') ? 'active' : '' %>">Domicilios</a></li>
+      <li><a href="/admin/dias" class="<%= typeof currentPath !== 'undefined' && currentPath?.startsWith('/admin/dias') ? 'active' : '' %>">Días</a></li>
+      <li><a href="/admin/horarios" class="<%= typeof currentPath !== 'undefined' && currentPath?.startsWith('/admin/horarios') ? 'active' : '' %>">Horarios</a></li>
+      <li><a href="/admin/empleados" class="<%= typeof currentPath !== 'undefined' && currentPath?.startsWith('/admin/empleados') ? 'active' : '' %>">Empleados</a></li>
+      <li><a href="/admin/visitas" class="<%= typeof currentPath !== 'undefined' && currentPath?.startsWith('/admin/visitas') ? 'active' : '' %>">Visitas</a></li>
+      <li><a href="/admin/retenidos" class="<%= typeof currentPath !== 'undefined' && currentPath?.startsWith('/admin/retenidos') && !currentPath?.startsWith('/admin/retenidos/demorados') ? 'active' : '' %>">Retenidos</a></li>
+      <li><a href="/admin/retenidos/demorados" class="<%= typeof currentPath !== 'undefined' && currentPath === '/admin/retenidos/demorados' ? 'active' : '' %>">Envases Demorados</a></li>
+      <li><a href="/admin/reclamos" class="<%= typeof currentPath !== 'undefined' && currentPath?.startsWith('/admin/reclamos') ? 'active' : '' %>">Reclamos</a></li>
     </ul>
-    <hr>
-    <div class="dropdown">
-      <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" data-bs-toggle="dropdown">
-        <strong><%= typeof userNombre !== 'undefined' ? userNombre : 'Admin' %></strong>
-      </a>
-      <ul class="dropdown-menu dropdown-menu-dark">
-        <li>
-          <form method="POST" action="/admin/logout">
-            <button type="submit" class="dropdown-item">Cerrar sesión</button>
-          </form>
-        </li>
-      </ul>
+    <div class="user-section">
+      <div class="user-name"><%= typeof userNombre !== 'undefined' ? userNombre : 'Admin' %></div>
+      <form method="POST" action="/admin/logout">
+        <button type="submit" class="logout-link" style="background:none;border:none;cursor:pointer;display:block;padding:0.25rem 0.75rem;width:100%;text-align:left;"><%= typeof userNombre !== 'undefined' ? 'Cerrar sesión' : 'Iniciar sesión' %></button>
+      </form>
     </div>
   </nav>
-  <main class="flex-grow-1 min-vh-100 bg-light">
-    <div class="bg-white border-bottom px-4 py-3">
-      <h5 class="mb-0"><%= typeof title !== 'undefined' ? title : 'Dashboard' %></h5>
+  <main class="main-content">
+    <div style="border-bottom:1px solid var(--pico-border-color);padding:0.75rem 0;margin-bottom:1rem;">
+      <h5 style="margin:0;"><%= typeof title !== 'undefined' ? title : 'Dashboard' %></h5>
     </div>
-    <div class="container-fluid p-4">
+    <div>
       <% if (typeof success !== 'undefined' && success) { %>
-        <div class="alert alert-success alert-dismissible fade show" role="alert"><%= success %><button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+        <div class="alert alert-success" role="alert"><%= success %></div>
       <% } %>
       <% if (typeof error !== 'undefined' && error) { %>
-        <div class="alert alert-danger alert-dismissible fade show" role="alert"><%= error %><button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+        <div class="alert alert-danger" role="alert"><%= error %></div>
       <% } %>

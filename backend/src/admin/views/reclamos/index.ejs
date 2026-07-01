@@ -1,45 +1,39 @@
 <%- include('../layouts/header') %>
-<div class="d-flex justify-content-between align-items-center mb-3">
+<header class="flex justify-between items-center mb-3">
   <div><span class="text-muted"><%= total %> reclamos</span></div>
-  <a href="/admin/reclamos/nuevo" class="btn btn-primary">Nuevo Reclamo</a>
-</div>
-<form method="GET" class="row g-2 mb-3">
-  <div class="col-auto">
-    <select class="form-select form-select-sm" name="clienteId">
-      <option value="">Todos los clientes</option>
-      <% clientes.forEach(c => { %>
-        <option value="<%= c.id %>" <%= filtroClienteId === c.id ? 'selected' : '' %>><%= c.apellido %>, <%= c.nombre %></option>
-      <% }) %>
-    </select>
-  </div>
-  <div class="col-auto">
-    <button type="submit" class="btn btn-outline-secondary btn-sm">Filtrar</button>
-  </div>
+  <a href="/admin/reclamos/nuevo" role="button" class="primary">Nuevo Reclamo</a>
+</header>
+<form method="GET" class="flex gap-2 mb-3 items-center">
+  <select name="clienteId" style="width:auto">
+    <option value="">Todos los clientes</option>
+    <% clientes.forEach(c => { %>
+      <option value="<%= c.id %>" <%= filtroClienteId === c.id ? 'selected' : '' %>><%= c.apellido %>, <%= c.nombre %></option>
+    <% }) %>
+  </select>
+  <button type="submit" class="secondary outline">Filtrar</button>
 </form>
-<div class="table-responsive">
-  <table class="table table-hover align-middle">
-    <thead class="table-light">
-      <tr><th>Cliente</th><th>Fecha</th><th></th></tr>
-    </thead>
-    <tbody>
-      <% reclamos.forEach(r => { %>
-        <tr>
-          <td><%= r.cliente.apellido %>, <%= r.cliente.nombre %></td>
-          <td><%= r.creadoEn.toLocaleDateString() %> <%= r.creadoEn.toLocaleTimeString() %></td>
-          <td>
-            <a href="/admin/reclamos/<%= r.id %>/editar" class="btn btn-sm btn-outline-primary">Editar</a>
-            <form method="POST" action="/admin/reclamos/<%= r.id %>/eliminar" style="display:inline" onsubmit="return confirm('¿Eliminar este reclamo?')">
-              <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
-            </form>
-          </td>
-        </tr>
-      <% }) %>
-      <% if (reclamos.length === 0) { %>
-        <tr><td colspan="3" class="text-center text-muted py-4">No hay reclamos</td></tr>
-      <% } %>
-    </tbody>
-  </table>
-</div>
+<table>
+  <thead>
+    <tr><th>Cliente</th><th>Fecha</th><th></th></tr>
+  </thead>
+  <tbody>
+    <% reclamos.forEach(r => { %>
+      <tr>
+        <td><%= r.cliente.apellido %>, <%= r.cliente.nombre %></td>
+        <td><%= r.creadoEn.toLocaleDateString() %> <%= r.creadoEn.toLocaleTimeString() %></td>
+        <td class="action-cell">
+          <a href="/admin/reclamos/<%= r.id %>/editar" role="button" class="secondary outline small-btn">Editar</a>
+          <form method="POST" action="/admin/reclamos/<%= r.id %>/eliminar" onsubmit="return confirm('¿Eliminar este reclamo?')">
+            <button type="submit" class="secondary outline small-btn">Eliminar</button>
+          </form>
+        </td>
+      </tr>
+    <% }) %>
+    <% if (reclamos.length === 0) { %>
+      <tr><td colspan="3" class="text-center text-muted" style="padding:1rem 0">No hay reclamos</td></tr>
+    <% } %>
+  </tbody>
+</table>
 <% const totalPages = Math.ceil(total / pageSize); %>
 <%- include('../layouts/pagination', { totalPages, currentPage: page, qs }) %>
 <%- include('../layouts/footer') %>

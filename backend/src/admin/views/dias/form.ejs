@@ -1,39 +1,33 @@
 <%- include('../layouts/header') %>
-<div class="mb-3">
-  <a href="/admin/dias" class="btn btn-outline-secondary btn-sm">&larr; Volver</a>
-</div>
-<div class="card">
-  <div class="card-header"><strong><%= dia ? 'Editar' : 'Nuevo' %> Día</strong></div>
-  <div class="card-body">
-    <% if (typeof errors.general !== 'undefined' && errors.general) { %>
-      <div class="alert alert-danger"><%= errors.general %></div>
-    <% } %>
-    <form method="POST" action="/admin/dias<%= dia ? '/' + dia.id : '' %>">
-      <div class="row mb-3">
-        <div class="col-md-6">
-          <label for="nombre" class="form-label">Día de la semana</label>
-          <select class="form-select" id="nombre" name="nombre" required>
-            <option value="">Seleccionar día...</option>
-            <% DIAS_SEMANA.forEach(d => { %>
-              <option value="<%= d %>" <%= dia && dia.nombre === d ? 'selected' : '' %>><%= d.charAt(0) + d.slice(1).toLowerCase() %></option>
-            <% }) %>
-          </select>
-        </div>
-        <div class="col-md-6">
-          <label for="domicilioId" class="form-label">Domicilio</label>
-          <select class="form-select" id="domicilioId" name="domicilioId" required>
-            <option value="">Seleccionar domicilio...</option>
-            <% domicilios.forEach(d => { %>
-              <option value="<%= d.id %>" <%= dia && dia.domicilioId === d.id ? 'selected' : '' %>><%= d.cliente.apellido %>, <%= d.cliente.nombre %> — <%= d.calle %> <%= d.numero %> (<%= d.ciudad.nombre %>)</option>
-            <% }) %>
-          </select>
-        </div>
-      </div>
-      <div class="d-flex gap-2">
-        <button type="submit" class="btn btn-primary"><%= dia ? 'Guardar Cambios' : 'Crear Día' %></button>
-        <a href="/admin/dias" class="btn btn-outline-secondary">Cancelar</a>
-      </div>
-    </form>
-  </div>
-</div>
+<a href="/admin/dias" class="secondary outline small-btn mb-2">&larr; Volver</a>
+<article>
+  <header><strong><%= dia ? 'Editar' : 'Nuevo' %> Día</strong></header>
+  <% if (typeof errors.general !== 'undefined' && errors.general) { %>
+    <div class="alert alert-danger"><%= errors.general %></div>
+  <% } %>
+  <form method="POST" action="/admin/dias<%= dia ? '/' + dia.id : '' %>">
+    <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 1rem;">
+      <label for="nombre">Día de la semana
+        <select id="nombre" name="nombre" required>
+          <option value="">Seleccionar día...</option>
+          <% DIAS_SEMANA.forEach(d => { %>
+            <option value="<%= d %>" <%= dia && dia.nombre === d ? 'selected' : '' %>><%= d.charAt(0) + d.slice(1).toLowerCase() %></option>
+          <% }) %>
+        </select>
+      </label>
+      <label for="domicilioId">Domicilio
+        <select id="domicilioId" name="domicilioId" required>
+          <option value="">Seleccionar domicilio...</option>
+          <% domicilios.forEach(d => { %>
+            <option value="<%= d.id %>" <%= dia && dia.domicilioId === d.id ? 'selected' : '' %>><%= d.cliente.apellido %>, <%= d.cliente.nombre %> — <%= d.calle %> <%= d.numero %> (<%= d.ciudad.nombre %>)</option>
+          <% }) %>
+        </select>
+      </label>
+    </div>
+    <footer class="flex gap-2">
+      <button type="submit" class="primary"><%= dia ? 'Guardar Cambios' : 'Crear Día' %></button>
+      <a href="/admin/dias" role="button" class="secondary outline">Cancelar</a>
+    </footer>
+  </form>
+</article>
 <%- include('../layouts/footer') %>

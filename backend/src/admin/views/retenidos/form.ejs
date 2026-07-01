@@ -1,66 +1,56 @@
 <%- include('../layouts/header') %>
-<div class="mb-3">
-  <a href="/admin/retenidos" class="btn btn-outline-secondary btn-sm">&larr; Volver</a>
-</div>
-<div class="card">
-  <div class="card-header"><strong><%= retenido ? 'Editar' : 'Nuevo' %> Retenido</strong></div>
-  <div class="card-body">
-    <% if (typeof errors.general !== 'undefined' && errors.general) { %>
-      <div class="alert alert-danger"><%= errors.general %></div>
-    <% } %>
-    <form method="POST" action="/admin/retenidos<%= retenido ? '/' + retenido.id : '' %>">
-      <div class="row mb-3">
-        <div class="col-md-4">
-          <label for="estado" class="form-label">Estado</label>
-          <select class="form-select" id="estado" name="estado" required>
-            <% ESTADOS.forEach(e => { %>
-              <option value="<%= e %>" <%= retenido && retenido.estado === e ? 'selected' : '' %>><%= e.charAt(0) + e.slice(1).toLowerCase() %></option>
-            <% }) %>
-          </select>
-        </div>
-        <div class="col-md-4">
-          <label for="inicio" class="form-label">Inicio</label>
-          <input type="date" class="form-control" id="inicio" name="inicio" value="<%= retenido ? new Date(retenido.inicio.getTime() - retenido.inicio.getTimezoneOffset() * 60000).toISOString().slice(0, 10) : '' %>" required>
-        </div>
-        <div class="col-md-4">
-          <label for="fin" class="form-label">Fin (opcional)</label>
-          <input type="date" class="form-control" id="fin" name="fin" value="<%= retenido && retenido.fin ? new Date(retenido.fin.getTime() - retenido.fin.getTimezoneOffset() * 60000).toISOString().slice(0, 10) : '' %>">
-        </div>
-      </div>
-      <div class="row mb-3">
-        <div class="col-md-4">
-          <label for="itemId" class="form-label">Item</label>
-          <select class="form-select" id="itemId" name="itemId" required>
-            <option value="">Seleccionar item...</option>
-            <% items.forEach(i => { %>
-              <option value="<%= i.id %>" <%= retenido && retenido.itemId === i.id ? 'selected' : '' %>><%= i.nombre %></option>
-            <% }) %>
-          </select>
-        </div>
-        <div class="col-md-4">
-          <label for="clienteId" class="form-label">Cliente</label>
-          <select class="form-select" id="clienteId" name="clienteId" required>
-            <option value="">Seleccionar cliente...</option>
-            <% clientes.forEach(c => { %>
-              <option value="<%= c.id %>" <%= retenido && retenido.clienteId === c.id ? 'selected' : '' %>><%= c.apellido %>, <%= c.nombre %></option>
-            <% }) %>
-          </select>
-        </div>
-        <div class="col-md-4">
-          <label for="pedidoId" class="form-label">Pedido</label>
-          <select class="form-select" id="pedidoId" name="pedidoId" required>
-            <option value="">Seleccionar pedido...</option>
-            <% pedidos.forEach(p => { %>
-              <option value="<%= p.id %>" <%= retenido && retenido.pedidoId === p.id ? 'selected' : '' %>><%= p.numeroPedido %> — <%= p.cliente.apellido %>, <%= p.cliente.nombre %></option>
-            <% }) %>
-          </select>
-        </div>
-      </div>
-      <div class="d-flex gap-2">
-        <button type="submit" class="btn btn-primary"><%= retenido ? 'Guardar Cambios' : 'Crear Retenido' %></button>
-        <a href="/admin/retenidos" class="btn btn-outline-secondary">Cancelar</a>
-      </div>
-    </form>
-  </div>
-</div>
+<a href="/admin/retenidos" class="secondary outline small-btn mb-2">&larr; Volver</a>
+<article>
+  <header><strong><%= retenido ? 'Editar' : 'Nuevo' %> Retenido</strong></header>
+  <% if (typeof errors.general !== 'undefined' && errors.general) { %>
+    <div class="alert alert-danger"><%= errors.general %></div>
+  <% } %>
+  <form method="POST" action="/admin/retenidos<%= retenido ? '/' + retenido.id : '' %>">
+    <div class="grid" style="grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
+      <label for="estado">Estado
+        <select id="estado" name="estado" required>
+          <% ESTADOS.forEach(e => { %>
+            <option value="<%= e %>" <%= retenido && retenido.estado === e ? 'selected' : '' %>><%= e.charAt(0) + e.slice(1).toLowerCase() %></option>
+          <% }) %>
+        </select>
+      </label>
+      <label for="inicio">Inicio
+        <input type="date" id="inicio" name="inicio" value="<%= retenido ? new Date(retenido.inicio.getTime() - retenido.inicio.getTimezoneOffset() * 60000).toISOString().slice(0, 10) : '' %>" required>
+      </label>
+      <label for="fin">Fin (opcional)
+        <input type="date" id="fin" name="fin" value="<%= retenido && retenido.fin ? new Date(retenido.fin.getTime() - retenido.fin.getTimezoneOffset() * 60000).toISOString().slice(0, 10) : '' %>">
+      </label>
+    </div>
+    <div class="grid" style="grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
+      <label for="itemId">Item
+        <select id="itemId" name="itemId" required>
+          <option value="">Seleccionar item...</option>
+          <% items.forEach(i => { %>
+            <option value="<%= i.id %>" <%= retenido && retenido.itemId === i.id ? 'selected' : '' %>><%= i.nombre %></option>
+          <% }) %>
+        </select>
+      </label>
+      <label for="clienteId">Cliente
+        <select id="clienteId" name="clienteId" required>
+          <option value="">Seleccionar cliente...</option>
+          <% clientes.forEach(c => { %>
+            <option value="<%= c.id %>" <%= retenido && retenido.clienteId === c.id ? 'selected' : '' %>><%= c.apellido %>, <%= c.nombre %></option>
+          <% }) %>
+        </select>
+      </label>
+      <label for="pedidoId">Pedido
+        <select id="pedidoId" name="pedidoId" required>
+          <option value="">Seleccionar pedido...</option>
+          <% pedidos.forEach(p => { %>
+            <option value="<%= p.id %>" <%= retenido && retenido.pedidoId === p.id ? 'selected' : '' %>><%= p.numeroPedido %> — <%= p.cliente.apellido %>, <%= p.cliente.nombre %></option>
+          <% }) %>
+        </select>
+      </label>
+    </div>
+    <footer class="flex gap-2">
+      <button type="submit" class="primary"><%= retenido ? 'Guardar Cambios' : 'Crear Retenido' %></button>
+      <a href="/admin/retenidos" role="button" class="secondary outline">Cancelar</a>
+    </footer>
+  </form>
+</article>
 <%- include('../layouts/footer') %>

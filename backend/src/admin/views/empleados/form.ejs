@@ -1,33 +1,26 @@
 <%- include('../layouts/header') %>
-<div class="mb-3">
-  <a href="/admin/empleados" class="btn btn-outline-secondary btn-sm">&larr; Volver</a>
-</div>
-<div class="card">
-  <div class="card-header"><strong><%= empleado ? 'Editar' : 'Nuevo' %> Empleado</strong></div>
-  <div class="card-body">
-    <% if (typeof errors.general !== 'undefined' && errors.general) { %>
-      <div class="alert alert-danger"><%= errors.general %></div>
-    <% } %>
-    <form method="POST" action="/admin/empleados<%= empleado ? '/' + empleado.id : '' %>">
-      <div class="row mb-3">
-        <div class="col-md-6">
-          <label for="apellido" class="form-label">Apellido</label>
-          <input type="text" class="form-control" id="apellido" name="apellido" value="<%= empleado ? empleado.apellido : '' %>" required>
-        </div>
-        <div class="col-md-6">
-          <label for="nombre" class="form-label">Nombre</label>
-          <input type="text" class="form-control" id="nombre" name="nombre" value="<%= empleado ? empleado.nombre : '' %>" required>
-        </div>
-      </div>
-      <div class="mb-3">
-        <label for="dni" class="form-label">DNI</label>
-        <input type="text" class="form-control" id="dni" name="dni" value="<%= empleado ? empleado.dni : '' %>" required>
-      </div>
-      <div class="d-flex gap-2">
-        <button type="submit" class="btn btn-primary"><%= empleado ? 'Guardar Cambios' : 'Crear Empleado' %></button>
-        <a href="/admin/empleados" class="btn btn-outline-secondary">Cancelar</a>
-      </div>
-    </form>
-  </div>
-</div>
+<a href="/admin/empleados" class="secondary outline small-btn mb-2">&larr; Volver</a>
+<article>
+  <header><strong><%= empleado ? 'Editar' : 'Nuevo' %> Empleado</strong></header>
+  <% if (typeof errors.general !== 'undefined' && errors.general) { %>
+    <div class="alert alert-danger"><%= errors.general %></div>
+  <% } %>
+  <form method="POST" action="/admin/empleados<%= empleado ? '/' + empleado.id : '' %>">
+    <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 1rem;">
+      <label for="apellido">Apellido
+        <input type="text" id="apellido" name="apellido" value="<%= empleado ? empleado.apellido : '' %>" required>
+      </label>
+      <label for="nombre">Nombre
+        <input type="text" id="nombre" name="nombre" value="<%= empleado ? empleado.nombre : '' %>" required>
+      </label>
+    </div>
+    <label for="dni">DNI
+      <input type="text" id="dni" name="dni" value="<%= empleado ? empleado.dni : '' %>" required>
+    </label>
+    <footer class="flex gap-2">
+      <button type="submit" class="primary"><%= empleado ? 'Guardar Cambios' : 'Crear Empleado' %></button>
+      <a href="/admin/empleados" role="button" class="secondary outline">Cancelar</a>
+    </footer>
+  </form>
+</article>
 <%- include('../layouts/footer') %>
