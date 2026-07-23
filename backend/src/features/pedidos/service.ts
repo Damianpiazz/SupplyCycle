@@ -515,6 +515,34 @@ export async function actualizarEstado(id: string, nuevoEstado: string) {
   };
 }
 
+/** PATCH /pedidos/:id/cancelar-cliente — PENDIENTE → CANCELADO (cliente/bot, no auto-completa reparto) */
+export async function cancelarPedidoCliente(id: string, motivo: string) {
+  const pedido = await prisma.pedido.findUnique({ where: { id } });
+
+  if (!pedido) {
+    throw ApiError.notFound('Pedido no encontrado');
+  }
+
+  if (pedido.estado !== 'PENDIENTE') {
+    throw ApiError.conflict('Solo se pueden cancelar pedidos en estado pendiente');
+  }
+
+  const updated = await prisma.pedido.update({
+    where: { id },
+    data: { estado: 'CANCELADO', motivoFalla: motivo },
+  });
+
+  // NOTE: Intentionally does NOT call autoCompletarRepartoSiCorresponde.
+  // Client cancellations should not auto-complete the reparto flow.
+
+  return {
+    id: updated.id,
+    estado: 'CANCELADO' as const,
+    motivoFalla: updated.motivoFalla!,
+    actualizadoEn: updated.actualizadoEn.toISOString(),
+  };
+}
+
 /** POST /pedidos/:id/cancelar — Admin: PENDIENTE → CANCELADO */
 export async function cancelarPedido(id: string) {
   const pedido = await prisma.pedido.findUnique({ where: { id } });
