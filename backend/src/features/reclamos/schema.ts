@@ -27,8 +27,3 @@ export const listarReclamosQuerySchema = z.object({
     .optional(),
 });
 
-export const reclamoIdParamSchema = z.object({
-  id: z
-    .string()
-    .uuid('El ID del reclamo debe ser un UUID válido'),
-});
