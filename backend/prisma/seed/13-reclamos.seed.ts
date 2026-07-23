@@ -7,6 +7,7 @@ faker.seed(42);
 export async function seedReclamos(clientes: any[]) {
   const data = Array.from({ length: Math.min(1000, clientes.length * 2) }, () => ({
     clienteId: faker.helpers.arrayElement(clientes).id,
+    descripcion: faker.lorem.sentence({ min: 5, max: 15 }),
   }));
 
   await bulkCreate(prisma.reclamo, data, 'reclamos');
