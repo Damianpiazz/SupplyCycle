@@ -21,9 +21,9 @@ router.get('/:id/consumo', apiKeyAuth, authenticate, consumoController);
 router.get('/:id/pedidos', apiKeyAuth, authenticate, pedidosClienteController);
 router.get('/:id', apiKeyAuth, authenticate, obtenerController);
 
-// Rutas admin-only
-router.post('/', authenticate, requireRole('ADMIN'), crearController);
-router.patch('/:id', authenticate, requireRole('ADMIN'), actualizarController);
+// Rutas admin-only or bot (via api key)
+router.post('/', apiKeyAuth, authenticate, requireRole('ADMIN', 'BOT'), crearController);
+router.patch('/:id', apiKeyAuth, authenticate, requireRole('ADMIN', 'BOT'), actualizarController);
 router.delete('/:id', authenticate, requireRole('ADMIN'), eliminarController);
 
 export default router;
