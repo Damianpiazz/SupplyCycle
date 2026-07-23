@@ -10,6 +10,7 @@ datasource db {
 enum Rol {
   REPARTIDOR
   ADMIN
+  BOT
 }
 
 enum DiaSemana {
@@ -207,8 +208,9 @@ model Retenido {
 }
 
 model Reclamo {
-  id        String   @id @default(uuid())
-  clienteId String
-  creadoEn  DateTime @default(now())
-  cliente   Cliente  @relation(fields: [clienteId], references: [id])
+  id          String   @id @default(uuid())
+  clienteId   String
+  descripcion String
+  creadoEn    DateTime @default(now())
+  cliente     Cliente  @relation(fields: [clienteId], references: [id])
 }
