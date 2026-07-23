@@ -44,3 +44,14 @@ export const confirmarPedidoSchema = z.object({
   latitud: z.number().min(-90).max(90).optional(),
   longitud: z.number().min(-180).max(180).optional(),
 });
+
+export const cancelarClienteSchema = z.object({
+  motivo: z.enum([
+    'YA_NO_LO_NECESITA',
+    'DIRECCION_INCORRECTA',
+    'CANCELACION_CLIENTE',
+    'OTRO',
+  ], {
+    message: 'Motivo de cancelación inválido',
+  }),
+});
