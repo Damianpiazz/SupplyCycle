@@ -343,8 +343,9 @@ export async function obtenerRepartoDelDia(repartidorId: string) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const reparto = await prisma.reparto.findFirst({
-    where: { repartidorId, fecha: today },
+  // Priorizar reparto activo (PENDIENTE o EN_CURSO); si no, el más reciente
+  let reparto = await prisma.reparto.findFirst({
+    where: { repartidorId, fecha: today, estado: { in: ['PENDIENTE', 'EN_CURSO'] } },
     include: {
       pedidos: {
         include: {
@@ -355,6 +356,22 @@ export async function obtenerRepartoDelDia(repartidorId: string) {
       },
     },
   });
+
+  if (!reparto) {
+    reparto = await prisma.reparto.findFirst({
+      where: { repartidorId, fecha: today },
+      orderBy: { creadoEn: 'desc' },
+      include: {
+        pedidos: {
+          include: {
+            ...pedidoDomicilioInclude,
+            items: { include: { item: true } },
+          },
+          orderBy: { orden: 'asc' },
+        },
+      },
+    });
+  }
 
   if (!reparto) {
     return null;
@@ -416,12 +433,16 @@ export async function crearReparto(data: {
     throw ApiError.badRequest('El usuario seleccionado no es un repartidor');
   }
 
-  // 2. Validar que el repartidor no tenga ya un reparto para esta fecha
-  const repartoExistente = await prisma.reparto.findFirst({
-    where: { repartidorId: data.repartidorId, fecha: fechaDate },
+  // 2. Validar que el repartidor no tenga ya un reparto ACTIVO (PENDIENTE o EN_CURSO) para esta fecha
+  const repartoActivo = await prisma.reparto.findFirst({
+    where: {
+      repartidorId: data.repartidorId,
+      fecha: fechaDate,
+      estado: { in: ['PENDIENTE', 'EN_CURSO'] },
+    },
   });
-  if (repartoExistente) {
-    throw ApiError.conflict('El repartidor ya tiene un reparto asignado para esta fecha');
+  if (repartoActivo) {
+    throw ApiError.conflict('El repartidor ya tiene un reparto activo para esta fecha. Finalizalo antes de crear uno nuevo.');
   }
 
   // 3. Validar pedidos
