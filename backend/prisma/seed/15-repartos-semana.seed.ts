@@ -45,11 +45,9 @@ export async function seedRepartosSemana(repartidorId: string): Promise<DiaRepar
       horaFin = null;
     }
 
-    // Upsert: find existing reparto for this repartidor + date, or create
-    const existing = await prisma.reparto.findUnique({
-      where: {
-        repartidorId_fecha: { repartidorId, fecha: dia.date },
-      },
+    // Find existing reparto for this repartidor + date, or create
+    const existing = await prisma.reparto.findFirst({
+      where: { repartidorId, fecha: dia.date },
     });
 
     if (existing) {

@@ -44,7 +44,9 @@ export default function CrearRepartoScreen() {
       toast.show('Reparto creado exitosamente', 'success');
       setTimeout(() => router.back(), 1500);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Error al crear reparto';
+      const axiosErr = err as { response?: { data?: { error?: { message?: string } } } };
+      const msg = axiosErr.response?.data?.error?.message
+        ?? (err instanceof Error ? err.message : 'Error al crear reparto');
       toast.show(msg, 'error');
     }
   }

@@ -122,8 +122,6 @@ model Reparto {
   actualizadoEn DateTime      @updatedAt
   repartidor    Usuario       @relation(fields: [repartidorId], references: [id])
   pedidos       Pedido[]
-
-  @@unique([repartidorId, fecha])
 }
 
 model Ciudad {
