@@ -2,6 +2,7 @@ import type { Request, Response, NextFunction } from 'express';
 import {
   crearPedidoSchema,
   cancelarPedidoSchema,
+  cancelarClienteSchema,
   confirmarPedidoSchema,
   actualizarEstadoSchema,
   agregarItemSchema,
@@ -202,6 +203,22 @@ export async function obtenerDisponiblesController(
     }
     const result = await pedidosService.obtenerPedidosDisponiblesParaReparto(fecha);
     sendList(res, result);
+  } catch (err) {
+    next(err);
+  }
+}
+
+/** PATCH /pedidos/:id/cancelar-cliente — PENDIENTE → CANCELADO (cliente/bot) */
+export async function cancelarClienteController(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const id = req.params['id'] as string;
+    const { motivo } = cancelarClienteSchema.parse(req.body);
+    const result = await pedidosService.cancelarPedidoCliente(id, motivo);
+    sendSuccess(res, result);
   } catch (err) {
     next(err);
   }

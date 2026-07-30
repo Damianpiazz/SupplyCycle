@@ -6,6 +6,7 @@ import {
   listarController,
   confirmarController,
   cancelarRepartidorController,
+  cancelarClienteController,
   actualizarEstadoController,
   crearController,
   agregarItemController,
@@ -24,18 +25,21 @@ router.get('/disponibles', authenticate, requireRole('ADMIN'), obtenerDisponible
 router.get('/', apiKeyAuth, authenticate, listarController);
 router.get('/:id', apiKeyAuth, authenticate, obtenerController);
 
-// ─── Escritura — Admin y repartidor ───────────────────────────────────────────
-router.post('/', authenticate, requireRole('ADMIN', 'REPARTIDOR'), crearController);
+// ─── Escritura — Admin, repartidor y bot ──────────────────────────────────────
+router.post('/', apiKeyAuth, authenticate, requireRole('ADMIN', 'REPARTIDOR', 'BOT'), crearController);
 router.patch('/:id/estado', authenticate, requireRole('ADMIN', 'REPARTIDOR'), actualizarEstadoController);
-router.delete('/:id', authenticate, requireRole('ADMIN', 'REPARTIDOR'), eliminarPedidoController);
+router.delete('/:id', authenticate, requireRole('ADMIN'), eliminarPedidoController);
 
-// ─── Items del pedido — Admin y repartidor ────────────────────────────────────
-router.post('/:pedidoId/items', authenticate, requireRole('ADMIN', 'REPARTIDOR'), agregarItemController);
-router.patch('/:pedidoId/items/:itemId', authenticate, requireRole('ADMIN', 'REPARTIDOR'), actualizarCantidadItemController);
-router.delete('/:pedidoId/items/:itemId', authenticate, requireRole('ADMIN', 'REPARTIDOR'), quitarItemController);
+// ─── Items del pedido — Admin, repartidor y bot ───────────────────────────────
+router.post('/:pedidoId/items', apiKeyAuth, authenticate, requireRole('ADMIN', 'REPARTIDOR', 'BOT'), agregarItemController);
+router.patch('/:pedidoId/items/:itemId', apiKeyAuth, authenticate, requireRole('ADMIN', 'REPARTIDOR', 'BOT'), actualizarCantidadItemController);
+router.delete('/:pedidoId/items/:itemId', authenticate, requireRole('ADMIN'), quitarItemController);
 
 // ─── Flujo de reparto — Solo repartidor ───────────────────────────────────────
 router.patch('/:id/confirmar', authenticate, requireRole('REPARTIDOR'), confirmarController);
 router.patch('/:id/cancelar', authenticate, requireRole('REPARTIDOR'), cancelarRepartidorController);
+
+// ─── Cancelación por cliente — Admin o bot ────────────────────────────────────
+router.patch('/:id/cancelar-cliente', apiKeyAuth, authenticate, requireRole('ADMIN', 'BOT'), cancelarClienteController);
 
 export default router;

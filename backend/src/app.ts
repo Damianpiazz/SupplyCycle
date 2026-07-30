@@ -16,6 +16,7 @@ import pedidosRoutes from './features/pedidos/routes.js';
 import repartosRoutes from './features/repartos/routes.js';
 import usuariosRoutes from './features/usuarios/routes.js';
 import estadisticasRoutes from './features/estadisticas/routes.js';
+import reclamosRoutes from './features/reclamos/routes.js';
 import adminRoutes from './admin/routes/index.js';
 import { errorHandler } from './middleware/error-handler.js';
 
@@ -31,7 +32,7 @@ app.use(cors({
   origin: true,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key'],
 }));
 
 app.use(express.json());
@@ -125,6 +126,7 @@ app.use('/api/v1/pedidos', pedidosRoutes);
 app.use('/api/v1/repartos', repartosRoutes);
 app.use('/api/v1/usuarios', usuariosRoutes);
 app.use('/api/v1/estadisticas', estadisticasRoutes);
+app.use('/api/v1/reclamos', reclamosRoutes);
 
 // Admin EJS routes
 app.use('/admin', adminRoutes);

@@ -36,7 +36,7 @@ export async function createForm(_req: Request, res: Response, next: NextFunctio
 export async function create(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const b = req.body as Record<string, string>;
-    await prisma.reclamo.create({ data: { clienteId: b.clienteId! } });
+    await prisma.reclamo.create({ data: { clienteId: b.clienteId!, descripcion: b.descripcion ?? '' } });
     req.session.success = 'Reclamo registrado exitosamente';
     res.redirect('/admin/reclamos');
   } catch (err: any) {
@@ -60,7 +60,7 @@ export async function update(req: Request, res: Response, next: NextFunction): P
     const b = req.body as Record<string, string>;
     await prisma.reclamo.update({
       where: { id: req.params.id as string },
-      data: { clienteId: b.clienteId },
+      data: { clienteId: b.clienteId, descripcion: b.descripcion ?? '' },
     });
     req.session.success = 'Reclamo actualizado exitosamente';
     res.redirect('/admin/reclamos');
