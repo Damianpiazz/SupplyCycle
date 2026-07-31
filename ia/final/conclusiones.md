@@ -32,6 +32,10 @@ Sin embargo, noté que delegar el desarrollo a la IA requiere tener una visión 
 
 En conclusión, la IA es un aliado excelente que potencia nuestra productividad y acelera los tiempos, pero el diseño estructural, la protección de los datos y la toma de decisiones críticas siguen dependiendo pura y exclusivamente de nuestra capacidad analítica.
 
-## Integrante 4 — <Nombre>
+## Integrante 4 — Tiago Solis
 
-<!-- Reflexión libre... -->
+Antes de este proyecto ya conocía la inteligencia artificial, pero no tenía tan claro hasta qué punto podía integrarse al desarrollo de software. Durante el trabajo descubrí que no solo permite ahorrar mucho tiempo en tareas de programación, sino que también ofrece una perspectiva más amplia sobre las herramientas y metodologías que hoy se utilizan en el mercado laboral. Esa experiencia cambió mi forma de verla y es algo que actualmente aplico en otros proyectos.
+
+Al mismo tiempo, también encontré algunas limitaciones. Los modelos gratuitos suelen tener restricciones, como la cantidad de tokens disponibles, y muchas veces requieren un control mucho mayor sobre las respuestas que generan. En varias ocasiones fue necesario revisar, corregir y validar el código propuesto para asegurar que realmente cumpliera con lo que el proyecto necesitaba.
+
+En conclusión, este proyecto me dejó la idea de que la inteligencia artificial no es el futuro, sino el presente. Saber utilizarla de forma crítica y aprovechar sus capacidades se está convirtiendo en una habilidad cada vez más importante para cualquier desarrollador, ya que puede potenciar enormemente la productividad sin reemplazar el criterio y la responsabilidad de quien programa.
