@@ -81,7 +81,7 @@ export async function confirmarController(
   try {
     const id = req.params['id'] as string;
     const body = confirmarPedidoSchema.parse(req.body);
-    const result = await pedidosService.confirmarEntrega(id, body.latitud, body.longitud);
+    const result = await pedidosService.confirmarEntrega(id, body.latitud, body.longitud, body.devoluciones);
     sendSuccess(res, result);
   } catch (err) {
     next(err);

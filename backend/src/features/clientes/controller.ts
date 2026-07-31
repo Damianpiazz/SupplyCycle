@@ -93,6 +93,20 @@ export async function consumoController(
   }
 }
 
+export async function frecuenciaController(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const id = req.params['id'] as string;
+    const result = await clientesService.calcularFrecuencia(id);
+    sendSuccess(res, result);
+  } catch (err) {
+    next(err);
+  }
+}
+
 export async function pedidosClienteController(
   req: Request,
   res: Response,

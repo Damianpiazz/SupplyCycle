@@ -78,6 +78,7 @@ model Item {
   unidad      String
   precio      Float?
   activo      Boolean      @default(true)
+  retornable  Boolean      @default(false)
   creadoEn    DateTime     @default(now())
   pedidoItems PedidoItem[]
   retenidos   Retenido[]

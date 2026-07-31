@@ -9,9 +9,7 @@ const PORT = process.env.PORT ?? 3008
 const main = async () => {
   const adapterFlow = createFlow([welcomeFlow, altaFlow, yaRegistradoFlow, pedidoFlow, noRegistradoFlow, reclamoFlow, cancelarFlow, bajaFlow])
 
-  const adapterProvider = createProvider(Provider, {
-    version: [2, 3000, 1035824857],
-  })
+  const adapterProvider = createProvider(Provider, {})
 
   const adapterDB = new Database()
 

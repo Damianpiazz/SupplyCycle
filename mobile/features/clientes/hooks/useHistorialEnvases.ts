@@ -1,23 +1,23 @@
 import { useEffect, useState } from 'react';
 import { apiClient, unwrapResponse } from '@/services/api';
-import type { MovimientoEnvase, SaldoEnvase } from '@/types/historial';
+import type { RetenidoResponse, SaldoEnvase } from '@/types/historial';
 
 interface HistorialEnvasesResult {
   saldoEnvases: SaldoEnvase[];
-  historial: MovimientoEnvase[];
+  retenidos: RetenidoResponse[];
   loading: boolean;
   error: string | null;
 }
 
 interface HistorialApiResponse {
   saldoEnvases: SaldoEnvase[];
-  historial: MovimientoEnvase[];
+  retenidos: RetenidoResponse[];
 }
 
 export function useHistorialEnvases(clienteId: string): HistorialEnvasesResult {
   const [data, setData] = useState<Omit<HistorialEnvasesResult, 'loading' | 'error'>>({
     saldoEnvases: [],
-    historial: [],
+    retenidos: [],
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -38,7 +38,7 @@ export function useHistorialEnvases(clienteId: string): HistorialEnvasesResult {
         const body = unwrapResponse<HistorialApiResponse>(res);
         setData({
           saldoEnvases: body.saldoEnvases ?? [],
-          historial: body.historial ?? [],
+          retenidos: body.retenidos ?? [],
         });
       })
       .catch((e) => {

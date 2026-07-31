@@ -7,6 +7,7 @@ export interface Item {
   unidad: string;
   precio?: number;
   activo: boolean;
+  retornable?: boolean;
 }
 
 export interface PedidoItem {

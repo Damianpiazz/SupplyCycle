@@ -91,6 +91,7 @@ function formatPedido(pedido: PedidoConRelaciones) {
         descripcion: pi.item.descripcion ?? undefined,
         unidad: pi.item.unidad,
         activo: pi.item.activo,
+        retornable: pi.item.retornable,
       },
       cantidad: pi.cantidad,
       precioUnitario: pi.precioUnitario,
@@ -294,47 +295,105 @@ async function autoCompletarRepartoSiCorresponde(pedidoId: string): Promise<void
 // =============================================================================
 
 /** PATCH /pedidos/:id/confirmar — PENDIENTE/EN_RUTA → ENTREGADO */
-export async function confirmarEntrega(id: string, latitud?: number, longitud?: number) {
-  const pedido = await prisma.pedido.findUnique({ where: { id } });
-
-  if (!pedido) {
-    throw ApiError.notFound('Pedido no encontrado');
-  }
-
-  if (pedido.estado !== 'PENDIENTE' && pedido.estado !== 'EN_RUTA') {
-    throw ApiError.conflict('El pedido no puede ser entregado desde su estado actual');
-  }
-
-  // Si se recibió ubicación y el domicilio aún no tiene coordenadas, capturarlas
-  if ((latitud !== undefined || longitud !== undefined) && pedido.domicilioId) {
-    const domicilio = await prisma.domicilio.findUnique({
-      where: { id: pedido.domicilioId },
-      select: { latitud: true, longitud: true },
+export async function confirmarEntrega(
+  id: string,
+  latitud?: number,
+  longitud?: number,
+  devoluciones?: Array<{ itemId: string; cantidad: number }>
+) {
+  return prisma.$transaction(async (tx) => {
+    const pedido = await tx.pedido.findUnique({
+      where: { id },
+      include: {
+        items: { include: { item: true } },
+        domicilio: { include: { cliente: true } },
+      },
     });
 
-    if (domicilio && (domicilio.latitud === null || domicilio.longitud === null)) {
-      await prisma.domicilio.update({
-        where: { id: pedido.domicilioId },
-        data: {
-          latitud: latitud ?? domicilio.latitud,
-          longitud: longitud ?? domicilio.longitud,
-        },
-      });
+    if (!pedido) {
+      throw ApiError.notFound('Pedido no encontrado');
     }
-  }
 
-  const updated = await prisma.pedido.update({
-    where: { id },
-    data: { estado: 'ENTREGADO' },
+    if (pedido.estado !== 'PENDIENTE' && pedido.estado !== 'EN_RUTA') {
+      throw ApiError.conflict('El pedido no puede ser entregado desde su estado actual');
+    }
+
+    const clienteId = pedido.domicilio.cliente.id;
+
+    // 2. Crear Retenidos para items retornables
+    const itemsRetornables = pedido.items.filter((pi) => pi.item.retornable);
+    if (itemsRetornables.length > 0) {
+      const retenidosData = itemsRetornables.flatMap((pi) =>
+        Array.from({ length: pi.cantidad }, () => ({
+          estado: 'RETENIDO' as const,
+          inicio: new Date(),
+          itemId: pi.itemId,
+          clienteId,
+          pedidoId: pedido.id,
+        }))
+      );
+      await tx.retenido.createMany({ data: retenidosData });
+    }
+
+    // 3. Procesar devoluciones: cerrar Retenidos pendientes del cliente
+    if (devoluciones && devoluciones.length > 0) {
+      for (const dev of devoluciones) {
+        const pendientes = await tx.retenido.findMany({
+          where: {
+            clienteId,
+            itemId: dev.itemId,
+            estado: 'RETENIDO',
+          },
+          orderBy: { inicio: 'asc' },
+          take: dev.cantidad,
+        });
+
+        if (pendientes.length < dev.cantidad) {
+          const item = await tx.item.findUnique({ where: { id: dev.itemId } });
+          throw ApiError.badRequest(
+            `El cliente no tiene ${dev.cantidad} "${item?.nombre ?? dev.itemId}" pendientes de devolución (solo ${pendientes.length})`
+          );
+        }
+
+        await tx.retenido.updateMany({
+          where: { id: { in: pendientes.map((r) => r.id) } },
+          data: { fin: new Date(), estado: 'DEVUELTO' },
+        });
+      }
+    }
+
+    // 4. Actualizar ubicación (igual que hoy)
+    if ((latitud !== undefined || longitud !== undefined) && pedido.domicilioId) {
+      const domicilio = await tx.domicilio.findUnique({
+        where: { id: pedido.domicilioId },
+        select: { latitud: true, longitud: true },
+      });
+      if (domicilio && (domicilio.latitud === null || domicilio.longitud === null)) {
+        await tx.domicilio.update({
+          where: { id: pedido.domicilioId },
+          data: {
+            latitud: latitud ?? domicilio.latitud,
+            longitud: longitud ?? domicilio.longitud,
+          },
+        });
+      }
+    }
+
+    // 5. Marcar pedido como ENTREGADO
+    const updated = await tx.pedido.update({
+      where: { id },
+      data: { estado: 'ENTREGADO' },
+    });
+
+    // 6. Auto-completar reparto si corresponde (fuera de tx porque es no-crítico)
+    await autoCompletarRepartoSiCorresponde(id);
+
+    return {
+      id: updated.id,
+      estado: 'ENTREGADO' as const,
+      actualizadoEn: updated.actualizadoEn.toISOString(),
+    };
   });
-
-  await autoCompletarRepartoSiCorresponde(id);
-
-  return {
-    id: updated.id,
-    estado: 'ENTREGADO' as const,
-    actualizadoEn: updated.actualizadoEn.toISOString(),
-  };
 }
 
 /** PATCH /pedidos/:id/cancelar — PENDIENTE/EN_RUTA → NO_ENTREGADO (repartidor) */
