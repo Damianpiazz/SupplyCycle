@@ -2,7 +2,7 @@ import 'dotenv/config'
 import { createBot, createProvider, createFlow, MemoryDB as Database } from '@builderbot/bot'
 import { BaileysProvider as Provider } from '@builderbot/provider-baileys'
 import { welcomeFlow, altaFlow, yaRegistradoFlow, pedidoFlow, noRegistradoFlow, reclamoFlow, cancelarFlow, bajaFlow } from './flows/index.js'
-import { registerBlacklistRoutes } from './routes/index.js'
+import { registerBlacklistRoutes, registerSendMessageRoutes } from './routes/index.js'
 
 const PORT = process.env.PORT ?? 3008
 
@@ -24,6 +24,11 @@ const main = async () => {
   registerBlacklistRoutes(
     adapterProvider.server.post.bind(adapterProvider.server),
     adapterProvider.server.get.bind(adapterProvider.server),
+    handleCtx,
+  )
+
+  registerSendMessageRoutes(
+    adapterProvider.server.post.bind(adapterProvider.server),
     handleCtx,
   )
 

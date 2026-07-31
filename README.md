@@ -273,9 +273,13 @@ cp backend/.env.example backend/.env
 | `JWT_SECRET` | Secreto para firmar tokens | `supplycycle-dev-secret-key-2026` |
 | `JWT_EXPIRES_IN` | Expiración del token | `24h` |
 | `BCRYPT_SALT_ROUNDS` | Rondas de sal para bcrypt | `10` |
+| `SESSION_SECRET` | Secreto de sesión | `supplycycle-session-secret` |
 | `CORS_ORIGIN` | Origen permitido CORS | `*` |
 | `LOG_LEVEL` | Nivel de log | `debug` |
-| `BOT_API_KEY` | API key del bot WhatsApp | `sc-bot-dev-key-change-in-production` |
+| `BOT_API_KEY` | API key que el bot envía al backend (header `x-api-key`) | `sc-bot-dev-key-change-in-production` |
+| `BOT_API_URL` | URL base del bot para enviarle mensajes HTTP | `http://localhost:3008` |
+| `BOT_API_KEY_OUTGOING` | API key que el backend envía al bot (header `x-bot-api-key`) | `sc-bot-outgoing-key-change-in-production` |
+| `CRON_ENVASES_DEMORADOS` | Expresión cron para job de detección de envases demorados (RF-12) | `0 8 * * *` |
 
 ### mobile/
 
@@ -287,11 +291,18 @@ cp mobile/.env.example mobile/.env
 |---|---|---|
 | `EXPO_PUBLIC_API_URL` | URL del backend | `http://localhost:3000/api/v1` |
 | `EXPO_PUBLIC_API_TIMEOUT` | Timeout en ms | `10000` |
+| `EXPO_PUBLIC_API_RETRY_COUNT` | Número de reintentos | `2` |
 | `EXPO_PUBLIC_AUTH_ENABLED` | Autenticación habilitada | `true` |
-| `EXPO_PUBLIC_USE_MOCKS` | Usar datos mock | `true` |
-| `EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN` | Token de Mapbox (requerido para mapa) | `pk.xxx...` |
 | `EXPO_PUBLIC_ENABLE_LOGS` | Logs en consola | `true` |
+| `EXPO_PUBLIC_FEATURE_CHAT` | Habilitar chat | `true` |
+| `EXPO_PUBLIC_FEATURE_NOTIFICATIONS` | Habilitar notificaciones | `true` |
 | `EXPO_PUBLIC_FEATURE_DARK_MODE` | Modo oscuro | `true` |
+| `EXPO_PUBLIC_MAPS_PROVIDER` | Proveedor de mapas (`mapbox` o `google`) | `mapbox` |
+| `EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN` | Token de Mapbox (requerido para mapa) | `pk.xxx...` |
+| `EXPO_PUBLIC_USE_MOCKS` | Usar datos mock en desarrollo | `true` |
+| `EXPO_PUBLIC_MOCK_DELAY` | Delay simulado de mock (ms) | `500` |
+| `EXPO_PUBLIC_DEFAULT_LANGUAGE` | Idioma por defecto | `es` |
+| `EXPO_PUBLIC_SUPPORTED_LANGUAGES` | Idiomas soportados | `es,en` |
 
 > Las variables con prefijo `EXPO_PUBLIC_` se exponen al cliente. No poner secrets acá.
 
@@ -303,10 +314,10 @@ cp whatsapp-bot/.env.example whatsapp-bot/.env
 
 | Variable | Descripción | Ejemplo |
 |---|---|---|
-| `BACKEND_API_URL` | URL del backend | `http://localhost:3000/api/v1` |
-| `BOT_API_KEY` | API key compartida con backend | `sc-bot-dev-key-change-in-production` |
-
-> No existe `.env.example` todavía; creá el archivo con esas 2 variables.
+| `PORT` | Puerto del servidor HTTP del bot | `3008` |
+| `BACKEND_API_URL` | URL del backend para llamadas salientes | `http://localhost:3000/api/v1` |
+| `BOT_API_KEY` | API key que el bot envía al backend (header `x-api-key`) | `sc-bot-dev-key-change-in-production` |
+| `BOT_API_KEY_INCOMING` | API key que el bot espera del backend (header `x-bot-api-key`). Debe coincidir con `BOT_API_KEY_OUTGOING` del backend | `sc-bot-outgoing-key-change-in-production` |
 
 ---
 
