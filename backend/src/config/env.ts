@@ -11,4 +11,7 @@ export const env = {
   logLevel: process.env['LOG_LEVEL'] ?? 'debug',
   sessionSecret: process.env['SESSION_SECRET'] ?? 'supplycycle-session-secret',
   botApiKey: process.env['BOT_API_KEY'] ?? '',
+  botApiUrl: process.env['BOT_API_URL'] ?? 'http://localhost:3008',
+  botApiKeyOutgoing: process.env['BOT_API_KEY_OUTGOING'] ?? '',
+  cronEnvasesDemorados: process.env['CRON_ENVASES_DEMORADOS'] ?? '0 8 * * *',
 } as const;

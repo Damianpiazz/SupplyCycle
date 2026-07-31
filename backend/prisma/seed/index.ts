@@ -15,6 +15,7 @@ import { seedClientes as seedClientesSemana } from './14-clientes-semana.seed.js
 import { seedRepartosSemana } from './15-repartos-semana.seed.js';
 import { seedPedidos as seedPedidosSemana } from './16-pedidos-semana.seed.js';
 import { seedDemandas } from './17-demandas.seed.js';
+import { seedConfiguracion } from './18-configuracion.seed.js';
 
 async function main() {
   console.log('🌱 Seed: La Plata — Semana del 29/06 al 04/07\n');
@@ -67,6 +68,10 @@ async function main() {
   await seedVisitas(pedidosList, empleadosList);
   await seedRetenidos(clientes, itemsList, pedidosList, domicilios);
   await seedReclamos(clientes);
+
+  // Level 5: Configuración (RF-12)
+  console.log('[9] Configuración de envases demorados...');
+  await seedConfiguracion();
 
   console.log('\n🎉 Seed completado exitosamente!');
   console.log('   Usuario: repartidor@supplycycle.com / Repartidor123');

@@ -1,4 +1,4 @@
-﻿import { faker } from '@faker-js/faker';
+import { faker } from '@faker-js/faker';
 import { prisma } from '../../src/lib/prisma.js';
 import { bulkCreate } from './helpers.js';
 
