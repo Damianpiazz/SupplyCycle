@@ -20,7 +20,10 @@ const mockPrisma = {
     update: vi.fn(),
   },
   cliente: { findUnique: vi.fn() },
-  reparto: { findUnique: vi.fn() },
+  reparto: {
+    findUnique: vi.fn(),
+    update: vi.fn(),
+  },
   item: { findUnique: vi.fn() },
   pedidoItem: {
     findFirst: vi.fn(),
@@ -28,6 +31,11 @@ const mockPrisma = {
     create: vi.fn(),
     update: vi.fn(),
     delete: vi.fn(),
+  },
+  retenido: {
+    createMany: vi.fn(),
+    findMany: vi.fn(),
+    updateMany: vi.fn(),
   },
 };
 
@@ -86,6 +94,7 @@ function buildMockPedido(overrides: Record<string, unknown> = {}) {
     items: [
       {
         id: 'item-ped-001',
+        itemId: 'prod-001',
         cantidad: 2,
         precioUnitario: 1500,
         item: {
@@ -95,6 +104,7 @@ function buildMockPedido(overrides: Record<string, unknown> = {}) {
           precio: 1500,
           unidad: 'unidad',
           activo: true,
+          retornable: true,
         },
       },
     ],
@@ -515,6 +525,7 @@ describe('PedidosService', () => {
     it('debe confirmar entrega desde PENDIENTE (backward compat)', async () => {
       mockPrisma.pedido.findUnique.mockResolvedValue(buildMockPedido({ estado: 'PENDIENTE' }));
       mockPrisma.pedido.update.mockResolvedValue(buildMockPedido({ estado: 'ENTREGADO' }));
+      mockPrisma.retenido.createMany.mockResolvedValue({ count: 2 });
 
       const result = await service.confirmarEntrega('ped-001');
       expect(result.estado).toBe('ENTREGADO');
@@ -523,6 +534,7 @@ describe('PedidosService', () => {
     it('debe confirmar entrega desde EN_RUTA', async () => {
       mockPrisma.pedido.findUnique.mockResolvedValue(buildMockPedido({ estado: 'EN_RUTA' }));
       mockPrisma.pedido.update.mockResolvedValue(buildMockPedido({ estado: 'ENTREGADO' }));
+      mockPrisma.retenido.createMany.mockResolvedValue({ count: 2 });
 
       const result = await service.confirmarEntrega('ped-001');
       expect(result.estado).toBe('ENTREGADO');
@@ -533,6 +545,107 @@ describe('PedidosService', () => {
 
       await expect(service.confirmarEntrega('ped-001'))
         .rejects.toThrow('El pedido no puede ser entregado desde su estado actual');
+    });
+  });
+
+  // ─── Retornables + Devoluciones (RF-06) ──────────────────────────────────────
+
+  describe('confirmarEntrega con retornables y devoluciones (RF-06)', () => {
+    it('debe crear Retenidos para items retornables', async () => {
+      const pedido = buildMockPedido({ estado: 'PENDIENTE' });
+      mockPrisma.pedido.findUnique.mockResolvedValue(pedido);
+      mockPrisma.pedido.update.mockResolvedValue({ ...pedido, estado: 'ENTREGADO' });
+      mockPrisma.retenido.createMany.mockResolvedValue({ count: 2 });
+
+      const result = await service.confirmarEntrega('ped-001');
+
+      expect(result.estado).toBe('ENTREGADO');
+      expect(mockPrisma.retenido.createMany).toHaveBeenCalledWith({
+        data: expect.arrayContaining([
+          expect.objectContaining({ itemId: 'prod-001', clienteId: 'cli-001', pedidoId: 'ped-001', estado: 'RETENIDO' }),
+        ]),
+      });
+      // 2 unidades de Bidón 20L → 2 retenidos
+      expect((mockPrisma.retenido.createMany.mock.calls[0]?.[0] as any)?.data).toHaveLength(2);
+    });
+
+    it('debe procesar devoluciones y cerrar Retenidos', async () => {
+      const pedido = buildMockPedido({ estado: 'PENDIENTE' });
+      mockPrisma.pedido.findUnique.mockResolvedValue(pedido);
+      mockPrisma.pedido.update.mockResolvedValue({ ...pedido, estado: 'ENTREGADO' });
+      mockPrisma.retenido.createMany.mockResolvedValue({ count: 2 });
+      mockPrisma.retenido.findMany.mockResolvedValue([
+        { id: 'ret-001', inicio: new Date('2026-07-01'), estado: 'RETENIDO' },
+        { id: 'ret-002', inicio: new Date('2026-07-05'), estado: 'RETENIDO' },
+      ]);
+      mockPrisma.retenido.updateMany.mockResolvedValue({ count: 2 });
+      mockPrisma.item.findUnique.mockResolvedValue({ id: 'prod-001', nombre: 'Bidón 20L' });
+
+      const result = await service.confirmarEntrega('ped-001', undefined, undefined, [
+        { itemId: 'prod-001', cantidad: 2 },
+      ]);
+
+      expect(result.estado).toBe('ENTREGADO');
+      expect(mockPrisma.retenido.updateMany).toHaveBeenCalledWith({
+        where: { id: { in: ['ret-001', 'ret-002'] } },
+        data: { fin: expect.any(Date), estado: 'DEVUELTO' },
+      });
+    });
+
+    it('debe rechazar devolución de más items de los pendientes', async () => {
+      const pedido = buildMockPedido({ estado: 'PENDIENTE' });
+      mockPrisma.pedido.findUnique.mockResolvedValue(pedido);
+      mockPrisma.retenido.findMany.mockResolvedValue([
+        { id: 'ret-001', inicio: new Date('2026-07-01'), estado: 'RETENIDO' },
+      ]);
+      mockPrisma.item.findUnique.mockResolvedValue({ id: 'prod-001', nombre: 'Bidón 20L' });
+
+      await expect(
+        service.confirmarEntrega('ped-001', undefined, undefined, [
+          { itemId: 'prod-001', cantidad: 5 },
+        ])
+      ).rejects.toThrow('El cliente no tiene 5 "Bidón 20L" pendientes de devolución');
+    });
+
+    it('debe funcionar sin items retornables', async () => {
+      const pedido = buildMockPedido({
+        estado: 'PENDIENTE',
+        items: [{
+          id: 'item-ped-002',
+          itemId: 'prod-002',
+          cantidad: 1,
+          precioUnitario: 200,
+          item: {
+            id: 'prod-002',
+            nombre: 'Tapa para bidón 20L',
+            descripcion: 'Tapa de repuesto',
+            precio: 200,
+            unidad: 'unidad',
+            activo: true,
+            retornable: false,
+          },
+        }],
+      });
+      mockPrisma.pedido.findUnique.mockResolvedValue(pedido);
+      mockPrisma.pedido.update.mockResolvedValue({ ...pedido, estado: 'ENTREGADO' });
+
+      const result = await service.confirmarEntrega('ped-001');
+
+      expect(result.estado).toBe('ENTREGADO');
+      expect(mockPrisma.retenido.createMany).not.toHaveBeenCalled();
+    });
+
+    it('debe confirmar sin devoluciones cuando no se proveen', async () => {
+      const pedido = buildMockPedido({ estado: 'PENDIENTE' });
+      mockPrisma.pedido.findUnique.mockResolvedValue(pedido);
+      mockPrisma.pedido.update.mockResolvedValue({ ...pedido, estado: 'ENTREGADO' });
+      mockPrisma.retenido.createMany.mockResolvedValue({ count: 2 });
+
+      const result = await service.confirmarEntrega('ped-001', undefined, undefined);
+
+      expect(result.estado).toBe('ENTREGADO');
+      // createMany se llama solo para crear retenidos, sin devoluciones
+      expect(mockPrisma.retenido.updateMany).not.toHaveBeenCalled();
     });
   });
 
