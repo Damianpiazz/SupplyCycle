@@ -5,6 +5,7 @@ export default function EstadisticasLayout() {
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="index" />
       <Stack.Screen name="mensual" />
+      <Stack.Screen name="demanda" />
     </Stack>
   );
 }

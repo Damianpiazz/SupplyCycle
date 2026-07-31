@@ -1,0 +1,81 @@
+<%- include('../layouts/header') %>
+
+<form method="GET" class="flex gap-2 mb-3 items-center">
+  <label for="periodo" style="margin-bottom:0;white-space:nowrap;">Período (días):</label>
+  <select name="periodo" id="periodo" style="width:auto;">
+    <% [7, 15, 30, 60, 90].forEach(p => { %>
+      <option value="<%= p %>" <%= periodo === p ? 'selected' : '' %>><%= p %> días</option>
+    <% }) %>
+  </select>
+  <label for="incluirClientes" style="margin-bottom:0;white-space:nowrap;">
+    <input type="checkbox" name="incluirClientes" id="incluirClientes" value="true" <%= incluirClientes ? 'checked' : '' %>>
+    Mostrar clientes
+  </label>
+  <button class="secondary outline">Estimar</button>
+</form>
+
+<% if (data) { %>
+  <article style="padding:1rem;margin-bottom:1rem;">
+    <h6 style="margin-top:0;">Resumen</h6>
+    <div class="grid">
+      <div><strong>Unidades estimadas:</strong> <%= data.demandaTotalUnidades.toLocaleString() %></div>
+      <div><strong>Clientes con estimación:</strong> <%= data.clientesConEstimacion %> / <%= data.totalClientes %></div>
+      <div><strong>Frecuencia promedio:</strong> cada <%= data.frecuenciaPromedioGlobal %> días</div>
+      <div><strong>Período:</strong> <%= data.fechaDesde %> → <%= data.fechaHasta %></div>
+    </div>
+  </article>
+
+  <h6>Productos con mayor demanda</h6>
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Producto</th>
+        <th>Unidad</th>
+        <th>Cant. Estimada</th>
+        <th>Clientes</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% if (data.demandaPorProducto.length === 0) { %>
+        <tr><td colspan="5" style="text-align:center;padding:1rem 0;">No hay estimaciones para este período</td></tr>
+      <% } else { %>
+        <% data.demandaPorProducto.forEach((p, i) => { %>
+          <tr>
+            <td><%= i + 1 %></td>
+            <td><%= p.nombre %></td>
+            <td><%= p.unidad %></td>
+            <td><strong><%= p.cantidadEstimada.toLocaleString() %></strong></td>
+            <td><%= p.clientesEstimados %></td>
+          </tr>
+        <% }) %>
+      <% } %>
+    </tbody>
+  </table>
+
+  <% if (data.clientes && data.clientes.length > 0) { %>
+    <h6>Clientes con mayor demanda</h6>
+    <table>
+      <thead>
+        <tr>
+          <th>Cliente</th>
+          <th>Frecuencia</th>
+          <th>Próx. pedido</th>
+          <th>Unid. estimadas</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% data.clientes.forEach(c => { %>
+          <tr>
+            <td><%= c.apellido %>, <%= c.nombre %></td>
+            <td>c/<%= c.frecuenciaPromedioDias %> días</td>
+            <td><%= c.proximoPedidoEstimado %></td>
+            <td><%= c.unidadesEstimadas %></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  <% } %>
+<% } %>
+
+<%- include('../layouts/footer') %>

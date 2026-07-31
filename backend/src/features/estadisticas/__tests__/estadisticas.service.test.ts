@@ -7,6 +7,8 @@ const mockPrisma = {
   pedido: { findMany: vi.fn() },
   pedidoItem: { findMany: vi.fn() },
   reparto: { findMany: vi.fn() },
+  cliente: { findMany: vi.fn() },
+  item: { findMany: vi.fn() },
 };
 
 vi.mock('../../../lib/prisma.js', () => ({ prisma: mockPrisma }));
@@ -264,5 +266,179 @@ describe('obtenerEstadisticasMensuales', () => {
     const result = await obtenerEstadisticasMensuales(2025, 2); // 2025 no bisiesto
 
     expect(result.dias).toHaveLength(28);
+  });
+});
+
+// ─── Tests: estimarDemanda ──────────────────────────────────────────────────────
+
+describe('estimarDemanda', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('retorna demanda vacía cuando no hay clientes con pedidos', async () => {
+    mockPrisma.cliente.findMany.mockResolvedValue([]);
+    mockPrisma.item.findMany.mockResolvedValue([]);
+
+    const result = await import('../service.js').then((m) => m.estimarDemanda(30, false));
+
+    expect(result.periodo).toBe(30);
+    expect(result.totalClientes).toBe(0);
+    expect(result.clientesConEstimacion).toBe(0);
+    expect(result.demandaPorProducto).toEqual([]);
+    expect(result.demandaTotalUnidades).toBe(0);
+  });
+
+  it('retorna demanda con un cliente que tiene un solo pedido', async () => {
+    mockPrisma.cliente.findMany.mockResolvedValue([
+      {
+        id: 'cliente-1',
+        nombre: 'Juan',
+        apellido: 'Perez',
+        domicilios: [
+          {
+            pedidos: [
+              {
+                fecha: new Date(),
+                items: [
+                  { itemId: 'item-1', cantidad: 5 },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    ]);
+
+    mockPrisma.item.findMany.mockResolvedValue([
+      { id: 'item-1', nombre: 'Bidón 12L', unidad: 'unidad' },
+    ]);
+
+    const result = await import('../service.js').then((m) => m.estimarDemanda(30, false));
+
+    expect(result.totalClientes).toBe(1);
+    expect(result.clientesConEstimacion).toBe(1);
+    expect(result.demandaPorProducto).toHaveLength(1);
+    expect(result.demandaPorProducto[0]?.cantidadEstimada).toBe(5);
+    expect(result.demandaTotalUnidades).toBe(5);
+  });
+
+  it('incluye desglose por cliente cuando incluirClientes es true', async () => {
+    mockPrisma.cliente.findMany.mockResolvedValue([
+      {
+        id: 'cliente-1',
+        nombre: 'Juan',
+        apellido: 'Perez',
+        domicilios: [
+          {
+            pedidos: [
+              {
+                fecha: new Date(),
+                items: [
+                  { itemId: 'item-1', cantidad: 3 },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    ]);
+
+    mockPrisma.item.findMany.mockResolvedValue([
+      { id: 'item-1', nombre: 'Bidón 12L', unidad: 'unidad' },
+    ]);
+
+    const result = await import('../service.js').then((m) => m.estimarDemanda(30, true));
+
+    expect(result.clientes).toBeDefined();
+    expect(result.clientes).toHaveLength(1);
+    expect(result.clientes![0]?.nombre).toBe('Juan');
+    expect(result.clientes![0]?.unidadesEstimadas).toBeGreaterThan(0);
+  });
+
+  it('excluye clientes cuyo próximo pedido está fuera del periodo', async () => {
+    const haceUnAnio = new Date();
+    haceUnAnio.setFullYear(haceUnAnio.getFullYear() - 1);
+    const today = new Date();
+
+    mockPrisma.cliente.findMany.mockResolvedValue([
+      {
+        id: 'cliente-1',
+        nombre: 'Juan',
+        apellido: 'Perez',
+        domicilios: [
+          {
+            pedidos: [
+              {
+                fecha: haceUnAnio, // más antiguo primero (asc order)
+                items: [{ itemId: 'item-1', cantidad: 3 }],
+              },
+              {
+                fecha: today, // más reciente segundo
+                items: [{ itemId: 'item-1', cantidad: 2 }],
+              },
+            ],
+          },
+        ],
+      },
+    ]);
+
+    mockPrisma.item.findMany.mockResolvedValue([
+      { id: 'item-1', nombre: 'Bidón 12L', unidad: 'unidad' },
+    ]);
+
+    // Ahora con frecuencia=7 fija, el cliente tiene pedido hoy → nextDate = today + 7 = dentro del periodo de 1 día? NO, 7 > 1
+    // Con periodo=1 y frecuencia=7, nextDate = today + 7 > endDate (today + 1), debería excluirse
+    const result = await import('../service.js').then((m) => m.estimarDemanda(1, false));
+
+    expect(result.clientesConEstimacion).toBe(0);
+  });
+
+  it('agrupa múltiples clientes en el mismo producto', async () => {
+    mockPrisma.cliente.findMany.mockResolvedValue([
+      {
+        id: 'cliente-1',
+        nombre: 'Juan',
+        apellido: 'Perez',
+        domicilios: [
+          {
+            pedidos: [
+              {
+                fecha: new Date(),
+                items: [{ itemId: 'item-1', cantidad: 2 }],
+              },
+            ],
+          },
+        ],
+      },
+      {
+        id: 'cliente-2',
+        nombre: 'Maria',
+        apellido: 'Lopez',
+        domicilios: [
+          {
+            pedidos: [
+              {
+                fecha: new Date(),
+                items: [{ itemId: 'item-1', cantidad: 3 }],
+              },
+            ],
+          },
+        ],
+      },
+    ]);
+
+    mockPrisma.item.findMany.mockResolvedValue([
+      { id: 'item-1', nombre: 'Bidón 12L', unidad: 'unidad' },
+    ]);
+
+    const result = await import('../service.js').then((m) => m.estimarDemanda(30, true));
+
+    expect(result.totalClientes).toBe(2);
+    expect(result.clientesConEstimacion).toBe(2);
+    expect(result.demandaPorProducto).toHaveLength(1);
+    expect(result.demandaPorProducto[0]?.cantidadEstimada).toBe(5);
+    expect(result.demandaPorProducto[0]?.clientesEstimados).toBe(2);
+    expect(result.clientes).toHaveLength(2);
   });
 });

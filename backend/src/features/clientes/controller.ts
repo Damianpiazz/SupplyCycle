@@ -107,6 +107,21 @@ export async function pedidosClienteController(
   }
 }
 
+export async function demandaClienteController(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const id = req.params['id'] as string;
+    const periodo = req.query['periodo'] ? parseInt(req.query['periodo'] as string, 10) : 30;
+    const result = await clientesService.obtenerDemandaCliente(id, periodo);
+    sendSuccess(res, result);
+  } catch (err) {
+    next(err);
+  }
+}
+
 export async function eliminarController(
   req: Request,
   res: Response,

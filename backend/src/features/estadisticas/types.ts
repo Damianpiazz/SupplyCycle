@@ -1,4 +1,5 @@
 // RF-08: Estadísticas diarias y mensuales para administradores
+// RF-11: Demanda estimada
 
 export interface EstadisticasDiarias {
   fecha: string;
@@ -32,4 +33,35 @@ export interface EstadisticasMensuales {
     entregasRealizadas: number;
     entregasNoRealizadas: number;
   }>;
+}
+
+// ─── RF-11 ───────────────────────────────────────────────────────────────
+
+export interface DemandaProducto {
+  itemId: string;
+  nombre: string;
+  unidad: string;
+  cantidadEstimada: number;
+  clientesEstimados: number;
+}
+
+export interface ClienteDemandaResumen {
+  clienteId: string;
+  nombre: string;
+  apellido: string;
+  frecuenciaPromedioDias: number;
+  proximoPedidoEstimado: string;
+  unidadesEstimadas: number;
+}
+
+export interface DemandaEstimada {
+  periodo: number;
+  fechaDesde: string;
+  fechaHasta: string;
+  totalClientes: number;
+  clientesConEstimacion: number;
+  demandaPorProducto: DemandaProducto[];
+  demandaTotalUnidades: number;
+  frecuenciaPromedioGlobal: number;
+  clientes?: ClienteDemandaResumen[];
 }

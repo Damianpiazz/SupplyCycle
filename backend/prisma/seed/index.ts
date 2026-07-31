@@ -14,6 +14,7 @@ import { seedReclamos } from './13-reclamos.seed.js';
 import { seedClientes as seedClientesSemana } from './14-clientes-semana.seed.js';
 import { seedRepartosSemana } from './15-repartos-semana.seed.js';
 import { seedPedidos as seedPedidosSemana } from './16-pedidos-semana.seed.js';
+import { seedDemandas } from './17-demandas.seed.js';
 
 async function main() {
   console.log('🌱 Seed: La Plata — Semana del 29/06 al 04/07\n');
@@ -57,6 +58,9 @@ async function main() {
   console.log('[7] Pedidos semanales La Plata (120)...');
   const clientesLP = await seedClientesSemana(ciudad.id);
   await seedPedidosSemana(clientesLP, itemsList, diasReparto);
+
+  console.log('[7b] Pedidos históricos para estimación de demanda (RF-11)...');
+  await seedDemandas(clientesLP, itemsList);
 
   // Level 4: Visitas + Retenidos + Reclamos
   console.log('[8] Visitas + Retenidos + Reclamos...');

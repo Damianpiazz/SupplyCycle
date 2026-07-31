@@ -19,6 +19,7 @@ const mockPrisma = {
   },
   pedido: {
     count: vi.fn(),
+    findMany: vi.fn(),
   },
   $transaction: vi.fn((fn: any) => fn(mockPrisma)),
 };
@@ -32,6 +33,7 @@ const {
   crearCliente,
   actualizarCliente,
   eliminarCliente,
+  obtenerDemandaCliente,
 } = await import('../service.js');
 
 const clienteInclude = {
@@ -381,6 +383,67 @@ describe('ClientesService', () => {
       });
 
       expect(mockPrisma.cliente.update).not.toHaveBeenCalled();
+    });
+  });
+
+  // ─── Tests: obtenerDemandaCliente ──────────────────────────────────────
+
+  describe('obtenerDemandaCliente', () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+    });
+
+    it('lanza 404 si el cliente no existe', async () => {
+      mockPrisma.cliente.findUnique.mockResolvedValue(null);
+
+      await expect(obtenerDemandaCliente('no-existe')).rejects.toThrow(ApiError);
+    });
+
+    it('retorna datos vacios si el cliente no tiene pedidos', async () => {
+      mockPrisma.cliente.findUnique.mockResolvedValue({
+        id: 'cliente-1',
+        nombre: 'Juan',
+        apellido: 'Perez',
+      });
+      mockPrisma.pedido.findMany.mockResolvedValue([]);
+
+      const result = await obtenerDemandaCliente('cliente-1');
+
+      expect(result.historicoPedidos).toBe(0);
+      expect(result.demandaPorProducto).toEqual([]);
+      expect(result.totalUnidadesEstimadas).toBe(0);
+      expect(result.proximoPedidoEstimado).toBeNull();
+    });
+
+    it('calcula demanda basada en historial de pedidos', async () => {
+      mockPrisma.cliente.findUnique.mockResolvedValue({
+        id: 'cliente-1',
+        nombre: 'Juan',
+        apellido: 'Perez',
+      });
+
+      const today = new Date();
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+
+      mockPrisma.pedido.findMany.mockResolvedValue([
+        {
+          fecha: today,
+          items: [{ itemId: 'item-1', cantidad: 3, item: { nombre: 'Bidón 12L', unidad: 'unidad' } }],
+        },
+        {
+          fecha: yesterday,
+          items: [{ itemId: 'item-1', cantidad: 5, item: { nombre: 'Bidón 12L', unidad: 'unidad' } }],
+        },
+      ]);
+
+      const result = await obtenerDemandaCliente('cliente-1');
+
+      expect(result.historicoPedidos).toBe(2);
+      expect(result.demandaPorProducto).toHaveLength(1);
+      expect(result.demandaPorProducto[0]?.cantidadEstimada).toBe(4); // avg(3, 5) = 4
+      expect(result.totalUnidadesEstimadas).toBe(4);
+      expect(result.frecuenciaPromedioDias).toBe(7); // TODO: cambiar cuando RF-10 esté implementado
     });
   });
 });

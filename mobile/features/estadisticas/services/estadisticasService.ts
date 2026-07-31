@@ -1,6 +1,6 @@
 import { apiClient, unwrapResponse } from '@/services/api';
 import type { ApiResponse } from '@/types/api';
-import type { EstadisticasDiarias, EstadisticasMensuales } from '@/types';
+import type { EstadisticasDiarias, EstadisticasMensuales, DemandaEstimada } from '@/types';
 
 export async function getEstadisticasDiariasRequest(
   fecha: string
@@ -19,6 +19,17 @@ export async function getEstadisticasMensualesRequest(
   const response = await apiClient.get<ApiResponse<EstadisticasMensuales>>(
     '/estadisticas/mensuales',
     { params: { anio: String(anio), mes: String(mes) } }
+  );
+  return unwrapResponse(response);
+}
+
+export async function getDemandaRequest(
+  periodo: number = 30,
+  incluirClientes: boolean = false
+): Promise<DemandaEstimada> {
+  const response = await apiClient.get<ApiResponse<DemandaEstimada>>(
+    '/estadisticas/demanda',
+    { params: { periodo: String(periodo), incluirClientes: String(incluirClientes) } }
   );
   return unwrapResponse(response);
 }

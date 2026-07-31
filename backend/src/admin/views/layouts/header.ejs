@@ -26,6 +26,7 @@
       <li><a href="/admin/retenidos" class="<%= typeof currentPath !== 'undefined' && currentPath?.startsWith('/admin/retenidos') && !currentPath?.startsWith('/admin/retenidos/demorados') ? 'active' : '' %>">Retenidos</a></li>
       <li><a href="/admin/retenidos/demorados" class="<%= typeof currentPath !== 'undefined' && currentPath === '/admin/retenidos/demorados' ? 'active' : '' %>">Envases Demorados</a></li>
       <li><a href="/admin/reclamos" class="<%= typeof currentPath !== 'undefined' && currentPath?.startsWith('/admin/reclamos') ? 'active' : '' %>">Reclamos</a></li>
+      <li><a href="/admin/estadisticas/demanda" class="<%= typeof currentPath !== 'undefined' && currentPath?.startsWith('/admin/estadisticas') ? 'active' : '' %>">Demanda Estimada</a></li>
     </ul>
     <div class="user-section">
       <div class="user-name"><%= typeof userNombre !== 'undefined' ? userNombre : 'Admin' %></div>
