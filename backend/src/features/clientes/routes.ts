@@ -7,6 +7,7 @@ import {
   eliminarController,
   historialController,
   consumoController,
+  frecuenciaController,
   pedidosClienteController,
 } from './controller.js';
 import { authenticate, requireRole } from '../../middleware/auth.middleware.js';
@@ -18,6 +19,7 @@ const router = Router();
 router.get('/', apiKeyAuth, authenticate, listarController);
 router.get('/:id/historial', apiKeyAuth, authenticate, historialController);
 router.get('/:id/consumo', apiKeyAuth, authenticate, consumoController);
+router.get('/:id/frecuencia', apiKeyAuth, authenticate, frecuenciaController);
 router.get('/:id/pedidos', apiKeyAuth, authenticate, pedidosClienteController);
 router.get('/:id', apiKeyAuth, authenticate, obtenerController);
 

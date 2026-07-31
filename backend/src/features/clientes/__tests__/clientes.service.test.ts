@@ -19,6 +19,7 @@ const mockPrisma = {
   },
   pedido: {
     count: vi.fn(),
+    findMany: vi.fn(),
   },
   $transaction: vi.fn((fn: any) => fn(mockPrisma)),
 };

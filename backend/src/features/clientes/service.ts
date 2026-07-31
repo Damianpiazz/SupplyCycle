@@ -316,45 +316,101 @@ export async function obtenerHistorialEnvases(clienteId: string) {
   }
   const saldoEnvases = Array.from(saldoMap.values());
 
-  // Historial cronológico: cada Retenido genera una entrada ENTREGA al inicio,
-  // y una entrada DEVOLUCION al fin (si tiene fecha de devolución).
-  const historial = retenidos.flatMap((r) => {
-    const entries: Array<{
-      id: string;
-      fecha: string;
-      tipo: 'ENTREGA' | 'DEVOLUCION';
-      cantidad: number;
-      tipoEnvase: string;
-      pedidoId: string | null;
-    }> = [];
+  // Retenidos en bruto: cada registro con fecha, devolución, item y pedido
+  const retenidosList = retenidos.map((r) => ({
+    id: r.id,
+    inicio: r.inicio.toISOString(),
+    fin: r.fin?.toISOString() ?? null,
+    estado: r.estado,
+    item: { id: r.item.id, nombre: r.item.nombre },
+    pedido: { id: r.pedido.id, numeroPedido: r.pedido.numeroPedido },
+  }));
 
-    entries.push({
-      id: `${r.id}-entrega`,
-      fecha: r.inicio.toISOString(),
-      tipo: 'ENTREGA',
-      cantidad: 1,
-      tipoEnvase: r.item.nombre,
-      pedidoId: r.pedido.numeroPedido,
-    });
+  return { saldoEnvases, retenidos: retenidosList };
+}
 
-    if (r.fin) {
-      entries.push({
-        id: `${r.id}-devolucion`,
-        fecha: r.fin.toISOString(),
-        tipo: 'DEVOLUCION',
-        cantidad: 1,
-        tipoEnvase: r.item.nombre,
-        pedidoId: r.pedido.numeroPedido,
-      });
-    }
+export type FrecuenciaCliente = {
+  intervaloPromedioDias: number | null;
+  diaSemanaFrecuente: string | null;
+  totalPedidosAnalizados: number;
+  primerPedido: string | null;
+  ultimoPedido: string | null;
+  distribucionDias: Record<string, number>;
+};
 
-    return entries;
+export async function calcularFrecuencia(clienteId: string): Promise<FrecuenciaCliente> {
+  const pedidos = await prisma.pedido.findMany({
+    where: {
+      domicilio: { clienteId },
+      estado: { not: 'CANCELADO' },
+      deletedAt: null,
+    },
+    select: { fecha: true },
+    orderBy: { fecha: 'asc' },
   });
 
-  // Ordenar por fecha descendente (más reciente primero)
-  historial.sort((a, b) => b.fecha.localeCompare(a.fecha));
+  if (pedidos.length === 0) {
+    return {
+      intervaloPromedioDias: null,
+      diaSemanaFrecuente: null,
+      totalPedidosAnalizados: 0,
+      primerPedido: null,
+      ultimoPedido: null,
+      distribucionDias: {},
+    };
+  }
 
-  return { saldoEnvases, historial };
+  // Calcular intervalos entre pedidos consecutivos (en días)
+  const DIAS_SEMANA = ['DOMINGO', 'LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES', 'SABADO'];
+  const distribucionDias: Record<string, number> = {
+    LUNES: 0, MARTES: 0, MIERCOLES: 0, JUEVES: 0, VIERNES: 0, SABADO: 0, DOMINGO: 0,
+  };
+
+  let sumaIntervalos = 0;
+  for (let i = 0; i < pedidos.length; i++) {
+    const diaIdx = pedidos[i]!.fecha.getDay();
+    const diaNombre = DIAS_SEMANA[diaIdx]!;
+    if (distribucionDias[diaNombre] !== undefined) {
+      distribucionDias[diaNombre]++;
+    }
+
+    if (i > 0) {
+      const diffMs = pedidos[i]!.fecha.getTime() - pedidos[i - 1]!.fecha.getTime();
+      sumaIntervalos += Math.round(diffMs / (1000 * 60 * 60 * 24));
+    }
+  }
+
+  // Limpiar días sin pedidos
+  const distribucionFiltrada: Record<string, number> = {};
+  for (const [dia, count] of Object.entries(distribucionDias)) {
+    if (count > 0) {
+      distribucionFiltrada[dia] = count;
+    }
+  }
+
+  const cantidadIntervalos = pedidos.length - 1;
+  const intervaloPromedioDias = cantidadIntervalos > 0
+    ? Math.round(sumaIntervalos / cantidadIntervalos)
+    : null;
+
+  // Día más frecuente
+  let diaSemanaFrecuente: string | null = null;
+  let maxCount = 0;
+  for (const [dia, count] of Object.entries(distribucionFiltrada)) {
+    if (count > maxCount) {
+      maxCount = count;
+      diaSemanaFrecuente = dia;
+    }
+  }
+
+  return {
+    intervaloPromedioDias,
+    diaSemanaFrecuente,
+    totalPedidosAnalizados: pedidos.length,
+    primerPedido: pedidos[0]!.fecha.toISOString(),
+    ultimoPedido: pedidos[pedidos.length - 1]!.fecha.toISOString(),
+    distribucionDias: distribucionFiltrada,
+  };
 }
 
 export async function obtenerConsumoCliente(clienteId: string) {
@@ -380,7 +436,9 @@ export async function obtenerConsumoCliente(clienteId: string) {
   );
   const promedioBidonesPorPedido = totalPedidos > 0 ? totalBidones / totalPedidos : 0;
 
-  return { totalPedidos, totalBidones, promedioBidonesPorPedido };
+  const frecuencia = await calcularFrecuencia(clienteId);
+
+  return { totalPedidos, totalBidones, promedioBidonesPorPedido, frecuencia };
 }
 
 export async function obtenerPedidosCliente(clienteId: string) {
@@ -395,16 +453,26 @@ export async function obtenerPedidosCliente(clienteId: string) {
       deletedAt: null,
     },
     include: {
-      items: { select: { cantidad: true } },
+      items: {
+        select: {
+          cantidad: true,
+          item: { select: { nombre: true } },
+        },
+      },
     },
     orderBy: { fecha: 'desc' },
   });
 
   return pedidos.map((p) => ({
     id: p.id,
+    numeroPedido: p.numeroPedido,
     fecha: p.fecha.toISOString(),
     estado: p.estado,
     totalBidones: p.items.reduce((s, i) => s + i.cantidad, 0),
+    items: p.items.map((i) => ({
+      nombre: i.item.nombre,
+      cantidad: i.cantidad,
+    })),
   }));
 }
 
