@@ -8,6 +8,7 @@ import {
   historialController,
   consumoController,
   pedidosClienteController,
+  demandaClienteController,
 } from './controller.js';
 import { authenticate, requireRole } from '../../middleware/auth.middleware.js';
 import { apiKeyAuth } from '../../middleware/api-key-auth.js';
@@ -19,6 +20,7 @@ router.get('/', apiKeyAuth, authenticate, listarController);
 router.get('/:id/historial', apiKeyAuth, authenticate, historialController);
 router.get('/:id/consumo', apiKeyAuth, authenticate, consumoController);
 router.get('/:id/pedidos', apiKeyAuth, authenticate, pedidosClienteController);
+router.get('/:id/demanda', apiKeyAuth, authenticate, demandaClienteController);
 router.get('/:id', apiKeyAuth, authenticate, obtenerController);
 
 // Rutas admin-only or bot (via api key)

@@ -16,15 +16,17 @@ vi.mock('@tanstack/react-query', async (importOriginal) => {
 
 const mockGetDiarias = vi.fn();
 const mockGetMensuales = vi.fn();
+const mockGetDemanda = vi.fn();
 
 vi.mock('@/features/estadisticas/services/estadisticasService', () => ({
   getEstadisticasDiariasRequest: (...args: unknown[]) => mockGetDiarias(...args),
   getEstadisticasMensualesRequest: (...args: unknown[]) => mockGetMensuales(...args),
+  getDemandaRequest: (...args: unknown[]) => mockGetDemanda(...args),
 }));
 
 // ─── Import after mocks ───────────────────────────────────────────────────────
 
-import { useEstadisticasDiarias, useEstadisticasMensuales } from '../useEstadisticas';
+import { useEstadisticasDiarias, useEstadisticasMensuales, useDemanda } from '../useEstadisticas';
 
 // ─── Helper ───────────────────────────────────────────────────────────────────
 
@@ -131,6 +133,48 @@ describe('useEstadisticasMensuales', () => {
     const result = await opts.queryFn();
 
     expect(mockGetMensuales).toHaveBeenCalledWith(2026, 6);
+    expect(result).toEqual(mockData);
+  });
+});
+
+// ─── Tests: useDemanda ────────────────────────────────────────────────────────
+
+describe('useDemanda', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(useQuery).mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      isError: false,
+      error: null,
+      refetch: vi.fn(),
+      isFetching: false,
+      isSuccess: false,
+      isFetched: false,
+    } as never);
+  });
+
+  it('usa queryKey con prefijo estadisticas, demanda, periodo e incluirClientes', () => {
+    useDemanda(30, true);
+    const opts = getQueryOptions();
+    expect(opts.queryKey).toEqual(['estadisticas', 'demanda', 30, true]);
+  });
+
+  it('usa staleTime de 5 minutos', () => {
+    useDemanda(30);
+    const opts = getQueryOptions();
+    expect(opts.staleTime).toBe(5 * 60 * 1000);
+  });
+
+  it('queryFn llama a getDemandaRequest con periodo e incluirClientes', async () => {
+    const mockData = { periodo: 15, demandaTotalUnidades: 50 };
+    mockGetDemanda.mockResolvedValue(mockData);
+
+    useDemanda(15, true);
+    const opts = getQueryOptions();
+    const result = await opts.queryFn();
+
+    expect(mockGetDemanda).toHaveBeenCalledWith(15, true);
     expect(result).toEqual(mockData);
   });
 });

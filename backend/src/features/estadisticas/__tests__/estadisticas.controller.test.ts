@@ -5,10 +5,12 @@ import { ZodError } from 'zod';
 
 const mockObtenerEstadisticasDiarias = vi.fn();
 const mockObtenerEstadisticasMensuales = vi.fn();
+const mockEstimarDemanda = vi.fn();
 
 vi.mock('../service.js', () => ({
   obtenerEstadisticasDiarias: mockObtenerEstadisticasDiarias,
   obtenerEstadisticasMensuales: mockObtenerEstadisticasMensuales,
+  estimarDemanda: mockEstimarDemanda,
 }));
 
 vi.mock('../../../lib/prisma.js', () => ({
@@ -21,7 +23,7 @@ vi.mock('../../../lib/prisma.js', () => ({
 
 // ─── Import after mocks ───────────────────────────────────────────────────────
 
-const { diariasController, mensualesController } = await import('../controller.js');
+const { diariasController, mensualesController, demandaController } = await import('../controller.js');
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -191,5 +193,97 @@ describe('mensualesController', () => {
     await mensualesController(req, res, next);
 
     expect(next).toHaveBeenCalledWith(expect.any(ZodError));
+  });
+});
+
+// ─── Tests: demandaController ──────────────────────────────────────────────────
+
+describe('demandaController', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('responde 200 con demanda estimada cuando periodo es válido', async () => {
+    const stats = {
+      periodo: 30,
+      fechaDesde: '2026-07-30',
+      fechaHasta: '2026-08-29',
+      totalClientes: 10,
+      clientesConEstimacion: 5,
+      demandaPorProducto: [],
+      demandaTotalUnidades: 0,
+      frecuenciaPromedioGlobal: 0,
+    };
+
+    mockEstimarDemanda.mockResolvedValue(stats);
+
+    const req = mockReq({ periodo: '30' });
+    const res = mockRes();
+    const next = mockNext();
+
+    await demandaController(req, res, next);
+
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({ data: stats });
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it('usa periodo por defecto 30 cuando no se provee', async () => {
+    mockEstimarDemanda.mockResolvedValue({});
+
+    const req = mockReq({}); // sin periodo
+    const res = mockRes();
+    const next = mockNext();
+
+    await demandaController(req, res, next);
+
+    expect(mockEstimarDemanda).toHaveBeenCalledWith(30, false);
+    expect(res.status).toHaveBeenCalledWith(200);
+  });
+
+  it('pasa incluirClientes=true cuando se especifica', async () => {
+    mockEstimarDemanda.mockResolvedValue({});
+
+    const req = mockReq({ periodo: '15', incluirClientes: 'true' });
+    const res = mockRes();
+    const next = mockNext();
+
+    await demandaController(req, res, next);
+
+    expect(mockEstimarDemanda).toHaveBeenCalledWith(15, true);
+    expect(res.status).toHaveBeenCalledWith(200);
+  });
+
+  it('llama a next con ZodError cuando periodo no es numérico', async () => {
+    const req = mockReq({ periodo: 'abc' });
+    const res = mockRes();
+    const next = mockNext();
+
+    await demandaController(req, res, next);
+
+    expect(next).toHaveBeenCalledWith(expect.any(ZodError));
+  });
+
+  it('llama a next con ZodError cuando periodo > 365', async () => {
+    const req = mockReq({ periodo: '500' });
+    const res = mockRes();
+    const next = mockNext();
+
+    await demandaController(req, res, next);
+
+    expect(next).toHaveBeenCalledWith(expect.any(ZodError));
+  });
+
+  it('pasa el error del servicio a next', async () => {
+    const error = new Error('Error al estimar demanda');
+    mockEstimarDemanda.mockRejectedValue(error);
+
+    const req = mockReq({ periodo: '30' });
+    const res = mockRes();
+    const next = mockNext();
+
+    await demandaController(req, res, next);
+
+    expect(next).toHaveBeenCalledWith(error);
   });
 });

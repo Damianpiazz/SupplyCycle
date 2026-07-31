@@ -14,6 +14,7 @@ import empleadosRouter from './empleados.admin.routes.js';
 import visitasRouter from './visitas.admin.routes.js';
 import retenidosRouter from './retenidos.admin.routes.js';
 import reclamosRouter from './reclamos.admin.routes.js';
+import estadisticasRouter from './estadisticas.admin.routes.js';
 
 const router = Router();
 
@@ -41,5 +42,6 @@ router.use('/empleados', requireAdminSession, empleadosRouter);
 router.use('/visitas', requireAdminSession, visitasRouter);
 router.use('/retenidos', requireAdminSession, retenidosRouter);
 router.use('/reclamos', requireAdminSession, reclamosRouter);
+router.use('/estadisticas', requireAdminSession, estadisticasRouter);
 
 export default router;

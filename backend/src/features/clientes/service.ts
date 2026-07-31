@@ -408,6 +408,106 @@ export async function obtenerPedidosCliente(clienteId: string) {
   }));
 }
 
+export async function obtenerDemandaCliente(clienteId: string, periodo: number = 30) {
+  const cliente = await prisma.cliente.findUnique({ where: { id: clienteId } });
+  if (!cliente) {
+    throw ApiError.notFound('Cliente no encontrado');
+  }
+
+  const pedidos = await prisma.pedido.findMany({
+    where: {
+      domicilio: { clienteId },
+      deletedAt: null,
+    },
+    orderBy: { fecha: 'asc' },
+    select: {
+      fecha: true,
+      items: {
+        select: {
+          itemId: true,
+          cantidad: true,
+          item: { select: { nombre: true, unidad: true } },
+        },
+      },
+    },
+  });
+
+  if (pedidos.length === 0) {
+    return {
+      clienteId,
+      nombre: cliente.nombre,
+      apellido: cliente.apellido,
+      frecuenciaPromedioDias: 0,
+      proximoPedidoEstimado: null,
+      demandaPorProducto: [],
+      totalUnidadesEstimadas: 0,
+      historicoPedidos: 0,
+    };
+  }
+
+  const lastDate = pedidos[pedidos.length - 1]!.fecha;
+
+  // TODO: reemplazar con cálculo de RF-10 cuando esté disponible
+  const frecuencia = 7;
+
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const nextDate = new Date(lastDate);
+  nextDate.setDate(nextDate.getDate() + frecuencia);
+
+  let proximoPedidoEstimado: string | null;
+  if (nextDate <= today) {
+    const estimado = new Date(today);
+    estimado.setDate(estimado.getDate() + frecuencia);
+    proximoPedidoEstimado = estimado.toISOString();
+  } else {
+    proximoPedidoEstimado = nextDate.toISOString();
+  }
+
+  const endDate = new Date(today);
+  endDate.setDate(endDate.getDate() + periodo);
+
+  const itemQtyMap = new Map<string, { nombre: string; unidad: string; cantidades: number[] }>();
+  for (const pedido of pedidos) {
+    for (const item of pedido.items) {
+      const existing = itemQtyMap.get(item.itemId);
+      if (existing) {
+        existing.cantidades.push(item.cantidad);
+      } else {
+        itemQtyMap.set(item.itemId, {
+          nombre: item.item.nombre,
+          unidad: item.item.unidad,
+          cantidades: [item.cantidad],
+        });
+      }
+    }
+  }
+
+  const demandaPorProducto = Array.from(itemQtyMap.entries()).map(([itemId, data]) => {
+    const avg = data.cantidades.reduce((a, b) => a + b, 0) / data.cantidades.length;
+    return {
+      itemId,
+      nombre: data.nombre,
+      unidad: data.unidad,
+      cantidadEstimada: Math.round(avg),
+      pedidosHistoricos: data.cantidades.length,
+    };
+  });
+
+  const totalUnidadesEstimadas = demandaPorProducto.reduce((s, p) => s + p.cantidadEstimada, 0);
+
+  return {
+    clienteId,
+    nombre: cliente.nombre,
+    apellido: cliente.apellido,
+    frecuenciaPromedioDias: Math.round(frecuencia * 10) / 10,
+    proximoPedidoEstimado,
+    demandaPorProducto,
+    totalUnidadesEstimadas,
+    historicoPedidos: pedidos.length,
+  };
+}
+
 export async function eliminarCliente(id: string) {
   const cliente = await prisma.cliente.findUnique({ where: { id } });
   if (!cliente) {

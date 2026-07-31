@@ -1,6 +1,12 @@
 import { prisma } from '../../lib/prisma.js';
 import { ApiError } from '../../utils/api-error.js';
-import type { EstadisticasDiarias, EstadisticasMensuales } from './types.js';
+import type {
+  EstadisticasDiarias,
+  EstadisticasMensuales,
+  DemandaEstimada,
+  DemandaProducto,
+  ClienteDemandaResumen,
+} from './types.js';
 
 // ─── Constantes ──────────────────────────────────────────────────────────────
 
@@ -179,5 +185,192 @@ export async function obtenerEstadisticasMensuales(
     totalRepartosIniciados,
     totalRepartosFinalizados,
     dias,
+  };
+}
+
+// ─── RF-11: Estimar demanda ───────────────────────────────────────────────
+
+const DEFAULT_FRECUENCIA_DIAS = 7; // TODO: reemplazar con cálculo de RF-10
+
+type ClienteHistory = {
+  id: string;
+  nombre: string;
+  apellido: string;
+  pedidos: Array<{
+    fecha: Date;
+    items: Array<{ itemId: string; cantidad: number }>;
+  }>;
+};
+
+function toDateString(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+function addDays(date: Date, days: number): Date {
+  const result = new Date(date);
+  result.setDate(result.getDate() + days);
+  return result;
+}
+
+export async function estimarDemanda(
+  periodo: number,
+  incluirClientes: boolean = false
+): Promise<DemandaEstimada> {
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+  const endDate = addDays(today, periodo);
+
+  // 1. Obtener todos los clientes con al menos un pedido
+  const clientes = await prisma.cliente.findMany({
+    where: {
+      activo: true,
+      domicilios: {
+        some: {
+          pedidos: {
+            some: { deletedAt: null },
+          },
+        },
+      },
+    },
+    select: {
+      id: true,
+      nombre: true,
+      apellido: true,
+      domicilios: {
+        select: {
+          pedidos: {
+            where: { deletedAt: null },
+            orderBy: { fecha: 'asc' },
+            select: {
+              fecha: true,
+              items: {
+                select: {
+                  itemId: true,
+                  cantidad: true,
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  });
+
+  const clientesHistory: ClienteHistory[] = clientes.map((c) => ({
+    id: c.id,
+    nombre: c.nombre,
+    apellido: c.apellido,
+    pedidos: c.domicilios.flatMap((d) => d.pedidos),
+  }));
+
+  // 2. Calcular demanda estimada por cliente
+  const productoMap = new Map<
+    string,
+    { nombre: string; unidad: string; cantidades: number[]; clientCount: Set<string> }
+  >();
+
+  // Obtener nombres de items
+  const items = await prisma.item.findMany({
+    where: { activo: true },
+    select: { id: true, nombre: true, unidad: true },
+  });
+  const itemInfo = new Map(items.map((i) => [i.id, { nombre: i.nombre, unidad: i.unidad }]));
+
+  const clientesConEstimacion: ClienteDemandaResumen[] = [];
+
+  for (const cliente of clientesHistory) {
+    if (cliente.pedidos.length === 0) continue;
+
+    const pedidos = cliente.pedidos;
+    const lastDate = pedidos[pedidos.length - 1]!.fecha;
+
+    // TODO: reemplazar con cálculo de RF-10 cuando esté disponible
+    const frecuencia = DEFAULT_FRECUENCIA_DIAS;
+
+    const nextDate = addDays(lastDate, frecuencia);
+
+    if (nextDate > endDate) continue;
+
+    const itemQtyMap = new Map<string, number[]>();
+    for (const pedido of pedidos) {
+      for (const item of pedido.items) {
+        const arr = itemQtyMap.get(item.itemId);
+        if (arr) {
+          arr.push(item.cantidad);
+        } else {
+          itemQtyMap.set(item.itemId, [item.cantidad]);
+        }
+      }
+    }
+
+    let unidadesEstimadas = 0;
+    for (const [itemId, cantidades] of itemQtyMap) {
+      const avg = cantidades.reduce((a, b) => a + b, 0) / cantidades.length;
+      const estimado = Math.round(avg);
+      unidadesEstimadas += estimado;
+
+      const info = itemInfo.get(itemId);
+      if (info) {
+        const existing = productoMap.get(itemId);
+        if (existing) {
+          existing.cantidades.push(estimado);
+          existing.clientCount.add(cliente.id);
+        } else {
+          productoMap.set(itemId, {
+            nombre: info.nombre,
+            unidad: info.unidad,
+            cantidades: [estimado],
+            clientCount: new Set([cliente.id]),
+          });
+        }
+      }
+    }
+
+    const proximoPedidoEstimado = nextDate > today
+      ? toDateString(nextDate)
+      : toDateString(addDays(today, frecuencia));
+
+    clientesConEstimacion.push({
+      clienteId: cliente.id,
+      nombre: cliente.nombre,
+      apellido: cliente.apellido,
+      frecuenciaPromedioDias: frecuencia,
+      proximoPedidoEstimado,
+      unidadesEstimadas,
+    });
+  }
+
+  // 3. Armar demanda por producto
+  const demandaPorProducto: DemandaProducto[] = [];
+  let demandaTotalUnidades = 0;
+
+  for (const [itemId, data] of productoMap) {
+    const totalEstimado = data.cantidades.reduce((a, b) => a + b, 0);
+    demandaTotalUnidades += totalEstimado;
+    demandaPorProducto.push({
+      itemId,
+      nombre: data.nombre,
+      unidad: data.unidad,
+      cantidadEstimada: totalEstimado,
+      clientesEstimados: data.clientCount.size,
+    });
+  }
+
+  demandaPorProducto.sort((a, b) => b.cantidadEstimada - a.cantidadEstimada);
+
+  // 4. Armar respuesta
+  return {
+    periodo,
+    fechaDesde: toDateString(today),
+    fechaHasta: toDateString(endDate),
+    totalClientes: clientesHistory.length,
+    clientesConEstimacion: clientesConEstimacion.length,
+    demandaPorProducto,
+    demandaTotalUnidades,
+    frecuenciaPromedioGlobal: DEFAULT_FRECUENCIA_DIAS,
+    ...(incluirClientes ? { clientes: clientesConEstimacion.sort((a, b) => b.unidadesEstimadas - a.unidadesEstimadas) } : {}),
   };
 }
