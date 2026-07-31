@@ -24,9 +24,13 @@ Primero, el uso de aplicaciones móviles se esta masificando por lo que es impor
 
 El otro punto importante que destaco de este proyecto es el uso de la inteligencia artificial. No conocía esta forma de incorporar la IA a los proyectos, asignandole skills para que el trabajo sea mas confiable, ni el uso de agentes especializados con las mismas. en mi caso, suavizó la curva de aprendizaje de aprender a desarrollar una app móvil desde cero.
 
-## Integrante 3 — <Nombre>
+## Integrante 3 — Manuela Chanquía
 
-<!-- Reflexión libre... -->
+Desde mi perspectiva, más enfocada en la lógica, el backend y la arquitectura del sistema, la experiencia de integrar inteligencia artificial fue un ejercicio de pura estrategia. Al trabajar con tecnologías más robustas y bases de datos, la IA demostró ser una herramienta increíble para agilizar tareas repetitivas, generar boilerplate y estructurar servicios o endpoints rápidamente.
+
+Sin embargo, noté que delegar el desarrollo a la IA requiere tener una visión sumamente clara y analítica de lo que se está construyendo. La herramienta puede escribir código funcional en segundos, pero carece del criterio humano para evaluar buenas prácticas, prevenir vulnerabilidades o asegurar la solidez de la arquitectura. Teniendo siempre presente la importancia de la ciberseguridad y el diseño bien estructurado, mi rol se transformó: pasé de escribir cada línea de código desde cero a ser la "estratega" detrás de la implementación. Mi tarea principal fue auditar y orquestar lo que la IA proponía, haciendo las cuentas necesarias para asegurarme de que cada pieza encajara de forma segura, escalable y eficiente en el panorama general.
+
+En conclusión, la IA es un aliado excelente que potencia nuestra productividad y acelera los tiempos, pero el diseño estructural, la protección de los datos y la toma de decisiones críticas siguen dependiendo pura y exclusivamente de nuestra capacidad analítica.
 
 ## Integrante 4 — <Nombre>
 
