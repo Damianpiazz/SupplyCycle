@@ -16,9 +16,13 @@ Ahí está la diferencia con programar solo, creo. A mano tardás más, pero ent
 
 Mi conclusión después de todo esto es que la IA no reemplaza al programador, lo hace más rápido. Pero el razonamiento, la revisión y la decisión final siempre fueron míos.
 
-## Integrante 2 — <Nombre>
+## Integrante 2 — Martina García Améndola
 
-<!-- Reflexión libre... -->
+El proyecto me resultó interesante y enriquecedor en dos aspectos principales, donde ambos puntos destacan la ventaja laboral que me dejó este proyecto.
+
+Primero, el uso de aplicaciones móviles se esta masificando por lo que es importante no quedarse atras y aprender a dominar herrmaientas como expo go para el desarrollo de las mismas.
+
+El otro punto importante que destaco de este proyecto es el uso de la inteligencia artificial. No conocía esta forma de incorporar la IA a los proyectos, asignandole skills para que el trabajo sea mas confiable, ni el uso de agentes especializados con las mismas. en mi caso, suavizó la curva de aprendizaje de aprender a desarrollar una app móvil desde cero.
 
 ## Integrante 3 — <Nombre>
 
