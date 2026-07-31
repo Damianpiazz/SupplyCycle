@@ -77,6 +77,78 @@
 </article>
 <% } %>
 
+<% if (typeof frecuencia !== 'undefined' && frecuencia && frecuencia.totalPedidosAnalizados > 0) { %>
+<article style="margin-bottom:1rem;">
+  <header>
+    <strong>Frecuencia de Pedidos</strong>
+  </header>
+  <table>
+    <tbody>
+      <% if (frecuencia.intervaloPromedioDias !== null) { %>
+        <tr>
+          <td style="font-weight:600;width:220px;">Intervalo promedio</td>
+          <td>cada <strong><%= frecuencia.intervaloPromedioDias %></strong> día<%= frecuencia.intervaloPromedioDias !== 1 ? 's' : '' %></td>
+        </tr>
+      <% } %>
+      <% if (frecuencia.diaSemanaFrecuente !== null) { %>
+        <tr>
+          <td style="font-weight:600;">Día más frecuente</td>
+          <td><strong><%= frecuencia.diaSemanaFrecuente.charAt(0) + frecuencia.diaSemanaFrecuente.slice(1).toLowerCase() %></strong></td>
+        </tr>
+      <% } %>
+      <tr>
+        <td style="font-weight:600;">Total de pedidos analizados</td>
+        <td><%= frecuencia.totalPedidosAnalizados %></td>
+      </tr>
+      <% if (frecuencia.primerPedido) { %>
+        <tr>
+          <td style="font-weight:600;">Primer pedido</td>
+          <td><%= new Date(frecuencia.primerPedido).toLocaleDateString() %></td>
+        </tr>
+      <% } %>
+      <% if (frecuencia.ultimoPedido) { %>
+        <tr>
+          <td style="font-weight:600;">Último pedido</td>
+          <td><%= new Date(frecuencia.ultimoPedido).toLocaleDateString() %></td>
+        </tr>
+      <% } %>
+    </tbody>
+  </table>
+
+  <% if (Object.keys(frecuencia.distribucionDias).length > 0) { %>
+    <hr>
+    <h6>Distribución por día</h6>
+    <table>
+      <thead>
+        <tr>
+          <th>Día</th>
+          <th>Pedidos</th>
+          <th style="width:60%;">Distribución</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% 
+          const entries = Object.entries(frecuencia.distribucionDias).sort((a, b) => b[1] - a[1]);
+          const maxVal = Math.max(...entries.map(e => e[1]));
+          const DIA_TRADUCIDO = { LUNES: 'Lunes', MARTES: 'Martes', MIERCOLES: 'Miércoles', JUEVES: 'Jueves', VIERNES: 'Viernes', SABADO: 'Sábado', DOMINGO: 'Domingo' };
+        %>
+        <% entries.forEach(([dia, count]) => { %>
+          <tr>
+            <td><%= DIA_TRADUCIDO[dia] || dia %></td>
+            <td><strong><%= count %></strong></td>
+            <td>
+              <div style="background:#eee;border-radius:4px;height:18px;overflow:hidden;">
+                <div style="background:<%= dia === frecuencia.diaSemanaFrecuente ? '#0066cc' : '#6ea8fe' %>;width:<%= (count / maxVal * 100).toFixed(0) %>%;height:100%;border-radius:4px;"></div>
+              </div>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  <% } %>
+</article>
+<% } %>
+
 <footer class="flex gap-2">
   <a href="/admin/clientes/<%= cliente.id %>/editar" role="button" class="primary">Editar</a>
   <% if (cliente.activo) { %>

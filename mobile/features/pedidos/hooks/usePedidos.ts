@@ -104,10 +104,12 @@ export function useConfirmarEntrega() {
       pedidoId,
       latitud,
       longitud,
+      devoluciones,
     }: {
       pedidoId: string;
       latitud?: number;
       longitud?: number;
+      devoluciones?: Array<{ itemId: string; cantidad: number }>;
     }) => {
       try {
         if (latitud === undefined || longitud === undefined) {
@@ -118,7 +120,7 @@ export function useConfirmarEntrega() {
             longitud = pos.coords.longitude;
           }
         }
-        return await confirmarEntregaRequest(pedidoId, { latitud, longitud });
+        return await confirmarEntregaRequest(pedidoId, { latitud, longitud, devoluciones });
       } catch (error) {
         // Solo encolar si es error de red; errores 4xx/5xx se relanzan
         if (isNetworkError(error)) {

@@ -9,6 +9,7 @@ import { useReparto, useIniciarReparto } from '@/features/repartos/hooks/useRepa
 import { useConfirmarEntrega, useCancelarPedido, useIniciarEntrega } from '@/features/pedidos/hooks/usePedidos';
 import ConfirmarAccionButtons from '@/features/pedidos/components/ConfirmarAccionButtons';
 import CancelModal from '@/features/pedidos/components/CancelModal';
+import ConfirmarEntregaModal from '@/features/repartos/components/ConfirmarEntregaModal';
 import { useToast } from '@/hooks/useToast';
 import { handleApiError } from '@/services/handleApiError';
 import { getEstadoColor, getEstadoLabel } from '@/features/pedidos/utils/estadoPedido';
@@ -447,6 +448,8 @@ export default function InicioScreen() {
 
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [pedidoACancelar, setPedidoACancelar] = useState<string | null>(null);
+  const [showConfirmarModal, setShowConfirmarModal] = useState(false);
+  const [pedidoParaModal, setPedidoParaModal] = useState<Pedido | null>(null);
 
   // ── Handlers ──────────────────────────────────────────────────────────────
 
@@ -474,15 +477,25 @@ export default function InicioScreen() {
   }, [iniciarEntrega, showToast]);
 
   const handleConfirmarEntrega = useCallback((pedidoId: string) => {
-    confirmarEntrega.mutate({ pedidoId }, {
-      onSuccess: () => {
-        showToast('Entrega confirmada', 'success');
-      },
-      onError: (err) => {
-        showToast(handleApiError(err).message, 'error');
-      },
-    });
-  }, [confirmarEntrega, showToast]);
+    const pedido = reparto?.pedidos?.find((p) => p.id === pedidoId);
+    if (!pedido) {
+      confirmarEntrega.mutate({ pedidoId }, {
+        onSuccess: () => showToast('Entrega confirmada', 'success'),
+        onError: (err) => showToast(handleApiError(err).message, 'error'),
+      });
+      return;
+    }
+    const tieneRetornables = pedido.items.some((i) => i.item.retornable);
+    if (tieneRetornables) {
+      setPedidoParaModal(pedido);
+      setShowConfirmarModal(true);
+    } else {
+      confirmarEntrega.mutate({ pedidoId }, {
+        onSuccess: () => showToast('Entrega confirmada', 'success'),
+        onError: (err) => showToast(handleApiError(err).message, 'error'),
+      });
+    }
+  }, [reparto, confirmarEntrega, showToast]);
 
   const handleCancelarEntrega = useCallback((pedidoId: string) => {
     setPedidoACancelar(pedidoId);
@@ -505,6 +518,45 @@ export default function InicioScreen() {
       }
     );
   }, [pedidoACancelar, cancelarPedido, showToast]);
+
+  // ── Modal de confirmación con devoluciones ──
+
+  const handleConfirmarConDevoluciones = useCallback(
+    (devoluciones: Array<{ itemId: string; cantidad: number }>) => {
+      if (!pedidoParaModal) return;
+      confirmarEntrega.mutate(
+        { pedidoId: pedidoParaModal.id, devoluciones },
+        {
+          onSuccess: () => {
+            setShowConfirmarModal(false);
+            setPedidoParaModal(null);
+            showToast('Entrega confirmada', 'success');
+          },
+          onError: (err) => {
+            showToast(handleApiError(err).message, 'error');
+          },
+        }
+      );
+    },
+    [pedidoParaModal, confirmarEntrega, showToast]
+  );
+
+  const handleSkipDevoluciones = useCallback(() => {
+    if (!pedidoParaModal) return;
+    confirmarEntrega.mutate(
+      { pedidoId: pedidoParaModal.id },
+      {
+        onSuccess: () => {
+          setShowConfirmarModal(false);
+          setPedidoParaModal(null);
+          showToast('Entrega confirmada', 'success');
+        },
+        onError: (err) => {
+          showToast(handleApiError(err).message, 'error');
+        },
+      }
+    );
+  }, [pedidoParaModal, confirmarEntrega, showToast]);
 
   // ── Loading ───────────────────────────────────────────────────────────────
 
@@ -572,6 +624,15 @@ export default function InicioScreen() {
           onClose={() => { setShowCancelModal(false); setPedidoACancelar(null); }}
           onConfirmar={handleConfirmarCancelacion}
         />
+        {pedidoParaModal && (
+          <ConfirmarEntregaModal
+            visible={showConfirmarModal}
+            pedido={pedidoParaModal}
+            onConfirm={handleConfirmarConDevoluciones}
+            onSkip={handleSkipDevoluciones}
+            onCancel={() => { setShowConfirmarModal(false); setPedidoParaModal(null); }}
+          />
+        )}
       </>
     );
   }
