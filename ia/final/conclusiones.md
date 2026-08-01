@@ -39,3 +39,9 @@ Antes de este proyecto ya conocía la inteligencia artificial, pero no tenía ta
 Al mismo tiempo, también encontré algunas limitaciones. Los modelos gratuitos suelen tener restricciones, como la cantidad de tokens disponibles, y muchas veces requieren un control mucho mayor sobre las respuestas que generan. En varias ocasiones fue necesario revisar, corregir y validar el código propuesto para asegurar que realmente cumpliera con lo que el proyecto necesitaba.
 
 En conclusión, este proyecto me dejó la idea de que la inteligencia artificial no es el futuro, sino el presente. Saber utilizarla de forma crítica y aprovechar sus capacidades se está convirtiendo en una habilidad cada vez más importante para cualquier desarrollador, ya que puede potenciar enormemente la productividad sin reemplazar el criterio y la responsabilidad de quien programa.
+
+## Integrante 5 — Damian Piazza
+
+Mi mayor aprendizaje en este proyecto fue entender que la IA es tan útil como las instrucciones que le damos. Al principio perdía tiempo intentando que la herramienta adivinara lo que necesitaba, obteniendo código genérico que requería mucha adaptación posterior.
+
+La verdadera ventaja de usar IA apareció cuando empecé a aplicar prompt engineering: aprendí a dividir problemas complejos en partes chicas, a ser ultra específico y a darle el contexto exacto. En resumen: hoy el desafío del desarrollador ya no es solo escribir código, sino saber comunicarle a la máquina exactamente qué se quiere lograr.
