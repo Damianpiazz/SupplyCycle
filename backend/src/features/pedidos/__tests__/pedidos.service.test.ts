@@ -124,9 +124,9 @@ describe('PedidosService', () => {
     service = await import('../service.js');
   });
 
-  // ─── TDD-0031: Crear Pedido ─────────────────────────────────────────────────
+  // ─── TDD-0025: Crear Pedido ─────────────────────────────────────────────────
 
-  describe('crearPedido (TDD-0031)', () => {
+  describe('crearPedido (TDD-0025)', () => {
     const validPayload = {
       clienteId: 'cli-001',
       items: [{ itemId: 'prod-001', cantidad: 2 }],
@@ -202,9 +202,9 @@ describe('PedidosService', () => {
     });
   });
 
-  // ─── TDD-0032: Obtener Pedido ───────────────────────────────────────────────
+  // ─── TDD-0026: Obtener Pedido ───────────────────────────────────────────────
 
-  describe('obtenerPedido (TDD-0032)', () => {
+  describe('obtenerPedido (TDD-0026)', () => {
     it('debe retornar el detalle completo del pedido', async () => {
       mockPrisma.pedido.findUnique.mockResolvedValue(buildMockPedido());
 
@@ -236,9 +236,9 @@ describe('PedidosService', () => {
     });
   });
 
-  // ─── TDD-0033: Listar Pedidos ───────────────────────────────────────────────
+  // ─── TDD-0027: Listar Pedidos ───────────────────────────────────────────────
 
-  describe('listarPedidos (TDD-0033)', () => {
+  describe('listarPedidos (TDD-0027)', () => {
     it('debe retornar lista paginada de pedidos', async () => {
       mockPrisma.pedido.findMany.mockResolvedValue([buildMockPedido()]);
       mockPrisma.pedido.count.mockResolvedValue(1);
@@ -279,9 +279,9 @@ describe('PedidosService', () => {
     });
   });
 
-  // ─── TDD-0034: Actualizar Estado ────────────────────────────────────────────
+  // ─── TDD-0028: Actualizar Estado ────────────────────────────────────────────
 
-  describe('actualizarEstado (TDD-0034)', () => {
+  describe('actualizarEstado (TDD-0028)', () => {
     it('debe permitir PENDIENTE → EN_RUTA', async () => {
       mockPrisma.pedido.findUnique.mockResolvedValue(buildMockPedido({ estado: 'PENDIENTE' }));
       mockPrisma.pedido.update.mockResolvedValue(buildMockPedido({ estado: 'EN_RUTA' }));
@@ -329,9 +329,9 @@ describe('PedidosService', () => {
     });
   });
 
-  // ─── TDD-0035: Cancelar Pedido ──────────────────────────────────────────────
+  // ─── TDD-0029: Cancelar Pedido ──────────────────────────────────────────────
 
-  describe('cancelarPedido (TDD-0035)', () => {
+  describe('cancelarPedido (TDD-0029)', () => {
     it('debe cancelar un pedido pendiente', async () => {
       mockPrisma.pedido.findUnique.mockResolvedValue(buildMockPedido({ estado: 'PENDIENTE' }));
       mockPrisma.pedido.update.mockResolvedValue(buildMockPedido({ estado: 'CANCELADO' }));
@@ -355,9 +355,9 @@ describe('PedidosService', () => {
     });
   });
 
-  // ─── TDD-0036: Eliminar Pedido (Soft Delete) ────────────────────────────────
+  // ─── TDD-0030: Eliminar Pedido (Soft Delete) ────────────────────────────────
 
-  describe('eliminarPedido (TDD-0036)', () => {
+  describe('eliminarPedido (TDD-0030)', () => {
     it('debe eliminar (soft delete) un pedido pendiente', async () => {
       const deletedAt = new Date();
       mockPrisma.pedido.findUnique.mockResolvedValue(buildMockPedido({ estado: 'PENDIENTE' }));
@@ -395,9 +395,9 @@ describe('PedidosService', () => {
     });
   });
 
-  // ─── TDD-0037: Agregar Item ─────────────────────────────────────────────────
+  // ─── TDD-0031: Agregar Item ─────────────────────────────────────────────────
 
-  describe('agregarItem (TDD-0037)', () => {
+  describe('agregarItem (TDD-0031)', () => {
     it('debe agregar un item a un pedido pendiente', async () => {
       mockPrisma.pedido.findUnique.mockResolvedValue(buildMockPedido({ estado: 'PENDIENTE' }));
       mockPrisma.item.findUnique.mockResolvedValue({
@@ -452,9 +452,9 @@ describe('PedidosService', () => {
     });
   });
 
-  // ─── TDD-0038: Actualizar Cantidad de Item ──────────────────────────────────
+  // ─── TDD-0032: Actualizar Cantidad de Item ──────────────────────────────────
 
-  describe('actualizarCantidadItem (TDD-0038)', () => {
+  describe('actualizarCantidadItem (TDD-0032)', () => {
     it('debe actualizar la cantidad de un item', async () => {
       mockPrisma.pedido.findUnique.mockResolvedValue(buildMockPedido({ estado: 'PENDIENTE' }));
       mockPrisma.pedidoItem.findFirst.mockResolvedValue(
@@ -483,9 +483,9 @@ describe('PedidosService', () => {
     });
   });
 
-  // ─── TDD-0039: Quitar Item ──────────────────────────────────────────────────
+  // ─── TDD-0033: Quitar Item ──────────────────────────────────────────────────
 
-  describe('quitarItem (TDD-0039)', () => {
+  describe('quitarItem (TDD-0033)', () => {
     it('debe quitar un item del pedido', async () => {
       mockPrisma.pedido.findUnique.mockResolvedValue(buildMockPedido({ estado: 'PENDIENTE' }));
       mockPrisma.pedidoItem.findFirst.mockResolvedValue(
