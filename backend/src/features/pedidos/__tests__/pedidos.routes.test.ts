@@ -183,3 +183,47 @@ describe('GET /api/v1/pedidos — BOT read isolation (SPEC-01 C3)', () => {
     expect(mockPrisma.pedido.findMany).toHaveBeenCalled();
   });
 });
+
+// ─── Tests: PATCH /api/v1/pedidos/:id/cancelar-cliente — BOT write isolation (SPEC-01 D1) ─
+
+describe('PATCH /api/v1/pedidos/:id/cancelar-cliente — BOT write isolation (SPEC-01 D1)', () => {
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('must return 400 for BOT without clienteId', async () => {
+    const res = await request(app)
+      .patch('/api/v1/pedidos/ped-001/cancelar-cliente')
+      .set('x-api-key', 'test-bot-key')
+      .send({ motivo: 'CANCELACION_CLIENTE' })
+      .expect(400);
+
+    expect(res.body.error.code).toBe('VALIDATION_ERROR');
+    expect(res.body.error.message).toBe('clienteId es requerido para el rol BOT');
+    expect(mockPrisma.pedido.findUnique).not.toHaveBeenCalled();
+    expect(mockPrisma.pedido.update).not.toHaveBeenCalled();
+  });
+
+  it('must return 404 and leave the pedido unchanged when BOT cancels another client pedido', async () => {
+    mockPrisma.pedido.findUnique.mockResolvedValue({
+      id: 'ped-001',
+      domicilio: { clienteId: 'cli-001' },
+    });
+
+    const res = await request(app)
+      .patch('/api/v1/pedidos/ped-001/cancelar-cliente')
+      .set('x-api-key', 'test-bot-key')
+      .send({
+        motivo: 'CANCELACION_CLIENTE',
+        clienteId: '11111111-1111-4111-8111-111111111111',
+      })
+      .expect(404);
+
+    expect(res.body.error.message).toBe('Pedido no encontrado');
+    expect(mockPrisma.pedido.findUnique).toHaveBeenCalledWith({
+      where: { id: 'ped-001' },
+      include: { domicilio: { select: { clienteId: true } } },
+    });
+    expect(mockPrisma.pedido.update).not.toHaveBeenCalled();
+  });
+});
