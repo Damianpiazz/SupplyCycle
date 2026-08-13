@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeAll, afterEach } from 'vitest';
 import request from 'supertest';
+import bcrypt from 'bcrypt';
 import type { DestinationStream } from 'pino';
 
 // ─── Mocks (hoisted by vitest; factories run on first import of each module) ─
@@ -104,5 +105,37 @@ describe('HTTP logging — credential redaction (SPEC-02 AC1/AC2)', () => {
     expect(joined).not.toContain(API_KEY);
     expect(joined).not.toContain(SESSION_VALUE);
     expect(joined).toContain('[REDACTED]');
+  });
+});
+
+// ─── SPEC-10 C5: admin session cookie hardening ────────────────────────────────
+
+describe('Admin session cookie (SPEC-10 C5)', () => {
+  it('sets a SameSite=Lax httpOnly session cookie on admin login', async () => {
+    const hash = bcrypt.hashSync('password123', 10);
+    mockPrisma.usuario.findUnique.mockResolvedValue({
+      id: 'usr-admin-1',
+      email: 'admin@supplycycle.com',
+      nombre: 'Admin',
+      apellido: 'Sistema',
+      rol: 'ADMIN',
+      activo: true,
+      password: hash,
+    });
+
+    const res = await request(app)
+      .post('/admin/login')
+      .type('form')
+      .send({ email: 'admin@supplycycle.com', password: 'password123' });
+
+    expect(res.status).toBe(302);
+    expect(res.headers.location).toBe('/admin/pedidos');
+
+    const setCookie = res.headers['set-cookie'] as string[] | undefined;
+    expect(setCookie).toBeDefined();
+    const joinedCookie = setCookie!.join(';');
+    expect(joinedCookie).toContain('connect.sid=');
+    expect(joinedCookie).toContain('SameSite=Lax');
+    expect(joinedCookie).toContain('HttpOnly');
   });
 });

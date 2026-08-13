@@ -1,7 +1,20 @@
 import 'dotenv/config';
 
+const nodeEnv = process.env['NODE_ENV'] ?? 'development';
+
+// Production fail-fast (SPEC-10 C5): never boot with placeholder secrets in prod.
+// dotenv never overrides already-set keys, so these checks run after .env loads.
+if (nodeEnv === 'production') {
+  if (!process.env['JWT_SECRET']) {
+    throw new Error('JWT_SECRET is required');
+  }
+  if (!process.env['SESSION_SECRET']) {
+    throw new Error('SESSION_SECRET is required');
+  }
+}
+
 export const env = {
-  nodeEnv: process.env['NODE_ENV'] ?? 'development',
+  nodeEnv,
   port: parseInt(process.env['PORT'] ?? '3000', 10),
   databaseUrl: process.env['DATABASE_URL'] ?? '',
   jwtSecret: process.env['JWT_SECRET'] ?? 'supplycycle-dev-secret',
