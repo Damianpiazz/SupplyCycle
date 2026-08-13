@@ -28,6 +28,8 @@ router.get('/:id', apiKeyAuth, authenticate, obtenerController);
 // Rutas admin-only or bot (via api key)
 router.post('/', apiKeyAuth, authenticate, requireRole('ADMIN', 'BOT'), crearController);
 router.patch('/:id', apiKeyAuth, authenticate, requireRole('ADMIN', 'BOT'), actualizarController);
-router.delete('/:id', authenticate, requireRole('ADMIN'), eliminarController);
+// DELETE (SPEC-07): solo ADMIN — apiKeyAuth pasa con/sin key; authenticate valida
+// JWT; requireRole cierra para REPARTIDOR/BOT (key-only → BOT → 403).
+router.delete('/:id', apiKeyAuth, authenticate, requireRole('ADMIN'), eliminarController);
 
 export default router;

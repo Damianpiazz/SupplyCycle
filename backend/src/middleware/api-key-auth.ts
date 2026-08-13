@@ -6,6 +6,13 @@ export function apiKeyAuth(
   _res: Response,
   next: NextFunction
 ): void {
+  // D3 (SPEC-07): Bearer JWT takes precedence over the BOT api key. Checked
+  // BEFORE parsing the key so a key+JWT hybrid request is never downgraded to
+  // BOT (which would deny ADMIN routes). Key-only requests keep flowing here.
+  if (req.headers.authorization?.startsWith('Bearer ')) {
+    return next();
+  }
+
   const apiKey = req.headers['x-api-key'] as string | undefined;
 
   if (!apiKey) {
