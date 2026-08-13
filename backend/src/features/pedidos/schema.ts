@@ -52,6 +52,8 @@ export const confirmarPedidoSchema = z.object({
 });
 
 export const cancelarClienteSchema = z.object({
+  // Optional for ADMIN; forced by the controller for the BOT role (D1).
+  clienteId: z.string().uuid().optional(),
   motivo: z.enum([
     'YA_NO_LO_NECESITA',
     'DIRECCION_INCORRECTA',

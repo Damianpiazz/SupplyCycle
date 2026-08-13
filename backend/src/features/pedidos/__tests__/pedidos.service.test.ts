@@ -393,6 +393,65 @@ describe('PedidosService', () => {
     });
   });
 
+  // ─── TDD-0059: Cancelar Pedido Cliente (ownership BOT) ─────────────────────
+
+  describe('cancelarPedidoCliente (TDD-0059)', () => {
+    it('must reject BOT cancel of another client pedido with 404, pedido unchanged (AC3)', async () => {
+      mockPrisma.pedido.findUnique.mockResolvedValue(buildMockPedido({ estado: 'PENDIENTE' }));
+
+      await expect(
+        service.cancelarPedidoCliente('ped-001', 'CANCELACION_CLIENTE', 'cli-999')
+      ).rejects.toThrow('Pedido no encontrado');
+      expect(mockPrisma.pedido.update).not.toHaveBeenCalled();
+    });
+
+    it('must return the same 404 for unknown pedido (no existence leak) (AC3)', async () => {
+      mockPrisma.pedido.findUnique.mockResolvedValue(null);
+
+      await expect(
+        service.cancelarPedidoCliente('ped-999', 'CANCELACION_CLIENTE', 'cli-001')
+      ).rejects.toThrow('Pedido no encontrado');
+      expect(mockPrisma.pedido.update).not.toHaveBeenCalled();
+    });
+
+    it('must let ADMIN cancel another client pedido (bypass, no clienteId) (AC4)', async () => {
+      mockPrisma.pedido.findUnique.mockResolvedValue(buildMockPedido({ estado: 'PENDIENTE' }));
+      mockPrisma.pedido.update.mockResolvedValue(
+        buildMockPedido({ estado: 'CANCELADO', motivoFalla: 'CANCELACION_CLIENTE' })
+      );
+
+      const result = await service.cancelarPedidoCliente('ped-001', 'CANCELACION_CLIENTE');
+
+      expect(result.estado).toBe('CANCELADO');
+      expect(mockPrisma.pedido.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 'ped-001' },
+          data: { estado: 'CANCELADO', motivoFalla: 'CANCELACION_CLIENTE' },
+        })
+      );
+    });
+
+    it('must let BOT cancel own client pending pedido persisting motivoFalla (AC5)', async () => {
+      mockPrisma.pedido.findUnique.mockResolvedValue(buildMockPedido({ estado: 'PENDIENTE' }));
+      mockPrisma.pedido.update.mockResolvedValue(
+        buildMockPedido({ estado: 'CANCELADO', motivoFalla: 'YA_NO_LO_NECESITA' })
+      );
+
+      const result = await service.cancelarPedidoCliente('ped-001', 'YA_NO_LO_NECESITA', 'cli-001');
+
+      expect(result.estado).toBe('CANCELADO');
+      expect(result.motivoFalla).toBe('YA_NO_LO_NECESITA');
+    });
+
+    it('must keep rejecting non-PENDIENTE states (existing behavior preserved)', async () => {
+      mockPrisma.pedido.findUnique.mockResolvedValue(buildMockPedido({ estado: 'ENTREGADO' }));
+
+      await expect(
+        service.cancelarPedidoCliente('ped-001', 'CANCELACION_CLIENTE', 'cli-001')
+      ).rejects.toThrow('Solo se pueden cancelar pedidos en estado pendiente');
+    });
+  });
+
   // ─── TDD-0030: Eliminar Pedido (Soft Delete) ────────────────────────────────
 
   describe('eliminarPedido (TDD-0030)', () => {

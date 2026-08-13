@@ -216,8 +216,22 @@ export async function cancelarClienteController(
 ): Promise<void> {
   try {
     const id = req.params['id'] as string;
-    const { motivo } = cancelarClienteSchema.parse(req.body);
-    const result = await pedidosService.cancelarPedidoCliente(id, motivo);
+    const { motivo, clienteId } = cancelarClienteSchema.parse(req.body);
+
+    // Write-side BOT isolation (D1): the bot must scope cancellation to its
+    // own client. ADMIN calls omit clienteId and bypass ownership.
+    if (req.user?.rol === 'BOT' && !clienteId) {
+      res.status(400).json({
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'clienteId es requerido para el rol BOT',
+          timestamp: new Date().toISOString(),
+        },
+      });
+      return;
+    }
+
+    const result = await pedidosService.cancelarPedidoCliente(id, motivo, clienteId);
     sendSuccess(res, result);
   } catch (err) {
     next(err);

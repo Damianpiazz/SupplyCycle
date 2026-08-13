@@ -581,10 +581,24 @@ export async function actualizarEstado(id: string, nuevoEstado: string) {
 }
 
 /** PATCH /pedidos/:id/cancelar-cliente — PENDIENTE → CANCELADO (cliente/bot, no auto-completa reparto) */
-export async function cancelarPedidoCliente(id: string, motivo: string) {
-  const pedido = await prisma.pedido.findUnique({ where: { id } });
+export async function cancelarPedidoCliente(
+  id: string,
+  motivo: string,
+  clienteId?: string
+) {
+  const pedido = await prisma.pedido.findUnique({
+    where: { id },
+    include: { domicilio: { select: { clienteId: true } } },
+  });
 
   if (!pedido) {
+    throw ApiError.notFound('Pedido no encontrado');
+  }
+
+  // Ownership (D1): when the bot passes clienteId, the pedido must belong to
+  // that client. ADMIN calls (no clienteId) bypass ownership. Same 404 as a
+  // missing pedido to avoid leaking existence across clients.
+  if (clienteId && pedido.domicilio.clienteId !== clienteId) {
     throw ApiError.notFound('Pedido no encontrado');
   }
 
