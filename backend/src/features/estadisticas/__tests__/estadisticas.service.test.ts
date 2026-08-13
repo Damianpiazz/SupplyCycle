@@ -474,4 +474,52 @@ describe('estimarDemanda', () => {
     expect(clientes[1]).toMatchObject({ clienteId: 'cliente-2', frecuenciaPromedioDias: 7 });
     expect(result.frecuenciaPromedioGlobal).toBe(8.5); // (10 + 7) / 2
   });
+
+  it('excluye pedidos CANCELADO de lastDate, frecuencia y demanda estimada (F3 gate-review)', async () => {
+    // F3 gate-review: fixture con un pedido CANCELADO como el MÁS RECIENTE.
+    // El servicio filtra CANCELADO ANTES de estimar (service.ts:269-271): el
+    // pedido cancelado no ancla la fecha de próximo pedido, no participa del
+    // intervalo de frecuencia ni aporta items a la demanda.
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-08-13T12:00:00Z'));
+    try {
+      mockPrisma.cliente.findMany.mockResolvedValue([
+        {
+          id: 'cliente-1',
+          nombre: 'Juan',
+          apellido: 'Perez',
+          domicilios: [
+            {
+              pedidos: [
+                // 2 completados: 2026-07-14 → 2026-08-03 = intervalo 20 días
+                { fecha: new Date('2026-07-14T12:00:00Z'), estado: 'ENTREGADO', items: [{ itemId: 'item-1', cantidad: 2 }] },
+                { fecha: new Date('2026-08-03T12:00:00Z'), estado: 'ENTREGADO', items: [{ itemId: 'item-1', cantidad: 3 }] },
+                // CANCELADO más reciente: no debe anclar lastDate ni sumar items
+                { fecha: new Date('2026-08-12T12:00:00Z'), estado: 'CANCELADO', items: [{ itemId: 'item-1', cantidad: 99 }] },
+              ],
+            },
+          ],
+        },
+      ]);
+
+      mockPrisma.item.findMany.mockResolvedValue([
+        { id: 'item-1', nombre: 'Bidón 12L', unidad: 'unidad' },
+      ]);
+
+      const result = await import('../service.js').then((m) => m.estimarDemanda(30, true));
+
+      // CANCELADO excluido de la frecuencia: 2 completados con intervalo 20
+      expect(result.clientes).toHaveLength(1);
+      expect(result.clientes![0]).toMatchObject({
+        clienteId: 'cliente-1',
+        frecuenciaPromedioDias: 20,
+        // avg(2, 3) = 2.5 → 3; los 99 del CANCELADO no cuentan
+        unidadesEstimadas: 3,
+      });
+      expect(result.frecuenciaPromedioGlobal).toBe(20);
+      expect(result.demandaPorProducto[0]?.cantidadEstimada).toBe(3);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });
