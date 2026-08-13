@@ -119,10 +119,10 @@ async function confirmacionHandler(
 ) {
   const respuesta = ctx.body.trim().toUpperCase()
   if (respuesta === 'SI') {
-    const st = await state.get() as { pedidoId: string; pedidoNumero?: string; motivo: string; clienteNombre?: string }
+    const st = await state.get() as { pedidoId: string; pedidoNumero?: string; motivo: string; clienteId?: string; clienteNombre?: string }
 
     try {
-      await pedidoService.cancelar(st.pedidoId, st.motivo)
+      await pedidoService.cancelar(st.pedidoId, st.motivo, st.clienteId)
       await flowDynamic(
         `✅ *Pedido cancelado con éxito!*\n\n` +
         `Pedido: *${st.pedidoNumero}*\n\n` +
@@ -275,11 +275,11 @@ describe('CancelarFlow', () => {
     expect(mockFlowDynamic).toHaveBeenCalledWith('Faltan datos. Escribí *cancelar* para empezar de nuevo.')
   })
 
-  it('Confirmation: SI calls pedidoService.cancelar and shows success', async () => {
+  it('Confirmation: SI calls pedidoService.cancelar with clienteId and shows success', async () => {
     const mockPedidoService = { cancelar: vi.fn().mockResolvedValue({ id: 'ped-1', estado: 'CANCELADO' }), getErrorMessage: vi.fn() }
     const mockState = {
       update: vi.fn(),
-      get: vi.fn().mockResolvedValue({ pedidoId: 'ped-1', pedidoNumero: 'PEDIDO #1', motivo: 'YA_NO_LO_NECESITA', clienteNombre: 'Juan' }),
+      get: vi.fn().mockResolvedValue({ pedidoId: 'ped-1', pedidoNumero: 'PEDIDO #1', motivo: 'YA_NO_LO_NECESITA', clienteId: 'cli-1', clienteNombre: 'Juan' }),
     }
     const mockFlowDynamic = vi.fn()
     const mockFallBack = vi.fn()
@@ -290,7 +290,7 @@ describe('CancelarFlow', () => {
       mockPedidoService,
     )
 
-    expect(mockPedidoService.cancelar).toHaveBeenCalledWith('ped-1', 'YA_NO_LO_NECESITA')
+    expect(mockPedidoService.cancelar).toHaveBeenCalledWith('ped-1', 'YA_NO_LO_NECESITA', 'cli-1')
     expect(mockFlowDynamic).toHaveBeenCalledWith(expect.stringContaining('cancelado con éxito'))
   })
 

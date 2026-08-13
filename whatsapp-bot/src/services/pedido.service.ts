@@ -62,8 +62,11 @@ class PedidoService {
     return res.data.data
   }
 
-  async cancelar(id: string, motivo: string): Promise<Pedido> {
-    const res = await api.patch<ApiResponse<Pedido>>(`/pedidos/${id}/cancelar-cliente`, { motivo })
+  async cancelar(id: string, motivo: string, clienteId?: string): Promise<Pedido> {
+    const res = await api.patch<ApiResponse<Pedido>>(`/pedidos/${id}/cancelar-cliente`, {
+      motivo,
+      ...(clienteId !== undefined ? { clienteId } : {}),
+    })
     return res.data.data
   }
 

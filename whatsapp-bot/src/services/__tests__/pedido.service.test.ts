@@ -90,6 +90,17 @@ describe('PedidoService', () => {
     expect(result.estado).toBe('CANCELADO')
   })
 
+  it('cancelar sends clienteId when provided (lockstep)', async () => {
+    const api = await getMockedApi()
+    api.patch.mockResolvedValueOnce({ data: { data: { ...mockPedido, estado: 'CANCELADO' } } })
+
+    const { pedidoService } = await import('../pedido.service.js')
+    const result = await pedidoService.cancelar('ped-1', 'YA_NO_LO_NECESITA', 'cli-1')
+
+    expect(api.patch).toHaveBeenCalledWith('/pedidos/ped-1/cancelar-cliente', { motivo: 'YA_NO_LO_NECESITA', clienteId: 'cli-1' })
+    expect(result.estado).toBe('CANCELADO')
+  })
+
   it('getErrorMessage returns API error message', async () => {
     const { pedidoService } = await import('../pedido.service.js')
     const error = { isAxiosError: true, response: { data: { error: { code: 'NOT_FOUND', message: 'Pedido no encontrado', timestamp: '2024-01-01T00:00:00Z' } } } }

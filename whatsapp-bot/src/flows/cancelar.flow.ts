@@ -111,10 +111,10 @@ export const cancelarFlow = addKeyword<Provider, Database>('cancelar')
     async (ctx, { state, flowDynamic, fallBack }) => {
       const respuesta = ctx.body.trim().toUpperCase()
       if (respuesta === 'SI') {
-        const st = await state.get() as { pedidoId: string; pedidoNumero?: string; motivo: string; clienteNombre?: string }
+        const st = await state.get() as { pedidoId: string; pedidoNumero?: string; motivo: string; clienteId?: string; clienteNombre?: string }
 
         try {
-          await pedidoService.cancelar(st.pedidoId, st.motivo)
+          await pedidoService.cancelar(st.pedidoId, st.motivo, st.clienteId)
           await flowDynamic(
             `✅ *Pedido cancelado con éxito!*\n\n` +
             `Pedido: *${st.pedidoNumero}*\n\n` +
