@@ -7,6 +7,7 @@
 Automatiza la logística de reparto: pedidos, rutas y comunicación con el cliente desde una sola solución.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+![Status](https://img.shields.io/badge/Estado-MVP-ff69b4.svg)
 
 ![Node.js](https://img.shields.io/badge/Node.js-339933?logo=nodedotjs&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)
@@ -23,7 +24,7 @@ Automatiza la logística de reparto: pedidos, rutas y comunicación con el clien
 
 ## ✨ ¿Qué es?
 
-SupplyCycle es un monorepo que integra tres frentes de la operación de reparto:
+SupplyCycle es un **MVP** desarrollado para la materia **Desarrollo de Aplicaciones Móviles** de la **Universidad Nacional de La Plata**. Integra tres frentes de la operación de reparto de envases de agua:
 
 | Frente | Descripción |
 |---|---|
