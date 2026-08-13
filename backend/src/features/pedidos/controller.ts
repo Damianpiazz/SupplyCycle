@@ -58,10 +58,26 @@ export async function listarController(
     const clienteNombre = typeof req.query.clienteNombre === 'string' ? req.query.clienteNombre : undefined;
     const fecha = typeof req.query.fecha === 'string' ? req.query.fecha : undefined;
     const estado = typeof req.query.estado === 'string' ? req.query.estado : undefined;
+    const clienteId = typeof req.query.clienteId === 'string' ? req.query.clienteId : undefined;
     const page = req.query.page ? parseInt(req.query.page as string, 10) : undefined;
     const pageSize = req.query.pageSize ? parseInt(req.query.pageSize as string, 10) : undefined;
+
+    // Read-side BOT isolation (D1): the bot must scope its listing to one
+    // client. ADMIN/REPARTIDOR listings are unaffected (filter optional).
+    if (req.user?.rol === 'BOT' && !clienteId) {
+      res.status(400).json({
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'clienteId es requerido para el rol BOT',
+          timestamp: new Date().toISOString(),
+        },
+      });
+      return;
+    }
+
     const { data, total } = await pedidosService.listarPedidos({
       clienteNombre,
+      clienteId,
       fecha,
       estado,
       page,
