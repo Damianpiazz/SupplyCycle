@@ -7,6 +7,7 @@ import {
   confirmarController,
   cancelarRepartidorController,
   cancelarClienteController,
+  cancelarController,
   actualizarEstadoController,
   crearController,
   agregarItemController,
@@ -41,5 +42,8 @@ router.patch('/:id/cancelar', authenticate, requireRole('REPARTIDOR'), cancelarR
 
 // ─── Cancelación por cliente — Admin o bot ────────────────────────────────────
 router.patch('/:id/cancelar-cliente', apiKeyAuth, authenticate, requireRole('ADMIN', 'BOT'), cancelarClienteController);
+
+// ─── Cancelación por admin — Admin (SPEC-05) ──────────────────────────────────
+router.post('/:id/cancelar', authenticate, requireRole('ADMIN'), cancelarController);
 
 export default router;

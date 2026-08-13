@@ -254,6 +254,21 @@ export async function cancelarClienteController(
   }
 }
 
+/** POST /pedidos/:id/cancelar — Admin: PENDIENTE → CANCELADO (SPEC-05, no auto-completa reparto) */
+export async function cancelarController(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const id = req.params['id'] as string;
+    const result = await pedidosService.cancelarPedido(id);
+    sendSuccess(res, result);
+  } catch (err) {
+    next(err);
+  }
+}
+
 export async function crearController(
   req: Request,
   res: Response,

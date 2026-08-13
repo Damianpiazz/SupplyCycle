@@ -227,3 +227,79 @@ describe('PATCH /api/v1/pedidos/:id/cancelar-cliente — BOT write isolation (SP
     expect(mockPrisma.pedido.update).not.toHaveBeenCalled();
   });
 });
+
+// ─── Tests: POST /api/v1/pedidos/:id/cancelar — admin cancel (SPEC-05 TDD-0063) ─
+
+describe('POST /api/v1/pedidos/:id/cancelar — admin cancel (SPEC-05 TDD-0063)', () => {
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('must return 200 with estado CANCELADO when ADMIN cancels a PENDIENTE pedido (AC1)', async () => {
+    mockPrisma.pedido.findUnique.mockResolvedValue(buildMockPedido({ estado: 'PENDIENTE' }));
+    mockPrisma.pedido.update.mockResolvedValue(
+      buildMockPedido({ estado: 'CANCELADO', actualizadoEn: new Date('2026-05-22T11:00:00Z') })
+    );
+
+    const res = await request(app)
+      .post('/api/v1/pedidos/ped-001/cancelar')
+      .set('Authorization', `Bearer ${makeToken('ADMIN')}`)
+      .expect(200);
+
+    expect(mockPrisma.pedido.findUnique).toHaveBeenCalledWith({ where: { id: 'ped-001' } });
+    expect(mockPrisma.pedido.update).toHaveBeenCalledWith({
+      where: { id: 'ped-001' },
+      data: { estado: 'CANCELADO' },
+    });
+    expect(res.body.data.id).toBe('ped-001');
+    expect(res.body.data.estado).toBe('CANCELADO');
+    expect(res.body.data.actualizadoEn).toBeDefined();
+    // AC4: mirrors cancelarPedido semantics — reparto is NOT auto-completed.
+    expect(mockPrisma.reparto.update).not.toHaveBeenCalled();
+  });
+
+  it('must return 404 for an unknown pedido (AC2)', async () => {
+    mockPrisma.pedido.findUnique.mockResolvedValue(null);
+
+    const res = await request(app)
+      .post('/api/v1/pedidos/ped-999/cancelar')
+      .set('Authorization', `Bearer ${makeToken('ADMIN')}`)
+      .expect(404);
+
+    expect(res.body.error.message).toBe('Pedido no encontrado');
+    expect(mockPrisma.pedido.update).not.toHaveBeenCalled();
+  });
+
+  it('must return 409 when the pedido is not PENDIENTE (AC2)', async () => {
+    mockPrisma.pedido.findUnique.mockResolvedValue(buildMockPedido({ estado: 'ENTREGADO' }));
+
+    const res = await request(app)
+      .post('/api/v1/pedidos/ped-001/cancelar')
+      .set('Authorization', `Bearer ${makeToken('ADMIN')}`)
+      .expect(409);
+
+    expect(res.body.error.message).toBe('Solo se pueden cancelar pedidos en estado pendiente');
+    expect(mockPrisma.pedido.update).not.toHaveBeenCalled();
+  });
+
+  it('must return 403 when a non-ADMIN (REPARTIDOR) tries to cancel (AC3)', async () => {
+    const res = await request(app)
+      .post('/api/v1/pedidos/ped-001/cancelar')
+      .set('Authorization', `Bearer ${makeToken('REPARTIDOR')}`)
+      .expect(403);
+
+    expect(res.body.error.code).toBe('FORBIDDEN');
+    expect(mockPrisma.pedido.findUnique).not.toHaveBeenCalled();
+    expect(mockPrisma.pedido.update).not.toHaveBeenCalled();
+  });
+
+  it('must return 401 when unauthenticated (AC3)', async () => {
+    const res = await request(app)
+      .post('/api/v1/pedidos/ped-001/cancelar')
+      .expect(401);
+
+    expect(res.body.error.code).toBe('UNAUTHORIZED');
+    expect(mockPrisma.pedido.findUnique).not.toHaveBeenCalled();
+    expect(mockPrisma.pedido.update).not.toHaveBeenCalled();
+  });
+});
