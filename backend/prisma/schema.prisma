@@ -111,6 +111,8 @@ model PedidoItem {
   precioUnitario Float?
   pedido        Pedido @relation(fields: [pedidoId], references: [id])
   item          Item   @relation(fields: [itemId], references: [id])
+
+  @@unique([pedidoId, itemId])
 }
 
 model Reparto {
