@@ -1,12 +1,17 @@
 /**
  * Dedupe script for PedidoItem (SPEC-06 / TDD-0064, D7).
  *
- * Counts (pedidoId, itemId) groups with more than one row, deletes the
- * duplicates keeping the smallest id per group, and reports the result.
- * Must run BEFORE `npx prisma migrate dev --name add_pedido_item_unique`.
+ * Counts (pedidoId, itemId) groups with more than one row and deletes the
+ * duplicates keeping the smallest id per group. Must run BEFORE
+ * `npx prisma migrate dev --name add_pedido_item_unique`.
+ *
+ * Destructive by nature — writes require an explicit --apply flag (gate fix E,
+ * mirrors scripts/limpiar-repartos-colgados.ts). Without it the script only
+ * prints the plan and the count of rows it WOULD delete.
  *
  * Usage:
- *   npx tsx scripts/dedupe-pedido-item.ts
+ *   npx tsx scripts/dedupe-pedido-item.ts           # dry-run: plan only, no writes
+ *   npx tsx scripts/dedupe-pedido-item.ts --apply   # execute the deletes
  */
 
 import 'dotenv/config';
@@ -17,8 +22,19 @@ import {
   planDedupePedidoItem,
 } from '../src/features/pedidos/dedupe.js';
 
-const connectionString = `${process.env['DATABASE_URL']}`;
-const adapter = new PrismaPg({ connectionString });
+const args = process.argv.slice(2);
+const isApply = args.includes('--apply');
+
+// Fail loudly instead of silently turning `undefined` into the string "undefined".
+const databaseUrl = process.env['DATABASE_URL'];
+if (!databaseUrl) {
+  console.error(
+    'Error: DATABASE_URL no está definida. Configúrala en .env o expórtala antes de ejecutar el script.'
+  );
+  process.exit(1);
+}
+
+const adapter = new PrismaPg({ connectionString: databaseUrl });
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
@@ -38,6 +54,14 @@ async function main() {
   }
 
   console.log(`⚠️  ${plan.duplicateGroups} grupo(s) duplicado(s) con ${plan.deleteIds.length} fila(s) a borrar (keep-min-id).`);
+
+  if (!isApply) {
+    console.log(
+      `ℹ️  Modo dry-run: no se borra nada. Vuelve a ejecutar con --apply para borrar ${plan.deleteIds.length} fila(s).`
+    );
+    await prisma.$disconnect();
+    return;
+  }
 
   // Single transaction: delete then count the affected rows
   const deleted = await prisma.$transaction(async (tx) => {
