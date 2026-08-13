@@ -277,6 +277,44 @@ describe('PedidosService', () => {
         })
       );
     });
+
+    it('must filter by clienteId when passed (AC1)', async () => {
+      mockPrisma.pedido.findMany.mockResolvedValue([buildMockPedido()]);
+      mockPrisma.pedido.count.mockResolvedValue(1);
+
+      const result = await service.listarPedidos({ clienteId: 'cli-001' });
+
+      expect(mockPrisma.pedido.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ domicilio: { clienteId: 'cli-001' } }),
+        })
+      );
+      expect(mockPrisma.pedido.count).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ domicilio: { clienteId: 'cli-001' } }),
+        })
+      );
+      expect(result.total).toBe(1);
+      expect(result.data).toHaveLength(1);
+    });
+
+    it('must combine clienteId with the OR name filter (AC2)', async () => {
+      mockPrisma.pedido.findMany.mockResolvedValue([]);
+      mockPrisma.pedido.count.mockResolvedValue(0);
+
+      await service.listarPedidos({ clienteId: 'cli-001', clienteNombre: 'Juan' });
+
+      const where = mockPrisma.pedido.findMany.mock.calls[0]![0]!.where;
+      expect(where).toEqual(
+        expect.objectContaining({
+          domicilio: { clienteId: 'cli-001' },
+          OR: [
+            { domicilio: { cliente: { nombre: { contains: 'Juan', mode: 'insensitive' } } } },
+            { domicilio: { cliente: { apellido: { contains: 'Juan', mode: 'insensitive' } } } },
+          ],
+        })
+      );
+    });
   });
 
   // ─── TDD-0028: Actualizar Estado ────────────────────────────────────────────

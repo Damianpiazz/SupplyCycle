@@ -191,9 +191,10 @@ export async function obtenerPedido(id: string) {
   return formatPedido(pedido);
 }
 
-/** GET /pedidos?clienteNombre=&estado=&page=&pageSize= */
+/** GET /pedidos?clienteNombre=&clienteId=&estado=&page=&pageSize= */
 export async function listarPedidos(params?: {
   clienteNombre?: string;
+  clienteId?: string;
   fecha?: string;
   estado?: string;
   page?: number;
@@ -209,6 +210,11 @@ export async function listarPedidos(params?: {
 
   if (params?.estado) {
     where['estado'] = params.estado;
+  }
+
+  // Optional client scoping (bot). Coexists with the OR name filter below.
+  if (params?.clienteId) {
+    where['domicilio'] = { clienteId: params.clienteId };
   }
 
   if (params?.clienteNombre) {
