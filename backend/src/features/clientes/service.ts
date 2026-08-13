@@ -4,6 +4,7 @@ import { getOrCreateCiudad } from '../../lib/ciudad.js';
 import { timeStringToDate, dateToTimeString } from '../../lib/date-utils.js';
 import { calcularDatosDemora } from '../../lib/retenidos-utils.js';
 import { calcularIntervaloPromedioDias, DEFAULT_FRECUENCIA_DIAS } from '../../lib/frecuencia.js';
+import { pedidosValidosParaDemanda } from '../../lib/pedido-utils.js';
 import type { z } from 'zod';
 import type { clienteSchema, actualizarClienteSchema } from './schema.js';
 
@@ -517,7 +518,8 @@ export async function obtenerDemandaCliente(clienteId: string, periodo: number =
   // RF-10 + F2 gate-review: CANCELADO se excluye ANTES de estimar, igual que
   // en /estadisticas/demanda — no ancla el próximo pedido (lastDate), no
   // participa del intervalo de frecuencia ni aporta items a la demanda.
-  const pedidosValidos = pedidos.filter((p) => p.estado !== 'CANCELADO');
+  // Fix B (S8): regla compartida en lib/pedido-utils (single source of truth).
+  const pedidosValidos = pedidosValidosParaDemanda(pedidos);
 
   if (pedidosValidos.length === 0) {
     return demandaVacia(cliente, pedidos.length);

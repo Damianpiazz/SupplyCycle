@@ -1,6 +1,7 @@
 import { prisma } from '../../lib/prisma.js';
 import { ApiError } from '../../utils/api-error.js';
 import { calcularIntervaloPromedioDias, DEFAULT_FRECUENCIA_DIAS } from '../../lib/frecuencia.js';
+import { esPedidoValidoParaDemanda } from '../../lib/pedido-utils.js';
 import type {
   EstadisticasDiarias,
   EstadisticasMensuales,
@@ -265,10 +266,10 @@ export async function estimarDemanda(
     nombre: c.nombre,
     apellido: c.apellido,
     // Pedidos ya cargados: sin N+1. CANCELADO no cuenta para la frecuencia
-    // ni para la demanda estimada.
+    // ni para la demanda estimada (Fix B: helper compartido en lib/pedido-utils).
     pedidos: c.domicilios
       .flatMap((d) => d.pedidos)
-      .filter((p) => p.estado !== 'CANCELADO'),
+      .filter(esPedidoValidoParaDemanda),
   }));
 
   // 2. Calcular demanda estimada por cliente
