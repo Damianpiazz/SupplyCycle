@@ -6,7 +6,7 @@ import helmet from 'helmet';
 import session from 'express-session';
 import { pinoHttp } from 'pino-http';
 
-import { logger } from './lib/logger.js';
+import { logger, serializeReq } from './lib/logger.js';
 import { env } from './config/env.js';
 import authRoutes from './features/auth/routes.js';
 import clientesRoutes from './features/clientes/routes.js';
@@ -43,40 +43,12 @@ app.use(
   pinoHttp({
     logger,
     serializers: {
-      req(req) {
-        return {
-          method: req.method,
-          url: req.url,
-          headers: req.headers,
-          body: req.body,
-        };
-      },
+      // Redact-only request serializer: sensitive headers and (nested)
+      // password keys are censored, everything else stays for debugging.
+      req: serializeReq,
     },
   }),
 );
-
-// Response logger
-app.use((req, res, next) => {
-  const originalJson = res.json.bind(res);
-
-  res.json = (body: any) => {
-    logger.info({
-      request: {
-        method: req.method,
-        url: req.originalUrl,
-        body: req.body,
-      },
-      response: {
-        statusCode: res.statusCode,
-        body,
-      },
-    });
-
-    return originalJson(body);
-  };
-
-  next();
-});
 
 // View engine
 app.set('view engine', 'ejs');

@@ -31,10 +31,12 @@ const mockPrisma = {
 
 vi.mock('../../../lib/prisma.js', () => ({ prisma: mockPrisma }));
 // Use a real silent pino instance: pino-http requires a pino-shaped logger
-// (logger.levels.values) and calls logger.child() during setup.
-vi.mock('../../../lib/logger.js', async () => {
+// (logger.levels.values) and calls logger.child() during setup. Keep the real
+// module's exports (serializeReq, serializeError, REDACT_PATHS) untouched.
+vi.mock('../../../lib/logger.js', async (importOriginal) => {
   const { default: pino } = await import('pino');
-  return { logger: pino({ level: 'silent' }) };
+  const mod = await importOriginal<typeof import('../../../lib/logger.js')>();
+  return { ...mod, logger: pino({ level: 'silent' }) };
 });
 
 // ─── Env stubbed BEFORE the dynamic app import (D6) ──────────────────────────
