@@ -11,6 +11,7 @@ type ApiErrorBody = {
 export interface Reclamo {
   id: string
   clienteId: string
+  descripcion: string
   creadoEn: string
   cliente?: Cliente
 }

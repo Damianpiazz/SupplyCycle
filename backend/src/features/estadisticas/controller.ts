@@ -2,6 +2,7 @@ import type { Request, Response, NextFunction } from 'express';
 import { z } from 'zod/v4';
 import * as estadisticasService from './service.js';
 import { sendSuccess } from '../../utils/response.js';
+import { demandaQuerySchema } from './schema.js';
 
 // ─── Schemas de validación ───────────────────────────────────────────────────
 
@@ -60,6 +61,22 @@ export async function mensualesController(
   try {
     const { anio, mes } = mensualesSchema.parse(req.query);
     const result = await estadisticasService.obtenerEstadisticasMensuales(anio, mes);
+    sendSuccess(res, result);
+  } catch (err) {
+    next(err);
+  }
+}
+
+// ─── Controller: demanda estimada ──────────────────────────────────────────
+
+export async function demandaController(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const { periodo, incluirClientes } = demandaQuerySchema.parse(req.query);
+    const result = await estadisticasService.estimarDemanda(periodo, incluirClientes);
     sendSuccess(res, result);
   } catch (err) {
     next(err);

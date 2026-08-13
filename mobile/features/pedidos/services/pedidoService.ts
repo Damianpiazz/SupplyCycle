@@ -28,9 +28,18 @@ export async function getPedidosRequest(params?: {
   );
 }
 
+export interface DevolucionInput {
+  itemId: string;
+  cantidad: number;
+}
+
 export async function confirmarEntregaRequest(
   id: string,
-  options?: { latitud?: number; longitud?: number }
+  options?: {
+    latitud?: number;
+    longitud?: number;
+    devoluciones?: DevolucionInput[];
+  }
 ): Promise<{ id: string; estado: 'ENTREGADO'; actualizadoEn: string }> {
   return unwrapResponse(
     await apiClient.patch<ApiResponse<{

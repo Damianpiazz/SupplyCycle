@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction } from 'express';
 import * as clientesService from '../../features/clientes/service.js';
 import { prisma } from '../../lib/prisma.js';
+import type { FrecuenciaCliente } from '../../features/clientes/service.js';
 
 export async function index(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
@@ -117,11 +118,20 @@ export async function show(req: Request, res: Response, next: NextFunction): Pro
     }
     const saldoEnvases = Array.from(saldoMap.values());
 
+    // RF-10: Frecuencia de pedidos
+    let frecuencia: FrecuenciaCliente | null = null;
+    try {
+      frecuencia = await clientesService.calcularFrecuencia(req.params.id as string);
+    } catch {
+      frecuencia = null;
+    }
+
     res.render('clientes/show', {
       title: `${cliente.apellido}, ${cliente.nombre}`,
       cliente,
       retenidos,
       saldoEnvases,
+      frecuencia,
     });
   } catch (err) {
     next(err);

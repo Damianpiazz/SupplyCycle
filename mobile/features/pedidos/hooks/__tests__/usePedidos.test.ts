@@ -288,7 +288,7 @@ describe('usePedidos hooks', () => {
       const opts = getMutationOptions();
       const result = await opts.mutationFn({ pedidoId: 'p1' });
 
-      expect(mockConfirmarEntrega).toHaveBeenCalledWith('p1');
+      expect(mockConfirmarEntrega).toHaveBeenCalledWith('p1', { latitud: -34.9215, longitud: -57.9546 });
       expect(result).toEqual({ id: 'p1' });
     });
 

@@ -1,0 +1,310 @@
+/* ═══════════════════════════════════════════════════
+   SupplyCycle Admin — Tema Pico.css
+   Basado en constants/theme.ts y docs/ux-ui/ux-ui-architecture.md
+   ═══════════════════════════════════════════════════ */
+
+/* ── Override de variables Pico ── */
+:root {
+  /* Primario */
+  --pico-primary: #3B6D11;
+  --pico-primary-hover: #2E5A0E;
+  --pico-primary-background: #3B6D11;
+  --pico-primary-underline: rgba(59, 109, 17, 0.5);
+  --pico-primary-border: var(--pico-primary-hover);
+
+  /* Tipografía */
+  --pico-font-family: 'Inter', system-ui, sans-serif;
+  --pico-font-size: 15px;
+  --pico-line-height: 1.5;
+
+  /* Colores base */
+  --pico-color: #1A2E18;
+  --pico-background-color: #F5F7F4;
+  --pico-card-background-color: #FFFFFF;
+  --pico-card-border-color: #C8D4C0;
+  --pico-card-box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --pico-border-color: #C8D4C0;
+  --pico-muted-color: #4A6045;
+  --pico-table-row-stripped-background: #EAF3DE;
+
+  /* Formularios */
+  --pico-border-radius: 8px;
+  --pico-form-element-spacing-vertical: 8px;
+  --pico-form-element-spacing-horizontal: 14px;
+  --pico-group-box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+
+  /* Botones */
+  --pico-button-font-weight: 600;
+}
+
+[data-theme='dark'] {
+  --pico-primary: #A8D878;
+  --pico-primary-hover: #8FCB5C;
+  --pico-primary-background: #3B6D11;
+  --pico-primary-underline: rgba(168, 216, 120, 0.5);
+  --pico-primary-border: #7DC44A;
+
+  --pico-color: #D8ECC8;
+  --pico-background-color: #0F1A12;
+  --pico-card-background-color: #162018;
+  --pico-card-border-color: #1C3020;
+  --pico-border-color: #284830;
+  --pico-muted-color: #6A9060;
+  --pico-table-row-stripped-background: #1A3010;
+}
+
+/* ── Layout: Sidebar + contenido ── */
+body {
+  display: flex;
+  min-height: 100vh;
+  margin: 0;
+}
+
+.sidebar {
+  width: 220px;
+  min-width: 220px;
+  height: 100vh;
+  position: sticky;
+  top: 0;
+  overflow-y: auto;
+  background: #1A2E18;
+  color: #D8ECC8;
+  padding: var(--pico-spacing);
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar a {
+  color: #8AAA80;
+  text-decoration: none;
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--pico-border-radius);
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.sidebar ul li {
+  width: 100%;
+}
+
+.sidebar a:hover,
+.sidebar a.active {
+  color: #FFFFFF;
+  background: rgba(168, 216, 120, 0.15);
+}
+
+.sidebar a.active {
+  color: #A8D878;
+}
+
+.sidebar ul {
+  display: flex;
+  flex-direction: column;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  flex: 1;
+}
+
+.sidebar .brand {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: #FFFFFF;
+  padding: 0.75rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.main-content {
+  flex: 1;
+  padding: var(--pico-spacing);
+  overflow-y: auto;
+}
+
+/* ── Sidebar: user menu sin dropdown ── */
+.sidebar .user-section {
+  margin-top: auto;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sidebar .user-name {
+  color: #FFFFFF;
+  font-weight: 500;
+  font-size: 0.85rem;
+  padding: 0.25rem 0.75rem;
+}
+
+.sidebar .logout-link {
+  color: #8AAA80;
+  font-size: 0.8rem;
+}
+
+/* ── Badges de estado ── */
+[class^='badge-'] {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.badge-success,
+.badge-activo { background: #EAF5EE; color: #2E6B42; }
+
+.badge-danger,
+.badge-inactivo { background: #FCEEED; color: #7A3535; }
+
+.badge-secondary { background: #F0F0EE; color: #4A6045; }
+
+.badge-pendiente { background: #FDF4E7; color: #7A5A1A; }
+
+.badge-entregado { background: #EAF5EE; color: #2E6B42; }
+
+.badge-no-entregado { background: #FCEEED; color: #7A3535; }
+
+.badge-en-curso { background: #EAF2FA; color: #2A4F70; }
+
+.badge-cancelado { background: #F0F0EE; color: #4A6045; }
+
+.badge-warning { background: #FDF4E7; color: #7A5A1A; }
+
+[data-theme='dark'] .badge-success,
+[data-theme='dark'] .badge-activo { background: #102A18; color: #80C898; }
+
+[data-theme='dark'] .badge-danger,
+[data-theme='dark'] .badge-inactivo { background: #250E0E; color: #D48080; }
+
+[data-theme='dark'] .badge-secondary { background: #1A2018; color: #6A9060; }
+
+[data-theme='dark'] .badge-pendiente { background: #251C08; color: #D4A84A; }
+
+[data-theme='dark'] .badge-entregado { background: #102A18; color: #80C898; }
+
+[data-theme='dark'] .badge-no-entregado { background: #250E0E; color: #D48080; }
+
+[data-theme='dark'] .badge-en-curso { background: #0E1A25; color: #80B8D8; }
+
+[data-theme='dark'] .badge-cancelado { background: #1A2018; color: #6A9060; }
+
+[data-theme='dark'] .badge-warning { background: #251C08; color: #D4A84A; }
+
+/* ── Alertas / Banners ── */
+.alert {
+  padding: 0.75rem 1rem;
+  border-radius: var(--pico-border-radius);
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+  border: 1px solid transparent;
+}
+
+.alert-success { background: #EAF5EE; color: #2E6B42; border-color: #C2DFCB; }
+.alert-danger { background: #FCEEED; color: #7A3535; border-color: #EAC8C8; }
+
+[data-theme='dark'] .alert-success { background: #102A18; color: #80C898; border-color: #1E4828; }
+[data-theme='dark'] .alert-danger { background: #250E0E; color: #D48080; border-color: #401818; }
+
+/* ── Paginación ── */
+.pagination {
+  display: flex;
+  gap: 0.25rem;
+  align-items: center;
+  margin-top: 1rem;
+}
+
+.pagination a,
+.pagination span {
+  padding: 0.35rem 0.7rem;
+  border-radius: var(--pico-border-radius);
+  font-size: 0.85rem;
+  text-decoration: none;
+  color: var(--pico-color);
+  border: 1px solid var(--pico-border-color);
+}
+
+.pagination a:hover {
+  background: var(--pico-table-row-stripped-background);
+}
+
+.pagination .active {
+  background: var(--pico-primary);
+  color: #FFFFFF;
+  border-color: var(--pico-primary);
+}
+
+.pagination .disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+/* ── Utilidades ── */
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.items-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+.justify-end { justify-content: flex-end; }
+.gap-1 { gap: 0.25rem; }
+.gap-2 { gap: 0.5rem; }
+.gap-3 { gap: 0.75rem; }
+.gap-4 { gap: 1rem; }
+.mb-1 { margin-bottom: 0.25rem; }
+.mb-2 { margin-bottom: 0.5rem; }
+.mb-3 { margin-bottom: 0.75rem; }
+.mt-2 { margin-top: 0.5rem; }
+.mt-3 { margin-top: 0.75rem; }
+.text-sm { font-size: 0.85rem; }
+.text-muted { color: var(--pico-muted-color); }
+.w-full { width: 100%; }
+.small-btn {
+  font-size: 0.85rem;
+  padding: 0.25rem 0.65rem;
+}
+
+/* ── Action cell: botones en tabla alineados horizontalmente ── */
+td.action-cell {
+  display: flex;
+  flex-direction: row;
+  gap: 0.5rem;
+  align-items: center;
+  white-space: nowrap;
+}
+
+td.action-cell form {
+  display: contents;
+}
+
+/* ── Botones en footers/show pages con mismo alto ── */
+footer.flex > form {
+  display: contents;
+}
+
+/* Pico.css agrega margin-bottom a inputs y botones — lo neutralizamos globalmente */
+input:not([type=checkbox],[type=radio]),
+select,
+textarea,
+button,
+[type=button],
+[type=reset],
+[type=submit],
+a[role="button"] {
+  margin-bottom: 0;
+}
+
+/* ── Bordes de tabla visibles ── */
+table {
+  border-collapse: collapse;
+}
+
+table th,
+table td {
+  padding: var(--pico-form-element-spacing-vertical) var(--pico-form-element-spacing-horizontal);
+  border: 1px solid var(--pico-table-border-color, var(--pico-border-color));
+}
+
+/* ── Tabla hover (Pico no lo incluye por defecto) ── */
+table tbody tr:hover {
+  background: var(--pico-table-row-stripped-background);
+}

@@ -16,6 +16,7 @@ vi.mock('@/services/api', () => ({
 const {
   getEstadisticasDiariasRequest,
   getEstadisticasMensualesRequest,
+  getDemandaRequest,
 } = await import('../estadisticasService');
 
 // ─── Fixtures ──────────────────────────────────────────────────────────────────
@@ -115,5 +116,56 @@ describe('getEstadisticasMensualesRequest', () => {
 
     expect(result.mes).toBe(7);
     expect(result.totalPedidos).toBe(500);
+  });
+});
+
+// ─── Tests: getDemandaRequest ──────────────────────────────────────────────────
+
+const mockDemanda = {
+  periodo: 30,
+  fechaDesde: '2026-07-30',
+  fechaHasta: '2026-08-29',
+  totalClientes: 20,
+  clientesConEstimacion: 15,
+  demandaPorProducto: [
+    { itemId: 'i1', nombre: 'Bidón 12L', unidad: 'unidad', cantidadEstimada: 45, clientesEstimados: 10 },
+    { itemId: 'i2', nombre: 'Bidón 20L', unidad: 'unidad', cantidadEstimada: 30, clientesEstimados: 8 },
+  ],
+  demandaTotalUnidades: 75,
+  frecuenciaPromedioGlobal: 7,
+};
+
+describe('getDemandaRequest', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('llama al endpoint /estadisticas/demanda con periodo por defecto 30', async () => {
+    mockGet.mockResolvedValue({ data: { data: mockDemanda } });
+
+    const result = await getDemandaRequest();
+
+    expect(mockGet).toHaveBeenCalledWith('/estadisticas/demanda', {
+      params: { periodo: '30', incluirClientes: 'false' },
+    });
+    expect(result.demandaTotalUnidades).toBe(75);
+  });
+
+  it('incluye clientes cuando se solicita', async () => {
+    mockGet.mockResolvedValue({ data: { data: { ...mockDemanda, clientes: [] } } });
+
+    const result = await getDemandaRequest(15, true);
+
+    expect(mockGet).toHaveBeenCalledWith('/estadisticas/demanda', {
+      params: { periodo: '15', incluirClientes: 'true' },
+    });
+    expect(result.clientes).toEqual([]);
+  });
+
+  it('propaga errores del servidor', async () => {
+    const error = new Error('Network Error');
+    mockGet.mockRejectedValue(error);
+
+    await expect(getDemandaRequest()).rejects.toThrow('Network Error');
   });
 });

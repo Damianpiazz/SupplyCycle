@@ -1,38 +1,31 @@
 <%- include('../layouts/header') %>
-<div class="mb-3">
-  <a href="/admin/horarios" class="btn btn-outline-secondary btn-sm">&larr; Volver</a>
-</div>
-<div class="card">
-  <div class="card-header"><strong><%= horario ? 'Editar' : 'Nuevo' %> Horario</strong></div>
-  <div class="card-body">
-    <% if (typeof errors.general !== 'undefined' && errors.general) { %>
-      <div class="alert alert-danger"><%= errors.general %></div>
-    <% } %>
-    <form method="POST" action="/admin/horarios<%= horario ? '/' + horario.id : '' %>">
-      <div class="mb-3">
-        <label for="diaId" class="form-label">Día</label>
-        <select class="form-select" id="diaId" name="diaId" required>
-          <option value="">Seleccionar día...</option>
-          <% dias.forEach(d => { %>
-            <option value="<%= d.id %>" <%= horario && horario.diaId === d.id ? 'selected' : '' %>><%= d.nombre.charAt(0) + d.nombre.slice(1).toLowerCase() %> — <%= d.domicilio.cliente.apellido %>, <%= d.domicilio.cliente.nombre %></option>
-          <% }) %>
-        </select>
-      </div>
-      <div class="row mb-3">
-        <div class="col-md-6">
-          <label for="inicio" class="form-label">Inicio</label>
-          <input type="datetime-local" class="form-control" id="inicio" name="inicio" value="<%= horario ? new Date(horario.inicio.getTime() - horario.inicio.getTimezoneOffset() * 60000).toISOString().slice(0, 16) : '' %>" required>
-        </div>
-        <div class="col-md-6">
-          <label for="fin" class="form-label">Fin</label>
-          <input type="datetime-local" class="form-control" id="fin" name="fin" value="<%= horario ? new Date(horario.fin.getTime() - horario.fin.getTimezoneOffset() * 60000).toISOString().slice(0, 16) : '' %>" required>
-        </div>
-      </div>
-      <div class="d-flex gap-2">
-        <button type="submit" class="btn btn-primary"><%= horario ? 'Guardar Cambios' : 'Crear Horario' %></button>
-        <a href="/admin/horarios" class="btn btn-outline-secondary">Cancelar</a>
-      </div>
-    </form>
-  </div>
-</div>
+<a href="/admin/horarios" class="secondary outline small-btn mb-2">&larr; Volver</a>
+<article>
+  <header><strong><%= horario ? 'Editar' : 'Nuevo' %> Horario</strong></header>
+  <% if (typeof errors.general !== 'undefined' && errors.general) { %>
+    <div class="alert alert-danger"><%= errors.general %></div>
+  <% } %>
+  <form method="POST" action="/admin/horarios<%= horario ? '/' + horario.id : '' %>">
+    <label for="diaId">Día
+      <select id="diaId" name="diaId" required>
+        <option value="">Seleccionar día...</option>
+        <% dias.forEach(d => { %>
+          <option value="<%= d.id %>" <%= horario && horario.diaId === d.id ? 'selected' : '' %>><%= d.nombre.charAt(0) + d.nombre.slice(1).toLowerCase() %> — <%= d.domicilio.cliente.apellido %>, <%= d.domicilio.cliente.nombre %></option>
+        <% }) %>
+      </select>
+    </label>
+    <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 1rem;">
+      <label for="inicio">Inicio
+        <input type="datetime-local" id="inicio" name="inicio" value="<%= horario ? new Date(horario.inicio.getTime() - horario.inicio.getTimezoneOffset() * 60000).toISOString().slice(0, 16) : '' %>" required>
+      </label>
+      <label for="fin">Fin
+        <input type="datetime-local" id="fin" name="fin" value="<%= horario ? new Date(horario.fin.getTime() - horario.fin.getTimezoneOffset() * 60000).toISOString().slice(0, 16) : '' %>" required>
+      </label>
+    </div>
+    <footer class="flex gap-2">
+      <button type="submit" class="primary"><%= horario ? 'Guardar Cambios' : 'Crear Horario' %></button>
+      <a href="/admin/horarios" role="button" class="secondary outline">Cancelar</a>
+    </footer>
+  </form>
+</article>
 <%- include('../layouts/footer') %>

@@ -1,11 +1,5 @@
-.sidebar {
-  width: 220px;
-  background-color: #212529;
-  min-height: 100vh;
-}
-.sidebar .nav-link.active {
-  background-color: #0d6efd;
-}
-.sidebar .nav-link:hover {
-  background-color: #343a40;
-}
+/* ═══════════════════════════════════════════════════
+   Admin CSS — DEPRECATED
+   Todo el theming ahora está en supplycycle-theme.css
+   Mantenido solo por compatibilidad, sin referencias.
+   ═══════════════════════════════════════════════════ */

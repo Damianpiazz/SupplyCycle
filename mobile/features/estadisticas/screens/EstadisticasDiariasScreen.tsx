@@ -155,6 +155,16 @@ export default function EstadisticasDiariasScreen() {
             Ver mes
           </Text>
         </TouchableOpacity>
+
+        <TouchableOpacity
+          onPress={() => router.push('/estadisticas/demanda')}
+          style={[styles.actionBtn, { backgroundColor: theme.tint }]}
+          activeOpacity={0.7}
+        >
+          <Text style={[styles.actionBtnText, { color: '#FFFFFF' }]}>
+            Demanda estimada
+          </Text>
+        </TouchableOpacity>
       </View>
 
       {/* Content */}

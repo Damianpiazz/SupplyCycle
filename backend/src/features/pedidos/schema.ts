@@ -40,7 +40,24 @@ export const cancelarPedidoSchema = z.object({
   ]),
 });
 
+export const devolucionItemSchema = z.object({
+  itemId: z.string().uuid(),
+  cantidad: z.number().int().min(1, 'La cantidad debe ser mayor a 0'),
+});
+
 export const confirmarPedidoSchema = z.object({
   latitud: z.number().min(-90).max(90).optional(),
   longitud: z.number().min(-180).max(180).optional(),
+  devoluciones: z.array(devolucionItemSchema).optional(),
+});
+
+export const cancelarClienteSchema = z.object({
+  motivo: z.enum([
+    'YA_NO_LO_NECESITA',
+    'DIRECCION_INCORRECTA',
+    'CANCELACION_CLIENTE',
+    'OTRO',
+  ], {
+    message: 'Motivo de cancelación inválido',
+  }),
 });

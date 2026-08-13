@@ -8,12 +8,15 @@
     "start": "node ./dist/app.js",
     "lint": "eslint . --no-ignore",
     "dev": "npm run lint && nodemon --signal SIGKILL  ./src/app.ts",
-    "build": "npx rollup -c"
+    "build": "npx rollup -c",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage"
   },
   "keywords": [],
   "dependencies": {
-    "@builderbot/bot": "1.4.2",
-    "@builderbot/provider-baileys": "1.4.2",
+    "@builderbot/bot": "^1.4.3-y.7",
+    "@builderbot/provider-baileys": "^1.4.3-y.7",
     "axios": "^1.17.0",
     "dotenv": "^17.4.2"
   },
@@ -27,7 +30,8 @@
     "rollup-plugin-typescript2": "^0.36.0",
     "tsx": "^4.7.1",
     "typescript": "^5.4.3",
-    "typescript-eslint": "^8.0.0"
+    "typescript-eslint": "^8.0.0",
+    "vitest": "^4.1.10"
   },
   "author": "",
   "license": "ISC"

@@ -85,6 +85,8 @@ export async function seedDomicilios(clientes: any[], ciudadId: string) {
     numero: String(faker.number.int({ min: 100, max: 9999 })),
     piso: faker.helpers.maybe(() => String(faker.number.int({ min: 1, max: 15 }))) ?? null,
     localidad: 'La Plata',
+    latitud: -34.92 + (Math.random() - 0.5) * 0.04,
+    longitud: -57.95 + (Math.random() - 0.5) * 0.04,
     clienteId: clientesIds[i]!,
     ciudadId,
   }));

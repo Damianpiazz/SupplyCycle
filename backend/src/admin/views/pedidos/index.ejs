@@ -1,69 +1,59 @@
 <%- include('../layouts/header') %>
 
-<div class="d-flex justify-content-between align-items-center mb-3">
+<header class="flex justify-between items-center mb-3">
   <div>
     <span class="text-muted"><%= total %> pedidos</span>
   </div>
-  <a href="/admin/pedidos/nuevo" class="btn btn-primary">Nuevo Pedido</a>
-</div>
+  <a href="/admin/pedidos/nuevo" role="button" class="primary">Nuevo Pedido</a>
+</header>
 
-<form method="GET" class="row g-2 mb-3">
-  <div class="col-auto">
-    <input type="text" class="form-control form-control-sm" name="clienteNombre" placeholder="Buscar cliente..." value="<%= typeof filters.clienteNombre !== 'undefined' ? filters.clienteNombre : '' %>">
-  </div>
-  <div class="col-auto">
-    <input type="date" class="form-control form-control-sm" name="fecha" value="<%= typeof filters.fecha !== 'undefined' ? filters.fecha : '' %>">
-  </div>
-  <div class="col-auto">
-    <select class="form-select form-select-sm" name="estado">
-      <option value="">Todos los estados</option>
-      <% estados.forEach(e => { %>
-        <option value="<%= e %>" <%= filters.estado === e ? 'selected' : '' %>><%= e.replace(/_/g, ' ') %></option>
-      <% }) %>
-    </select>
-  </div>
-  <div class="col-auto">
-    <button type="submit" class="btn btn-outline-secondary btn-sm">Filtrar</button>
-  </div>
+<form method="GET" class="flex gap-2 mb-3 items-center">
+  <input type="text" name="clienteNombre" placeholder="Buscar cliente..." value="<%= typeof filters.clienteNombre !== 'undefined' ? filters.clienteNombre : '' %>">
+  <input type="date" name="fecha" value="<%= typeof filters.fecha !== 'undefined' ? filters.fecha : '' %>">
+  <select name="estado" style="width:auto">
+    <option value="">Todos los estados</option>
+    <% estados.forEach(e => { %>
+      <option value="<%= e %>" <%= filters.estado === e ? 'selected' : '' %>><%= e.replace(/_/g, ' ') %></option>
+    <% }) %>
+  </select>
+  <button type="submit" class="secondary outline">Filtrar</button>
 </form>
 
-<div class="table-responsive">
-  <table class="table table-hover align-middle">
-    <thead class="table-light">
+<table>
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Cliente</th>
+      <th>Fecha</th>
+      <th>Estado</th>
+      <th>Items</th>
+      <th>Total</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <% pedidos.forEach(p => { %>
       <tr>
-        <th>#</th>
-        <th>Cliente</th>
-        <th>Fecha</th>
-        <th>Estado</th>
-        <th>Items</th>
-        <th>Total</th>
-        <th></th>
+        <td><%= p.numeroPedido %></td>
+        <td><%= p.cliente.apellido %>, <%= p.cliente.nombre %></td>
+        <td><%= p.fecha %></td>
+        <td>
+          <span class="badge-<%= p.estado === 'ENTREGADO' ? 'entregado' : p.estado === 'CANCELADO' ? 'cancelado' : p.estado === 'NO_ENTREGADO' ? 'no-entregado' : p.estado === 'EN_RUTA' ? 'en-curso' : 'pendiente' %>">
+            <%= p.estado.replace(/_/g, ' ') %>
+          </span>
+        </td>
+        <td><%= p.itemsCount %></td>
+        <td>$<%= p.total?.toFixed(2) %></td>
+        <td>
+          <a href="/admin/pedidos/<%= p.id %>" role="button" class="secondary outline small-btn">Ver</a>
+        </td>
       </tr>
-    </thead>
-    <tbody>
-      <% pedidos.forEach(p => { %>
-        <tr>
-          <td><%= p.numeroPedido %></td>
-          <td><%= p.cliente.apellido %>, <%= p.cliente.nombre %></td>
-          <td><%= p.fecha %></td>
-          <td>
-            <span class="badge bg-<%= p.estado === 'ENTREGADO' ? 'success' : p.estado === 'CANCELADO' || p.estado === 'NO_ENTREGADO' ? 'danger' : p.estado === 'EN_RUTA' ? 'warning' : 'secondary' %>">
-              <%= p.estado.replace(/_/g, ' ') %>
-            </span>
-          </td>
-          <td><%= p.itemsCount %></td>
-          <td>$<%= p.total?.toFixed(2) %></td>
-          <td>
-            <a href="/admin/pedidos/<%= p.id %>" class="btn btn-sm btn-outline-primary">Ver</a>
-          </td>
-        </tr>
-      <% }) %>
-      <% if (pedidos.length === 0) { %>
-        <tr><td colspan="7" class="text-center text-muted py-4">No hay pedidos</td></tr>
-      <% } %>
-    </tbody>
-  </table>
-</div>
+    <% }) %>
+    <% if (pedidos.length === 0) { %>
+      <tr><td colspan="7" class="text-center text-muted" style="padding:1rem 0">No hay pedidos</td></tr>
+    <% } %>
+  </tbody>
+</table>
 
 <%
   const totalPages = Math.ceil(total / pageSize);

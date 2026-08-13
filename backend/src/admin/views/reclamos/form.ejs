@@ -1,28 +1,23 @@
 <%- include('../layouts/header') %>
-<div class="mb-3">
-  <a href="/admin/reclamos" class="btn btn-outline-secondary btn-sm">&larr; Volver</a>
-</div>
-<div class="card">
-  <div class="card-header"><strong><%= reclamo ? 'Editar' : 'Nuevo' %> Reclamo</strong></div>
-  <div class="card-body">
-    <% if (typeof errors.general !== 'undefined' && errors.general) { %>
-      <div class="alert alert-danger"><%= errors.general %></div>
-    <% } %>
-    <form method="POST" action="/admin/reclamos<%= reclamo ? '/' + reclamo.id : '' %>">
-      <div class="mb-3">
-        <label for="clienteId" class="form-label">Cliente</label>
-        <select class="form-select" id="clienteId" name="clienteId" required>
-          <option value="">Seleccionar cliente...</option>
-          <% clientes.forEach(c => { %>
-            <option value="<%= c.id %>" <%= reclamo && reclamo.clienteId === c.id ? 'selected' : '' %>><%= c.apellido %>, <%= c.nombre %></option>
-          <% }) %>
-        </select>
-      </div>
-      <div class="d-flex gap-2">
-        <button type="submit" class="btn btn-primary"><%= reclamo ? 'Guardar Cambios' : 'Crear Reclamo' %></button>
-        <a href="/admin/reclamos" class="btn btn-outline-secondary">Cancelar</a>
-      </div>
-    </form>
-  </div>
-</div>
+<a href="/admin/reclamos" class="secondary outline small-btn mb-2">&larr; Volver</a>
+<article>
+  <header><strong><%= reclamo ? 'Editar' : 'Nuevo' %> Reclamo</strong></header>
+  <% if (typeof errors.general !== 'undefined' && errors.general) { %>
+    <div class="alert alert-danger"><%= errors.general %></div>
+  <% } %>
+  <form method="POST" action="/admin/reclamos<%= reclamo ? '/' + reclamo.id : '' %>">
+    <label for="clienteId">Cliente
+      <select id="clienteId" name="clienteId" required>
+        <option value="">Seleccionar cliente...</option>
+        <% clientes.forEach(c => { %>
+          <option value="<%= c.id %>" <%= reclamo && reclamo.clienteId === c.id ? 'selected' : '' %>><%= c.apellido %>, <%= c.nombre %></option>
+        <% }) %>
+      </select>
+    </label>
+    <footer class="flex gap-2">
+      <button type="submit" class="primary"><%= reclamo ? 'Guardar Cambios' : 'Crear Reclamo' %></button>
+      <a href="/admin/reclamos" role="button" class="secondary outline">Cancelar</a>
+    </footer>
+  </form>
+</article>
 <%- include('../layouts/footer') %>

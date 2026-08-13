@@ -1,107 +1,98 @@
 <%- include('../layouts/header') %>
 
-<div class="mb-3">
-  <a href="/admin/pedidos" class="btn btn-outline-secondary btn-sm">&larr; Volver</a>
-</div>
+<a href="/admin/pedidos" class="secondary outline small-btn mb-2">&larr; Volver</a>
 
-<div class="card">
-  <div class="card-header"><strong><%= pedido ? 'Editar' : 'Nuevo' %> Pedido</strong></div>
-  <div class="card-body">
-    <% if (typeof errors.general !== 'undefined' && errors.general) { %>
-      <div class="alert alert-danger"><%= errors.general %></div>
+<article>
+  <header><strong><%= pedido ? 'Editar' : 'Nuevo' %> Pedido</strong></header>
+  <% if (typeof errors.general !== 'undefined' && errors.general) { %>
+    <div class="alert alert-danger"><%= errors.general %></div>
+  <% } %>
+
+  <form method="POST" action="/admin/pedidos<%= pedido ? '/' + pedido.id : '' %>">
+    <label for="clienteId">Cliente
+      <select id="clienteId" name="clienteId" <%= pedido ? 'disabled' : '' %>>
+        <option value="">Seleccionar cliente...</option>
+        <% clientes.forEach(c => { %>
+          <option value="<%= c.id %>" <%= pedido && pedido.cliente.id === c.id ? 'selected' : '' %>><%= c.apellido %>, <%= c.nombre %> — <%= c.telefono %></option>
+        <% }) %>
+      </select>
+    </label>
+
+    <% if (!pedido) { %>
+      <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <label for="fecha">Fecha
+          <input type="date" id="fecha" name="fecha" value="<%= new Date().toISOString().slice(0, 10) %>">
+        </label>
+        <label for="orden">Orden (opcional)
+          <input type="number" id="orden" name="orden" min="1">
+        </label>
+      </div>
     <% } %>
 
-    <form method="POST" action="/admin/pedidos<%= pedido ? '/' + pedido.id : '' %>">
-      <div class="mb-3">
-        <label for="clienteId" class="form-label">Cliente</label>
-        <select class="form-select" id="clienteId" name="clienteId" <%= pedido ? 'disabled' : '' %>>
-          <option value="">Seleccionar cliente...</option>
-          <% clientes.forEach(c => { %>
-            <option value="<%= c.id %>" <%= pedido && pedido.cliente.id === c.id ? 'selected' : '' %>><%= c.apellido %>, <%= c.nombre %> — <%= c.telefono %></option>
-          <% }) %>
-        </select>
-      </div>
-
-      <% if (!pedido) { %>
-        <div class="row mb-3">
-          <div class="col-md-6">
-            <label for="fecha" class="form-label">Fecha</label>
-            <input type="date" class="form-control" id="fecha" name="fecha" value="<%= new Date().toISOString().slice(0, 10) %>">
+    <label>Items</label>
+    <div id="items-container">
+      <% if (pedido) { %>
+        <% pedido.items.forEach((item, idx) => { %>
+          <div class="flex gap-2 items-center" style="margin-bottom: 0.5rem;">
+            <div style="flex:6">
+              <input type="text" value="<%= item.item.nombre %>" readonly>
+              <input type="hidden" name="items[<%= idx %>][id]" value="<%= item.id %>">
+            </div>
+            <div style="flex:3">
+              <input type="number" name="items[<%= idx %>][cantidad]" value="<%= item.cantidad %>" min="1" required>
+            </div>
+            <div style="flex:2"><small><%= item.item.unidad %></small></div>
+            <div style="flex:1">
+              <a href="/admin/pedidos/<%= pedido.id %>/items/<%= item.id %>/quitar" class="secondary outline small-btn" onclick="return confirm('¿Quitar este item?')">Quitar</a>
+            </div>
           </div>
-          <div class="col-md-6">
-            <label for="orden" class="form-label">Orden (opcional)</label>
-            <input type="number" class="form-control" id="orden" name="orden" min="1">
+        <% }) %>
+      <% } else { %>
+        <div class="flex gap-2 items-center item-row" style="margin-bottom: 0.5rem;">
+          <div style="flex:6">
+            <select name="items[0][itemId]" required>
+              <option value="">Seleccionar item...</option>
+              <% items.forEach(item => { %>
+                <option value="<%= item.id %>"><%= item.nombre %> ($<%= item.precio?.toFixed(2) %>)</option>
+              <% }) %>
+            </select>
+          </div>
+          <div style="flex:3">
+            <input type="number" name="items[0][cantidad]" placeholder="Cantidad" min="1" required>
+          </div>
+          <div style="flex:2"></div>
+          <div style="flex:1">
+            <button type="button" class="secondary outline small-btn remove-item">X</button>
           </div>
         </div>
       <% } %>
-
-      <div class="mb-3">
-        <label class="form-label">Items</label>
-        <div id="items-container">
-          <% if (pedido) { %>
-            <% pedido.items.forEach((item, idx) => { %>
-              <div class="row g-2 mb-2 align-items-center">
-                <div class="col-md-6">
-                  <input type="text" class="form-control" value="<%= item.item.nombre %>" readonly>
-                  <input type="hidden" name="items[<%= idx %>][id]" value="<%= item.id %>">
-                </div>
-                <div class="col-md-3">
-                  <input type="number" class="form-control" name="items[<%= idx %>][cantidad]" value="<%= item.cantidad %>" min="1" required>
-                </div>
-                <div class="col-md-2"><span class="text-muted"><%= item.item.unidad %></span></div>
-                <div class="col-md-1">
-                  <a href="/admin/pedidos/<%= pedido.id %>/items/<%= item.id %>/quitar" class="btn btn-sm btn-outline-danger" onclick="return confirm('¿Quitar este item?')">Quitar</a>
-                </div>
-              </div>
+    </div>
+    <% if (!pedido) { %>
+      <button type="button" class="secondary outline small-btn mt-1" id="add-item">+ Agregar otro item</button>
+    <% } %>
+    <% if (pedido && pedido.estado === 'PENDIENTE') { %>
+      <hr>
+      <div class="flex gap-2 items-center">
+        <div style="flex:6">
+          <select name="nuevoItemId">
+            <option value="">Agregar nuevo item...</option>
+            <% items.forEach(item => { %>
+              <option value="<%= item.id %>"><%= item.nombre %></option>
             <% }) %>
-          <% } else { %>
-            <div class="row g-2 mb-2 align-items-center item-row">
-              <div class="col-md-6">
-                <select class="form-select" name="items[0][itemId]" required>
-                  <option value="">Seleccionar item...</option>
-                  <% items.forEach(item => { %>
-                    <option value="<%= item.id %>"><%= item.nombre %> ($<%= item.precio?.toFixed(2) %>)</option>
-                  <% }) %>
-                </select>
-              </div>
-              <div class="col-md-3">
-                <input type="number" class="form-control" name="items[0][cantidad]" placeholder="Cantidad" min="1" required>
-              </div>
-              <div class="col-md-2"></div>
-              <div class="col-md-1">
-                <button type="button" class="btn btn-sm btn-outline-danger remove-item">X</button>
-              </div>
-            </div>
-          <% } %>
+          </select>
         </div>
-        <% if (!pedido) { %>
-          <button type="button" class="btn btn-sm btn-outline-secondary mt-1" id="add-item">+ Agregar otro item</button>
-        <% } %>
-        <% if (pedido && pedido.estado === 'PENDIENTE') { %>
-          <hr>
-          <div class="row g-2 align-items-center">
-            <div class="col-md-6">
-              <select class="form-select" name="nuevoItemId">
-                <option value="">Agregar nuevo item...</option>
-                <% items.forEach(item => { %>
-                  <option value="<%= item.id %>"><%= item.nombre %></option>
-                <% }) %>
-              </select>
-            </div>
-            <div class="col-md-3">
-              <input type="number" class="form-control" name="nuevaCantidad" placeholder="Cantidad" min="1">
-            </div>
-          </div>
-        <% } %>
+        <div style="flex:3">
+          <input type="number" name="nuevaCantidad" placeholder="Cantidad" min="1">
+        </div>
       </div>
+    <% } %>
 
-      <div class="d-flex gap-2">
-        <button type="submit" class="btn btn-primary"><%= pedido ? 'Guardar Cambios' : 'Crear Pedido' %></button>
-        <a href="/admin/pedidos" class="btn btn-outline-secondary">Cancelar</a>
-      </div>
-    </form>
-  </div>
-</div>
+    <footer class="flex gap-2">
+      <button type="submit" class="primary"><%= pedido ? 'Guardar Cambios' : 'Crear Pedido' %></button>
+      <a href="/admin/pedidos" role="button" class="secondary outline">Cancelar</a>
+    </footer>
+  </form>
+</article>
 
 <% if (!pedido) { %>
 <script>

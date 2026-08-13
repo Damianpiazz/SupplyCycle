@@ -67,7 +67,7 @@ export async function seedPedidos(clientes: any[], items: any[], repartos: any[]
   }
 
   // Insert pedidos in batches
-  console.log(`  ── Insertando ${pedidosData.length} pedidos...`);
+  console.log(`  ÔöÇÔöÇ Insertando ${pedidosData.length} pedidos...`);
   let pedCount = 0;
   const allPedidos: any[] = [];
   for (let i = 0; i < pedidosData.length; i += 100) {
@@ -87,7 +87,7 @@ export async function seedPedidos(clientes: any[], items: any[], repartos: any[]
     console.log(`    ... ${pedCount}/${pedidosData.length} pedidos`);
   }
 
-  console.log(`  ✅ ${allPedidos.length} pedidos creados`);
+  console.log(`  Ô£à ${allPedidos.length} pedidos creados`);
   return allPedidos;
 }
 

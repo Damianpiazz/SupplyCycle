@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useState, useEffect, useRef } from 'react';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { router } from 'expo-router';
 import { ThemedView } from '@/components/themed-view';
 import { LoadingSpinner, ErrorMessage, Header } from '@/components/ui';
@@ -7,40 +7,68 @@ import { Colors, FontFamily, Spacing, FontSizes, BorderRadius } from '@/constant
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { usePedidosDelDia } from '@/features/pedidos/hooks/usePedidos';
 import { getEstadoColor, getEstadoLabel } from '@/features/pedidos/utils/estadoPedido';
-import type { Pedido } from '@/types';
+import * as Location from 'expo-location';
+import { useRouteLine } from '@/features/mapa/hooks/useRouteLine';
+import MapWebView from '@/components/ui/MapWebView';
+import type { MapPedido } from '@/components/ui/MapWebView.types';
 
-// Simple marker rendered as a colored dot with a label
-function MarkerPunto({
-  pedido,
-  theme,
-  isSelected,
-  onPress,
-}: {
-  pedido: Pedido;
-  theme: typeof Colors.light;
-  isSelected: boolean;
-  onPress: () => void;
-}) {
-  const color = getEstadoColor(pedido.estado, theme);
-
-  return (
-    <TouchableOpacity
-      style={[styles.markerContainer, isSelected && { backgroundColor: theme.tint + '26', borderWidth: 1, borderColor: theme.tint }]}
-      onPress={onPress}
-    >
-      <View style={[styles.markerDot, { backgroundColor: color }]} />
-      <Text style={[styles.markerLabel, { color: theme.text }]}>
-        {pedido.cliente.nombre}
-      </Text>
-    </TouchableOpacity>
-  );
-}
+const DEFAULT_CENTER: [number, number] = [-57.9546, -34.9215]; // La Plata
 
 export default function MapaScreen() {
   const colorScheme = useColorScheme() ?? 'light';
   const theme = Colors[colorScheme];
   const [selectedPedidoId, setSelectedPedidoId] = useState<string | null>(null);
   const { data: pedidos, isLoading, isError, error } = usePedidosDelDia();
+
+  // Ubicación del usuario
+  const userLocationRef = useRef<[number, number] | null>(null);
+  const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status === 'granted') {
+        const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
+        const coords: [number, number] = [loc.coords.longitude, loc.coords.latitude];
+        userLocationRef.current = coords;
+        setUserLocation(coords);
+      }
+    })();
+  }, []);
+
+  // Ruteo
+  const { nearestPedido, routeGeoJSON } = useRouteLine(userLocation, pedidos);
+
+  // Solo pedidos activos (no entregados) con coordenadas
+  const ESTADOS_ACTIVOS = ['PENDIENTE', 'EN_RUTA'];
+
+  const pedidosConCoordenadas = pedidos?.filter(
+    (p) => ESTADOS_ACTIVOS.includes(p.estado) && p.domicilio.latitud && p.domicilio.longitud,
+  ) ?? [];
+
+  // Mapear a formato simple para el WebView
+  const mapPedidos: MapPedido[] = pedidosConCoordenadas.map((p) => ({
+    id: p.id,
+    estado: p.estado,
+    numeroPedido: p.numeroPedido,
+    latitud: p.domicilio.latitud!,
+    longitud: p.domicilio.longitud!,
+    clienteNombre: p.cliente.nombre,
+    clienteApellido: p.cliente.apellido,
+    domicilioCalle: p.domicilio.calle,
+    domicilioNumero: p.domicilio.numero,
+  }));
+
+  // Mapa de colores por estado (sigue el theme actual)
+  const colorMap = {
+    PENDIENTE: getEstadoColor('PENDIENTE', theme),
+    EN_RUTA: getEstadoColor('EN_RUTA', theme),
+    ENTREGADO: getEstadoColor('ENTREGADO', theme),
+    NO_ENTREGADO: getEstadoColor('NO_ENTREGADO', theme),
+    CANCELADO: getEstadoColor('CANCELADO', theme),
+  };
+
+  /* ── Estados de carga / error ──────────────────────────── */
 
   if (isLoading) {
     return (
@@ -60,41 +88,48 @@ export default function MapaScreen() {
     );
   }
 
+  /* ── Render ────────────────────────────────────────────── */
+
   const selectedPedido = pedidos?.find((p) => p.id === selectedPedidoId) ?? null;
 
   return (
     <ThemedView style={styles.container}>
       <Header />
       <View style={styles.mapContainer}>
-        {/* Map placeholder - real Google Maps integration will be added later */}
-        <View style={[styles.mapPlaceholder, { backgroundColor: theme.surface }]}>
-          <Text style={[styles.mapPlaceholderText, { color: theme.muted }]}>
-            Mapa de entregas
-          </Text>
-          <Text style={[styles.mapPlaceholderHint, { color: theme.muted }]}>
-            {pedidos?.length ?? 0} puntos de entrega
-          </Text>
-        </View>
+        <MapWebView
+          pedidos={mapPedidos}
+          routeGeoJSON={routeGeoJSON}
+          selectedPedidoId={selectedPedidoId}
+          darkMode={colorScheme === 'dark'}
+          colorMap={colorMap}
+          userLocation={userLocation}
+          onSelectPedido={setSelectedPedidoId}
+        />
 
-        {/* Markers list as fallback (when map is not available) */}
-        <View style={styles.markersList}>
-          {pedidos?.map((pedido) => (
-            <MarkerPunto
-              key={pedido.id}
-              pedido={pedido}
-              theme={theme}
-              isSelected={selectedPedidoId === pedido.id}
-              onPress={() => setSelectedPedidoId(pedido.id)}
-            />
-          ))}
-        </View>
-
-        {/* Info card for selected pedido */}
+        {/* Info card del pedido seleccionado */}
         {selectedPedido && (
-          <View style={[styles.infoCard, { backgroundColor: theme.card, borderColor: theme.cardBorder }]}>
+          <View
+            style={[
+              styles.infoCard,
+              { backgroundColor: theme.card, borderColor: theme.cardBorder },
+            ]}
+          >
             <View style={styles.infoCardHeader}>
-              <View style={[styles.estadoBadge, { backgroundColor: getEstadoColor(selectedPedido.estado, theme) + '20' }]}>
-                <Text style={[styles.estadoBadgeText, { color: getEstadoColor(selectedPedido.estado, theme) }]}>
+              <View
+                style={[
+                  styles.estadoBadge,
+                  {
+                    backgroundColor:
+                      getEstadoColor(selectedPedido.estado, theme) + '20',
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.estadoBadgeText,
+                    { color: getEstadoColor(selectedPedido.estado, theme) },
+                  ]}
+                >
                   {getEstadoLabel(selectedPedido.estado)}
                 </Text>
               </View>
@@ -106,14 +141,18 @@ export default function MapaScreen() {
               {selectedPedido.cliente.nombre} {selectedPedido.cliente.apellido}
             </Text>
             <Text style={[styles.infoCardDireccion, { color: theme.muted }]}>
-              {selectedPedido.domicilio.calle}{' '}
-              {selectedPedido.domicilio.numero}
+              {selectedPedido.domicilio.calle} {selectedPedido.domicilio.numero}
             </Text>
             <TouchableOpacity
-              style={[styles.verDetalleButton, { backgroundColor: theme.buttonPrimary }]}
+              style={[
+                styles.verDetalleButton,
+                { backgroundColor: theme.buttonPrimary },
+              ]}
               onPress={() => router.push(`/mapa/${selectedPedido.id}`)}
             >
-              <Text style={[styles.verDetalleText, { color: theme.headerText }]}>Ver detalle</Text>
+              <Text style={[styles.verDetalleText, { color: theme.headerText }]}>
+                Ver detalle
+              </Text>
             </TouchableOpacity>
           </View>
         )}
@@ -121,8 +160,6 @@ export default function MapaScreen() {
     </ThemedView>
   );
 }
-
-const { width } = Dimensions.get('window');
 
 const styles = StyleSheet.create({
   container: {
@@ -132,48 +169,19 @@ const styles = StyleSheet.create({
     flex: 1,
     position: 'relative',
   },
-  mapPlaceholder: {
-    height: 200,
-    justifyContent: 'center',
-    alignItems: 'center',
-    margin: Spacing.lg,
-    borderRadius: BorderRadius.lg,
-  },
-  mapPlaceholderText: {
-    fontSize: FontSizes.lg,
-    fontFamily: FontFamily.interSemiBold,
-    fontWeight: '600',
-  },
-  mapPlaceholderHint: {
-    fontSize: FontSizes.sm,
-    fontFamily: FontFamily.inter,
-    marginTop: Spacing.xs,
-  },
-  markersList: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    paddingHorizontal: Spacing.lg,
-    gap: Spacing.sm,
-    marginBottom: Spacing.md,
-  },
-  markerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    borderRadius: BorderRadius.xl,
-    backgroundColor: 'rgba(0,0,0,0.05)',
-    gap: Spacing.sm,
-  },
   markerDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 3,
+    borderColor: '#fff',
   },
-  markerLabel: {
-    fontSize: FontSizes.xs,
-    fontFamily: FontFamily.inter,
-    fontWeight: '500',
+  markerNearest: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    borderWidth: 3,
+    borderColor: '#3B82F6',
   },
   // Info card at bottom
   infoCard: {

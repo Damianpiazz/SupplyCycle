@@ -1,34 +1,42 @@
 <% if (totalPages > 1) { %>
-  <nav>
-    <ul class="pagination pagination-sm justify-content-center mb-0">
-      <li class="page-item <%= currentPage <= 1 ? 'disabled' : '' %>">
-        <a class="page-link" href="?page=<%= currentPage - 1 %><%= qs %>">&laquo;</a>
-      </li>
-      <%
-        const pages = [];
-        const delta = 2;
-        const left = currentPage - delta;
-        const right = currentPage + delta;
-        for (let i = 1; i <= totalPages; i++) {
-          if (i === 1 || i === totalPages || (i >= left && i <= right)) {
-            pages.push(i);
-          } else if (pages[pages.length - 1] !== '...') {
-            pages.push('...');
-          }
+<nav aria-label="Paginación">
+  <ul class="pagination" style="list-style:none;padding:0;margin:0;">
+    <% if (currentPage > 1) { %>
+      <li><a href="?page=<%= currentPage - 1 %><%= typeof qs !== 'undefined' ? qs : '' %>">&laquo;</a></li>
+    <% } else { %>
+      <li><span class="disabled">&laquo;</span></li>
+    <% } %>
+    <%
+      const pages = [];
+      const delta = 2;
+      const left = currentPage - delta;
+      const right = currentPage + delta;
+      for (let i = 1; i <= totalPages; i++) {
+        if (i === 1 || i === totalPages || (i >= left && i <= right)) {
+          pages.push(i);
+        } else if (pages[pages.length - 1] !== '...') {
+          pages.push('...');
         }
-      %>
-      <% pages.forEach(p => { %>
-        <% if (p === '...') { %>
-          <li class="page-item disabled"><span class="page-link">...</span></li>
-        <% } else { %>
-          <li class="page-item <%= p === currentPage ? 'active' : '' %>">
-            <a class="page-link" href="?page=<%= p %><%= qs %>"><%= p %></a>
-          </li>
-        <% } %>
-      <% }) %>
-      <li class="page-item <%= currentPage >= totalPages ? 'disabled' : '' %>">
-        <a class="page-link" href="?page=<%= currentPage + 1 %><%= qs %>">&raquo;</a>
-      </li>
-    </ul>
-  </nav>
+      }
+    %>
+    <% pages.forEach(p => { %>
+      <% if (p === '...') { %>
+        <li><span class="disabled">...</span></li>
+      <% } else { %>
+        <li>
+          <% if (p === currentPage) { %>
+            <span class="active"><%= p %></span>
+          <% } else { %>
+            <a href="?page=<%= p %><%= typeof qs !== 'undefined' ? qs : '' %>"><%= p %></a>
+          <% } %>
+        </li>
+      <% } %>
+    <% }) %>
+    <% if (currentPage < totalPages) { %>
+      <li><a href="?page=<%= currentPage + 1 %><%= typeof qs !== 'undefined' ? qs : '' %>">&raquo;</a></li>
+    <% } else { %>
+      <li><span class="disabled">&raquo;</span></li>
+    <% } %>
+  </ul>
+</nav>
 <% } %>

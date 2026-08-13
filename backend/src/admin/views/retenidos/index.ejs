@@ -1,53 +1,47 @@
 <%- include('../layouts/header') %>
-<div class="d-flex justify-content-between align-items-center mb-3">
+<header class="flex justify-between items-center mb-3">
   <div><span class="text-muted"><%= total %> retenidos</span></div>
-  <a href="/admin/retenidos/nuevo" class="btn btn-primary">Nuevo Retenido</a>
-</div>
-<form method="GET" class="row g-2 mb-3">
-  <div class="col-auto">
-    <select class="form-select form-select-sm" name="estado">
-      <option value="">Todos</option>
-      <% ESTADOS.forEach(e => { %>
-        <option value="<%= e %>" <%= filtroEstado === e ? 'selected' : '' %>><%= e.charAt(0) + e.slice(1).toLowerCase() %></option>
-      <% }) %>
-    </select>
-  </div>
-  <div class="col-auto">
-    <button type="submit" class="btn btn-outline-secondary btn-sm">Filtrar</button>
-  </div>
+  <a href="/admin/retenidos/nuevo" role="button" class="primary">Nuevo Retenido</a>
+</header>
+<form method="GET" class="flex gap-2 mb-3 items-center">
+  <select name="estado" style="width:auto">
+    <option value="">Todos</option>
+    <% ESTADOS.forEach(e => { %>
+      <option value="<%= e %>" <%= filtroEstado === e ? 'selected' : '' %>><%= e.charAt(0) + e.slice(1).toLowerCase() %></option>
+    <% }) %>
+  </select>
+  <button type="submit" class="secondary outline">Filtrar</button>
 </form>
-<div class="table-responsive">
-  <table class="table table-hover align-middle">
-    <thead class="table-light">
-      <tr><th>Estado</th><th>Item</th><th>Cliente</th><th>Pedido</th><th>Inicio</th><th>Fin</th><th></th></tr>
-    </thead>
-    <tbody>
-      <% retenidos.forEach(r => { %>
-        <tr>
-          <td>
-            <span class="badge bg-<%= r.estado === 'RETENIDO' ? 'warning' : (r.estado === 'DEVUELTO' ? 'success' : 'danger') %>">
-              <%= r.estado.charAt(0) + r.estado.slice(1).toLowerCase() %>
-            </span>
-          </td>
-          <td><%= r.item.nombre %></td>
-          <td><%= r.cliente.apellido %>, <%= r.cliente.nombre %></td>
-          <td><%= r.pedido.numeroPedido %></td>
-          <td><%= r.inicio.toLocaleDateString() %></td>
-          <td><%= r.fin ? r.fin.toLocaleDateString() : '-' %></td>
-          <td>
-            <a href="/admin/retenidos/<%= r.id %>/editar" class="btn btn-sm btn-outline-primary">Editar</a>
-            <form method="POST" action="/admin/retenidos/<%= r.id %>/eliminar" style="display:inline" onsubmit="return confirm('¿Eliminar este retenido?')">
-              <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
-            </form>
-          </td>
-        </tr>
-      <% }) %>
-      <% if (retenidos.length === 0) { %>
-        <tr><td colspan="7" class="text-center text-muted py-4">No hay retenidos</td></tr>
-      <% } %>
-    </tbody>
-  </table>
-</div>
+<table>
+  <thead>
+    <tr><th>Estado</th><th>Item</th><th>Cliente</th><th>Pedido</th><th>Inicio</th><th>Fin</th><th></th></tr>
+  </thead>
+  <tbody>
+    <% retenidos.forEach(r => { %>
+      <tr>
+        <td>
+          <span class="badge-<%= r.estado === 'RETENIDO' ? 'pendiente' : (r.estado === 'DEVUELTO' ? 'success' : 'danger') %>">
+            <%= r.estado.charAt(0) + r.estado.slice(1).toLowerCase() %>
+          </span>
+        </td>
+        <td><%= r.item.nombre %></td>
+        <td><%= r.cliente.apellido %>, <%= r.cliente.nombre %></td>
+        <td><%= r.pedido.numeroPedido %></td>
+        <td><%= r.inicio.toLocaleDateString() %></td>
+        <td><%= r.fin ? r.fin.toLocaleDateString() : '-' %></td>
+        <td class="action-cell">
+          <a href="/admin/retenidos/<%= r.id %>/editar" role="button" class="secondary outline small-btn">Editar</a>
+          <form method="POST" action="/admin/retenidos/<%= r.id %>/eliminar" onsubmit="return confirm('¿Eliminar este retenido?')">
+            <button type="submit" class="secondary outline small-btn">Eliminar</button>
+          </form>
+        </td>
+      </tr>
+    <% }) %>
+    <% if (retenidos.length === 0) { %>
+      <tr><td colspan="7" class="text-center text-muted" style="padding:1rem 0">No hay retenidos</td></tr>
+    <% } %>
+  </tbody>
+</table>
 <% const totalPages = Math.ceil(total / pageSize); %>
 <%- include('../layouts/pagination', { totalPages, currentPage: page, qs }) %>
 <%- include('../layouts/footer') %>

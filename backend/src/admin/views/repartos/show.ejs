@@ -1,101 +1,89 @@
 <%- include('../layouts/header') %>
 
-<div class="mb-3">
-  <a href="/admin/repartos" class="btn btn-outline-secondary btn-sm">&larr; Volver</a>
-</div>
+<a href="/admin/repartos" class="secondary outline small-btn" style="margin-bottom:1rem;display:inline-block;">&larr; Volver</a>
 
-<div class="card mb-4">
-  <div class="card-header d-flex justify-content-between align-items-center">
+<article style="margin-bottom:1rem;">
+  <header class="flex justify-between items-center">
     <span><strong>Reparto del <%= reparto.fecha %></strong></span>
-    <span class="badge bg-<%= reparto.estado === 'COMPLETADO' ? 'success' : reparto.estado === 'EN_CURSO' ? 'warning' : 'secondary' %> fs-6">
+    <span class="<%= reparto.estado === 'COMPLETADO' ? 'badge-success' : reparto.estado === 'EN_CURSO' ? 'badge-en-curso' : 'badge-pendiente' %>" style="font-size:1rem;">
       <%= reparto.estado.replace(/_/g, ' ') %>
     </span>
-  </div>
-  <div class="card-body">
-    <div class="row">
-      <div class="col-md-4">
-        <h6>Repartidor</h6>
-        <p class="mb-1"><strong><%= reparto.repartidor.apellido %>, <%= reparto.repartidor.nombre %></strong></p>
-        <p class="mb-0"><%= reparto.repartidor.email %></p>
-      </div>
-      <div class="col-md-4">
-        <h6>Horarios</h6>
-        <p class="mb-1">Inicio: <%= reparto.horaInicio || '-' %></p>
-        <p class="mb-0">Fin: <%= reparto.horaFin || '-' %></p>
-      </div>
-      <div class="col-md-4">
-        <h6>Progreso</h6>
-        <p class="mb-1">Total: <%= reparto.resumen.totalPedidos %></p>
-        <p class="mb-0">Completados: <%= reparto.resumen.completados %> / <%= reparto.resumen.totalPedidos %></p>
-      </div>
+  </header>
+  <div class="grid" style="grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
+    <div>
+      <h6>Repartidor</h6>
+      <p style="margin-bottom:0.25rem;"><strong><%= reparto.repartidor.apellido %>, <%= reparto.repartidor.nombre %></strong></p>
+      <p><%= reparto.repartidor.email %></p>
+    </div>
+    <div>
+      <h6>Horarios</h6>
+      <p style="margin-bottom:0.25rem;">Inicio: <%= reparto.horaInicio || '-' %></p>
+      <p>Fin: <%= reparto.horaFin || '-' %></p>
+    </div>
+    <div>
+      <h6>Progreso</h6>
+      <p style="margin-bottom:0.25rem;">Total: <%= reparto.resumen.totalPedidos %></p>
+      <p>Completados: <%= reparto.resumen.completados %> / <%= reparto.resumen.totalPedidos %></p>
     </div>
   </div>
-</div>
+</article>
 
-<div class="card mb-4">
-  <div class="card-header d-flex justify-content-between align-items-center">
+<article style="margin-bottom:1rem;">
+  <header class="flex justify-between items-center">
     <span><strong>Pedidos</strong></span>
-    <span class="badge bg-secondary"><%= reparto.pedidos.length %> pedidos</span>
-  </div>
-  <div class="card-body p-0">
-    <table class="table table-striped mb-0">
-      <thead>
+    <span class="badge-secondary" style="font-size:1rem;"><%= reparto.pedidos.length %> pedidos</span>
+  </header>
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Cliente</th>
+        <th>Estado</th>
+        <th>Items</th>
+        <th>Motivo</th>
+        <% if (reparto.estado === 'PENDIENTE') { %>
+          <th></th>
+        <% } %>
+      </tr>
+    </thead>
+    <tbody>
+      <% reparto.pedidos.forEach(p => { %>
         <tr>
-          <th>#</th>
-          <th>Cliente</th>
-          <th>Estado</th>
-          <th>Items</th>
-          <th>Motivo</th>
+          <td><%= p.orden %></td>
+          <td><%= p.cliente.apellido %>, <%= p.cliente.nombre %></td>
+          <td>
+            <span class="<%= p.estado === 'ENTREGADO' ? 'badge-entregado' : p.estado === 'CANCELADO' || p.estado === 'NO_ENTREGADO' ? 'badge-no-entregado' : p.estado === 'EN_RUTA' ? 'badge-en-curso' : 'badge-pendiente' %>" style="font-size:1rem;">
+              <%= p.estado.replace(/_/g, ' ') %>
+            </span>
+          </td>
+          <td><%= p.items.length %></td>
+          <td><%= p.motivoFalla || '-' %></td>
           <% if (reparto.estado === 'PENDIENTE') { %>
-            <th></th>
+            <td>
+              <form method="POST" action="/admin/repartos/<%= reparto.id %>/pedidos/<%= p.id %>/quitar" data-confirm="¿Quitar este pedido del reparto?" class="flex">
+                <button type="submit" class="primary outline small-btn">Quitar</button>
+              </form>
+            </td>
           <% } %>
         </tr>
-      </thead>
-      <tbody>
-        <% reparto.pedidos.forEach(p => { %>
-          <tr>
-            <td><%= p.orden %></td>
-            <td><%= p.cliente.apellido %>, <%= p.cliente.nombre %></td>
-            <td>
-              <span class="badge bg-<%= p.estado === 'ENTREGADO' ? 'success' : p.estado === 'CANCELADO' || p.estado === 'NO_ENTREGADO' ? 'danger' : p.estado === 'EN_RUTA' ? 'warning' : 'secondary' %>">
-                <%= p.estado.replace(/_/g, ' ') %>
-              </span>
-            </td>
-            <td><%= p.items.length %></td>
-            <td><%= p.motivoFalla || '-' %></td>
-            <% if (reparto.estado === 'PENDIENTE') { %>
-              <td>
-                <form method="POST" action="/admin/repartos/<%= reparto.id %>/pedidos/<%= p.id %>/quitar" data-confirm="¿Quitar este pedido del reparto?" class="d-inline">
-                  <button type="submit" class="btn btn-sm btn-outline-danger">Quitar</button>
-                </form>
-              </td>
-            <% } %>
-          </tr>
-        <% }) %>
-      </tbody>
-    </table>
-  </div>
-</div>
+      <% }) %>
+    </tbody>
+  </table>
+</article>
 
 <% if (reparto.estado === 'PENDIENTE' && pedidosDisponibles.length > 0) { %>
-  <div class="card">
-    <div class="card-header"><strong>Agregar Pedido</strong></div>
-    <div class="card-body">
-      <form method="POST" action="/admin/repartos/<%= reparto.id %>/pedidos" class="row g-2">
-        <div class="col-md-8">
-          <select class="form-select" name="pedidoId" required>
-            <option value="">Seleccionar pedido...</option>
-            <% pedidosDisponibles.forEach(p => { %>
-              <option value="<%= p.id %>">#<%= p.numeroPedido %> — <%= p.cliente.apellido %>, <%= p.cliente.nombre %> (<%= p.itemsCount %> items)</option>
-            <% }) %>
-          </select>
-        </div>
-        <div class="col-md-4">
-          <button type="submit" class="btn btn-primary">Agregar</button>
-        </div>
-      </form>
-    </div>
-  </div>
+  <article>
+    <header><strong>Agregar Pedido</strong></header>
+    <form method="POST" action="/admin/repartos/<%= reparto.id %>/pedidos" class="flex gap-2 items-center">
+      <select name="pedidoId" required style="flex:1;">
+        <option value="">Seleccionar pedido...</option>
+        <% pedidosDisponibles.forEach(p => { %>
+          <option value="<%= p.id %>">#<%= p.numeroPedido %> — <%= p.cliente.apellido %>, <%= p.cliente.nombre %> (<%= p.itemsCount %> items)</option>
+        <% }) %>
+      </select>
+      <button class="primary">Agregar</button>
+    </form>
+  </article>
 <% } %>
 
 <%- include('../layouts/footer') %>

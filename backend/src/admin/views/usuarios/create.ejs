@@ -1,52 +1,43 @@
 <%- include('../layouts/header') %>
 
-<div class="mb-3">
-  <a href="/admin/usuarios" class="btn btn-outline-secondary btn-sm">&larr; Volver</a>
-</div>
+<a href="/admin/usuarios" class="secondary outline small-btn mb-2">&larr; Volver</a>
 
-<div class="card">
-  <div class="card-header"><strong>Nuevo Usuario</strong></div>
-  <div class="card-body">
-    <% if (typeof errors.general !== 'undefined' && errors.general) { %>
-      <div class="alert alert-danger"><%= errors.general %></div>
-    <% } %>
+<article>
+  <header><strong>Nuevo Usuario</strong></header>
+  <% if (typeof errors.general !== 'undefined' && errors.general) { %>
+    <div class="alert alert-danger"><%= errors.general %></div>
+  <% } %>
 
-    <form method="POST" action="/admin/usuarios">
-      <div class="row mb-3">
-        <div class="col-md-6">
-          <label for="nombre" class="form-label">Nombre</label>
-          <input type="text" class="form-control" id="nombre" name="nombre" required>
-        </div>
-        <div class="col-md-6">
-          <label for="apellido" class="form-label">Apellido</label>
-          <input type="text" class="form-control" id="apellido" name="apellido" required>
-        </div>
-      </div>
+  <form method="POST" action="/admin/usuarios">
+    <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 1rem;">
+      <label for="nombre">Nombre
+        <input type="text" id="nombre" name="nombre" required>
+      </label>
+      <label for="apellido">Apellido
+        <input type="text" id="apellido" name="apellido" required>
+      </label>
+    </div>
 
-      <div class="mb-3">
-        <label for="email" class="form-label">Email</label>
-        <input type="email" class="form-control" id="email" name="email" required>
-      </div>
+    <label for="email">Email
+      <input type="email" id="email" name="email" required>
+    </label>
 
-      <div class="mb-3">
-        <label for="password" class="form-label">Contraseña</label>
-        <input type="password" class="form-control" id="password" name="password" required minlength="8">
-      </div>
+    <label for="password">Contraseña
+      <input type="password" id="password" name="password" required minlength="8">
+    </label>
 
-      <div class="mb-3">
-        <label for="rol" class="form-label">Rol</label>
-        <select class="form-select" id="rol" name="rol">
-          <option value="REPARTIDOR">Repartidor</option>
-          <option value="ADMIN">Administrador</option>
-        </select>
-      </div>
+    <label for="rol">Rol
+      <select id="rol" name="rol">
+        <option value="REPARTIDOR">Repartidor</option>
+        <option value="ADMIN">Administrador</option>
+      </select>
+    </label>
 
-      <div class="d-flex gap-2">
-        <button type="submit" class="btn btn-primary">Crear Usuario</button>
-        <a href="/admin/usuarios" class="btn btn-outline-secondary">Cancelar</a>
-      </div>
-    </form>
-  </div>
-</div>
+    <footer class="flex gap-2">
+      <button type="submit" class="primary">Crear Usuario</button>
+      <a href="/admin/usuarios" role="button" class="secondary outline">Cancelar</a>
+    </footer>
+  </form>
+</article>
 
 <%- include('../layouts/footer') %>

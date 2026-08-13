@@ -7,9 +7,9 @@ import { normalizePhone } from '../utils/normalize-phone.js'
 import { noRegistradoFlow } from './pedido.flow.js'
 
 const MOTIVOS = [
-  { label: 'Ya no necesito el pedido', value: 'OTRO' },
+  { label: 'Ya no necesito el pedido', value: 'YA_NO_LO_NECESITA' },
   { label: 'La dirección es incorrecta', value: 'DIRECCION_INCORRECTA' },
-  { label: 'No voy a estar para recibir', value: 'CLIENTE_AUSENTE' },
+  { label: 'No voy a estar para recibir', value: 'CANCELACION_CLIENTE' },
   { label: 'Otro motivo', value: 'OTRO' },
 ] as const
 

@@ -1,98 +1,87 @@
 <%- include('../layouts/header') %>
 
-<div class="mb-3">
-  <a href="/admin/pedidos" class="btn btn-outline-secondary btn-sm">&larr; Volver</a>
-</div>
+<a href="/admin/pedidos" class="secondary outline small-btn" style="margin-bottom:1rem;display:inline-block;">&larr; Volver</a>
 
-<div class="card mb-4">
-  <div class="card-header d-flex justify-content-between align-items-center">
+<article style="margin-bottom:1rem;">
+  <header class="flex justify-between items-center">
     <span><strong>Pedido #<%= pedido.numeroPedido %></strong></span>
-    <span class="badge bg-<%= pedido.estado === 'ENTREGADO' ? 'success' : pedido.estado === 'CANCELADO' || pedido.estado === 'NO_ENTREGADO' ? 'danger' : pedido.estado === 'EN_RUTA' ? 'warning' : 'secondary' %> fs-6">
+    <span class="<%= pedido.estado === 'ENTREGADO' ? 'badge-entregado' : (pedido.estado === 'CANCELADO' || pedido.estado === 'NO_ENTREGADO') ? 'badge-no-entregado' : pedido.estado === 'EN_RUTA' ? 'badge-en-curso' : 'badge-pendiente' %>" style="font-size:1rem;">
       <%= pedido.estado.replace(/_/g, ' ') %>
     </span>
-  </div>
-  <div class="card-body">
-    <div class="row">
-      <div class="col-md-6">
-        <h6>Cliente</h6>
-        <p class="mb-1"><strong><%= pedido.cliente.apellido %>, <%= pedido.cliente.nombre %></strong></p>
-        <p class="mb-1">Tel: <%= pedido.cliente.telefono %></p>
-        <p class="mb-1">Dirección: <%= pedido.cliente.domicilio.calle %> <%= pedido.cliente.domicilio.numero %>, <%= pedido.cliente.domicilio.localidad %></p>
-        <p class="mb-1">Día de entrega: <%= pedido.cliente.diaEntrega %></p>
-        <p class="mb-0">Horario: <%= pedido.cliente.horarioDesde %> - <%= pedido.cliente.horarioHasta %></p>
-      </div>
-      <div class="col-md-6">
-        <h6>Detalles</h6>
-        <p class="mb-1">Fecha: <%= pedido.fecha %></p>
-        <p class="mb-1">Orden: <%= pedido.orden %></p>
-        <p class="mb-0">Total: <strong>$<%= pedido.total?.toFixed(2) %></strong></p>
-      </div>
+  </header>
+  <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 1rem;">
+    <div>
+      <h6>Cliente</h6>
+      <p style="margin-bottom:0.25rem;"><strong><%= pedido.cliente.apellido %>, <%= pedido.cliente.nombre %></strong></p>
+      <p style="margin-bottom:0.25rem;">Tel: <%= pedido.cliente.telefono %></p>
+      <p style="margin-bottom:0.25rem;">Dirección: <%= pedido.domicilio.calle %> <%= pedido.domicilio.numero %>, <%= pedido.domicilio.localidad %></p>
+      <p style="margin-bottom:0.25rem;">Día de entrega: <%= pedido.domicilio.dias?.[0]?.nombre ?? '-' %></p>
+      <p>Horario: <%= pedido.domicilio.dias?.[0]?.horarios?.[0]?.inicio ?? '-' %> - <%= pedido.domicilio.dias?.[0]?.horarios?.[0]?.fin ?? '-' %></p>
+    </div>
+    <div>
+      <h6>Detalles</h6>
+      <p style="margin-bottom:0.25rem;">Fecha: <%= pedido.fecha %></p>
+      <p style="margin-bottom:0.25rem;">Orden: <%= pedido.orden %></p>
+      <p>Total: <strong>$<%= pedido.total?.toFixed(2) %></strong></p>
     </div>
   </div>
-</div>
+</article>
 
-<div class="card mb-4">
-  <div class="card-header d-flex justify-content-between align-items-center">
+<article style="margin-bottom:1rem;">
+  <header class="flex justify-between items-center">
     <span><strong>Items</strong></span>
-    <span class="badge bg-secondary"><%= pedido.items.length %> items</span>
-  </div>
-  <div class="card-body p-0">
-    <table class="table table-striped mb-0">
-      <thead>
+    <span class="badge-secondary" style="font-size:1rem;"><%= pedido.items.length %> items</span>
+  </header>
+  <table>
+    <thead>
+      <tr>
+        <th>Item</th>
+        <th>Cantidad</th>
+        <th>Precio Unit.</th>
+        <th>Subtotal</th>
+        <% if (pedido.estado === 'PENDIENTE') { %>
+          <th></th>
+        <% } %>
+      </tr>
+    </thead>
+    <tbody>
+      <% pedido.items.forEach(item => { %>
         <tr>
-          <th>Item</th>
-          <th>Cantidad</th>
-          <th>Precio Unit.</th>
-          <th>Subtotal</th>
+          <td><%= item.item.nombre %></td>
+          <td><%= item.cantidad %> <%= item.item.unidad %></td>
+          <td>$<%= item.precioUnitario?.toFixed(2) %></td>
+          <td>$<%= (item.cantidad * (item.precioUnitario || 0)).toFixed(2) %></td>
           <% if (pedido.estado === 'PENDIENTE') { %>
-            <th></th>
+            <td>
+              <form method="POST" action="/admin/pedidos/<%= pedido.id %>/items/<%= item.id %>/quitar" data-confirm="¿Quitar este item?" class="flex">
+                <button type="submit" class="primary outline small-btn">Quitar</button>
+              </form>
+            </td>
           <% } %>
         </tr>
-      </thead>
-      <tbody>
-        <% pedido.items.forEach(item => { %>
-          <tr>
-            <td><%= item.item.nombre %></td>
-            <td><%= item.cantidad %> <%= item.item.unidad %></td>
-            <td>$<%= item.precioUnitario?.toFixed(2) %></td>
-            <td>$<%= (item.cantidad * (item.precioUnitario || 0)).toFixed(2) %></td>
-            <% if (pedido.estado === 'PENDIENTE') { %>
-              <td>
-                <form method="POST" action="/admin/pedidos/<%= pedido.id %>/items/<%= item.id %>/quitar" data-confirm="¿Quitar este item?" class="d-inline">
-                  <button type="submit" class="btn btn-sm btn-outline-danger">Quitar</button>
-                </form>
-              </td>
-            <% } %>
-          </tr>
-        <% }) %>
-      </tbody>
-    </table>
-  </div>
-</div>
+      <% }) %>
+    </tbody>
+  </table>
+</article>
 
 <% if (pedido.estado === 'PENDIENTE') { %>
-  <div class="card mb-4">
-    <div class="card-header"><strong>Agregar Item</strong></div>
-    <div class="card-body">
-      <form method="POST" action="/admin/pedidos/<%= pedido.id %>" class="row g-2">
-        <div class="col-md-6">
-          <a href="/admin/pedidos/<%= pedido.id %>/editar" class="btn btn-outline-primary">Editar Pedido</a>
-        </div>
-      </form>
-    </div>
-  </div>
+  <article style="margin-bottom:1rem;">
+    <header><strong>Agregar Item</strong></header>
+    <form method="POST" action="/admin/pedidos/<%= pedido.id %>" class="flex gap-2 items-center">
+      <a href="/admin/pedidos/<%= pedido.id %>/editar" class="primary outline">Editar Pedido</a>
+    </form>
+  </article>
 <% } %>
 
-<div class="d-flex gap-2">
+<footer class="flex gap-2">
   <% if (pedido.estado === 'PENDIENTE') { %>
     <form method="POST" action="/admin/pedidos/<%= pedido.id %>/cancelar" data-confirm="¿Cancelar este pedido?">
-      <button type="submit" class="btn btn-warning">Cancelar Pedido</button>
+      <button type="submit" class="primary outline">Cancelar Pedido</button>
     </form>
     <form method="POST" action="/admin/pedidos/<%= pedido.id %>/eliminar" data-confirm="¿Eliminar este pedido?">
-      <button type="submit" class="btn btn-danger">Eliminar</button>
+      <button type="submit" class="primary outline">Eliminar</button>
     </form>
   <% } %>
-  <a href="/admin/pedidos" class="btn btn-outline-secondary">Volver</a>
-</div>
+</footer>
 
 <%- include('../layouts/footer') %>

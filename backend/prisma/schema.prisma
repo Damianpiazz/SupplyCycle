@@ -10,6 +10,7 @@ datasource db {
 enum Rol {
   REPARTIDOR
   ADMIN
+  BOT
 }
 
 enum DiaSemana {
@@ -67,6 +68,7 @@ model Cliente {
   domicilios    Domicilio[]
   retenidos     Retenido[]
   reclamos      Reclamo[]
+  notificaciones Notificacion[]
 }
 
 model Item {
@@ -76,6 +78,7 @@ model Item {
   unidad      String
   precio      Float?
   activo      Boolean      @default(true)
+  retornable  Boolean      @default(false)
   creadoEn    DateTime     @default(now())
   pedidoItems PedidoItem[]
   retenidos   Retenido[]
@@ -121,8 +124,6 @@ model Reparto {
   actualizadoEn DateTime      @updatedAt
   repartidor    Usuario       @relation(fields: [repartidorId], references: [id])
   pedidos       Pedido[]
-
-  @@unique([repartidorId, fecha])
 }
 
 model Ciudad {
@@ -207,8 +208,36 @@ model Retenido {
 }
 
 model Reclamo {
-  id        String   @id @default(uuid())
+  id          String   @id @default(uuid())
+  clienteId   String
+  descripcion String
+  creadoEn    DateTime @default(now())
+  cliente     Cliente  @relation(fields: [clienteId], references: [id])
+}
+
+enum TipoNotificacion {
+  RECORDATORIO_ENVASES
+}
+
+model Notificacion {
+  id        String           @id @default(uuid())
   clienteId String
-  creadoEn  DateTime @default(now())
-  cliente   Cliente  @relation(fields: [clienteId], references: [id])
+  tipo      TipoNotificacion
+  contenido String
+  enviadoEn DateTime         @default(now())
+  exitoso   Boolean          @default(true)
+  error     String?
+  creadoEn  DateTime         @default(now())
+  cliente   Cliente          @relation(fields: [clienteId], references: [id])
+
+  @@map("notificaciones")
+}
+
+model Configuracion {
+  id            String   @id @default(uuid())
+  clave         String   @unique @db.VarChar(100)
+  valor         String   @db.VarChar(255)
+  actualizadoEn DateTime @updatedAt
+
+  @@map("configuracion")
 }
