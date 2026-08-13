@@ -143,6 +143,17 @@ describe('PATCH /api/v1/items/:id — update (SPEC-03 AC3/AC6)', () => {
     expect(res.body.error.code).toBe('FORBIDDEN');
     expect(mockPrisma.item.update).not.toHaveBeenCalled();
   });
+
+  it('must return 400 VALIDATION_ERROR for an empty PATCH body (gate fix C)', async () => {
+    const res = await request(app)
+      .patch('/api/v1/items/item-1')
+      .set('Authorization', `Bearer ${makeToken('ADMIN')}`)
+      .send({})
+      .expect(400);
+
+    expect(res.body.error.code).toBe('VALIDATION_ERROR');
+    expect(mockPrisma.item.update).not.toHaveBeenCalled();
+  });
 });
 
 // ─── Tests: DELETE /api/v1/items/:id ──────────────────────────────────────────

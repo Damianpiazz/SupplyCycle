@@ -18,14 +18,20 @@ export const itemSchema = z.object({
  */
 export const crearItemSchema = itemSchema;
 
-export const actualizarItemSchema = z.object({
-  nombre: z.string().min(2).max(100).optional(),
-  descripcion: z.string().optional(),
-  unidad: z.string().min(1).optional(),
-  precio: z.number().optional(),
-  activo: z.boolean().optional(),
-  retornable: z.boolean().optional(),
-});
+export const actualizarItemSchema = z
+  .object({
+    nombre: z.string().min(2).max(100).optional(),
+    descripcion: z.string().optional(),
+    unidad: z.string().min(1).optional(),
+    precio: z.number().optional(),
+    activo: z.boolean().optional(),
+    retornable: z.boolean().optional(),
+  })
+  .refine((data) => Object.keys(data).length > 0, {
+    // Gate fix C: an all-optional schema would let PATCH {} through and run
+    // prisma.item.update with data:{} (undefined behavior). Reject empty.
+    message: 'El cuerpo del PATCH no puede estar vacío',
+  });
 
 export const pedidoItemSchema = z.object({
   itemId: z.string().uuid('El ID del ítem debe ser un UUID válido'),
