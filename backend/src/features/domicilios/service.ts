@@ -1,5 +1,6 @@
 import { prisma } from '../../lib/prisma.js';
 import { ApiError } from '../../utils/api-error.js';
+import { getOrCreateCiudad } from '../../lib/ciudad.js';
 import { timeStringToDate, dateToTimeString } from '../../lib/date-utils.js';
 import type { z } from 'zod';
 import type { domicilioSchema, actualizarDomicilioSchema, crearDiaSchema, actualizarDiaSchema, crearHorarioSchema, actualizarHorarioSchema } from './schema.js';
@@ -10,16 +11,6 @@ type CrearDiaInput = z.infer<typeof crearDiaSchema>;
 type ActualizarDiaInput = z.infer<typeof actualizarDiaSchema>;
 type CrearHorarioInput = z.infer<typeof crearHorarioSchema>;
 type ActualizarHorarioInput = z.infer<typeof actualizarHorarioSchema>;
-
-async function getOrCreateCiudad(localidad: string) {
-  let ciudad = await prisma.ciudad.findFirst({
-    where: { nombre: { equals: localidad, mode: 'insensitive' } },
-  });
-  if (!ciudad) {
-    ciudad = await prisma.ciudad.create({ data: { nombre: localidad } });
-  }
-  return ciudad;
-}
 
 const domicilioInclude = {
   dias: {

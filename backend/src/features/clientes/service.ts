@@ -1,5 +1,6 @@
 import { prisma } from '../../lib/prisma.js';
 import { ApiError } from '../../utils/api-error.js';
+import { getOrCreateCiudad } from '../../lib/ciudad.js';
 import { timeStringToDate, dateToTimeString } from '../../lib/date-utils.js';
 import { calcularDatosDemora } from '../../lib/retenidos-utils.js';
 import { calcularIntervaloPromedioDias, DEFAULT_FRECUENCIA_DIAS } from '../../lib/frecuencia.js';
@@ -98,16 +99,6 @@ function toClienteResponse(cliente: ClienteWithRelations) {
       })),
     })),
   };
-}
-
-async function getOrCreateCiudad(localidad: string) {
-  let ciudad = await prisma.ciudad.findFirst({
-    where: { nombre: { equals: localidad, mode: 'insensitive' } },
-  });
-  if (!ciudad) {
-    ciudad = await prisma.ciudad.create({ data: { nombre: localidad } });
-  }
-  return ciudad;
 }
 
 export async function listarClientes(params?: ListarClientesParams) {

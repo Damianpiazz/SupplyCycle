@@ -1,10 +1,7 @@
 import { prisma } from '../../lib/prisma.js';
 import { ApiError } from '../../utils/api-error.js';
+import { dateToTimeString } from '../../lib/date-utils.js';
 import { dateFromISODate, fmtDate } from '../../utils/dates.js';
-
-function dateToTimeString(date: Date): string {
-  return date.toISOString().slice(11, 16);
-}
 
 const pedidoDomicilioInclude = {
   domicilio: {
