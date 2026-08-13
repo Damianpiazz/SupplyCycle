@@ -363,42 +363,52 @@ describe('estimarDemanda', () => {
   });
 
   it('excluye clientes cuyo próximo pedido está fuera del periodo', async () => {
-    const haceUnAnio = new Date();
-    haceUnAnio.setFullYear(haceUnAnio.getFullYear() - 1);
-    const today = new Date();
+    // F1 gate-review: fechas FIJAS (2025-08-13 → 2026-08-13 = exactamente 365
+    // días; el span no cruza un 29 de febrero). Antes se usaba `new Date()`
+    // menos un año, lo que daba 366 días cuando el rango cruzaba un año
+    // bisiesto (flake calendar-dependent). El reloj del sistema se stubea para
+    // que el servicio calcule "hoy" contra fechas deterministas.
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-08-13T12:00:00Z'));
+    try {
+      const haceUnAnio = new Date('2025-08-13T12:00:00Z');
+      const today = new Date('2026-08-13T12:00:00Z');
 
-    mockPrisma.cliente.findMany.mockResolvedValue([
-      {
-        id: 'cliente-1',
-        nombre: 'Juan',
-        apellido: 'Perez',
-        domicilios: [
-          {
-            pedidos: [
-              {
-                fecha: haceUnAnio, // más antiguo primero (asc order)
-                items: [{ itemId: 'item-1', cantidad: 3 }],
-              },
-              {
-                fecha: today, // más reciente segundo
-                items: [{ itemId: 'item-1', cantidad: 2 }],
-              },
-            ],
-          },
-        ],
-      },
-    ]);
+      mockPrisma.cliente.findMany.mockResolvedValue([
+        {
+          id: 'cliente-1',
+          nombre: 'Juan',
+          apellido: 'Perez',
+          domicilios: [
+            {
+              pedidos: [
+                {
+                  fecha: haceUnAnio, // más antiguo primero (asc order)
+                  items: [{ itemId: 'item-1', cantidad: 3 }],
+                },
+                {
+                  fecha: today, // más reciente segundo
+                  items: [{ itemId: 'item-1', cantidad: 2 }],
+                },
+              ],
+            },
+          ],
+        },
+      ]);
 
-    mockPrisma.item.findMany.mockResolvedValue([
-      { id: 'item-1', nombre: 'Bidón 12L', unidad: 'unidad' },
-    ]);
+      mockPrisma.item.findMany.mockResolvedValue([
+        { id: 'item-1', nombre: 'Bidón 12L', unidad: 'unidad' },
+      ]);
 
-    // Frecuencia real (hace 1 año → hoy = ~365 días): nextDate = hoy + 365 > endDate (hoy + 1) → excluido
-    // Además prueba que el promedio global usa la frecuencia REAL (365), no la constante 7.
-    const result = await import('../service.js').then((m) => m.estimarDemanda(1, false));
+      // Frecuencia real (hace 1 año → hoy = 365 días exactos): nextDate = hoy + 365 > endDate (hoy + 1) → excluido
+      // Además prueba que el promedio global usa la frecuencia REAL (365), no la constante 7.
+      const result = await import('../service.js').then((m) => m.estimarDemanda(1, false));
 
-    expect(result.clientesConEstimacion).toBe(0);
-    expect(result.frecuenciaPromedioGlobal).toBe(365);
+      expect(result.clientesConEstimacion).toBe(0);
+      expect(result.frecuenciaPromedioGlobal).toBe(365);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('agrupa múltiples clientes en el mismo producto', async () => {
