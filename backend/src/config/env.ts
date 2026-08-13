@@ -2,14 +2,29 @@ import 'dotenv/config';
 
 const nodeEnv = process.env['NODE_ENV'] ?? 'development';
 
-// Production fail-fast (SPEC-10 C5): never boot with placeholder secrets in prod.
-// dotenv never overrides already-set keys, so these checks run after .env loads.
+// Placeholders committed in .env.example (or defaulted below). They are public
+// and would allow forging tokens — never boot with them in production.
+const DEV_PLACEHOLDER_SECRETS: string[] = [
+  'supplycycle-dev-secret',
+  'supplycycle-dev-secret-key-2026',
+  'supplycycle-session-secret',
+];
+
+// Production fail-fast (SPEC-10 C5 + gate review): never boot with missing or
+// placeholder secrets. dotenv never overrides already-set keys, so these checks
+// run after .env loads.
 if (nodeEnv === 'production') {
   if (!process.env['JWT_SECRET']) {
     throw new Error('JWT_SECRET is required');
   }
   if (!process.env['SESSION_SECRET']) {
     throw new Error('SESSION_SECRET is required');
+  }
+  if (DEV_PLACEHOLDER_SECRETS.includes(process.env['JWT_SECRET'])) {
+    throw new Error('JWT_SECRET must not be a placeholder value in production');
+  }
+  if (DEV_PLACEHOLDER_SECRETS.includes(process.env['SESSION_SECRET'])) {
+    throw new Error('SESSION_SECRET must not be a placeholder value in production');
   }
 }
 

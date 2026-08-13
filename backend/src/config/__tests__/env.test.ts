@@ -47,6 +47,36 @@ describe('env — production fail-fast (SPEC-10 C5)', () => {
     expect(env.sessionSecret).toBe('prod-session-secret');
   });
 
+  it('throws when JWT_SECRET is a dev placeholder in production', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('JWT_SECRET', 'supplycycle-dev-secret');
+    vi.stubEnv('SESSION_SECRET', 'prod-session-secret');
+
+    await expect(loadEnv()).rejects.toThrow(
+      'JWT_SECRET must not be a placeholder value in production'
+    );
+  });
+
+  it('throws when JWT_SECRET is the .env.example placeholder in production', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('JWT_SECRET', 'supplycycle-dev-secret-key-2026');
+    vi.stubEnv('SESSION_SECRET', 'prod-session-secret');
+
+    await expect(loadEnv()).rejects.toThrow(
+      'JWT_SECRET must not be a placeholder value in production'
+    );
+  });
+
+  it('throws when SESSION_SECRET is a dev placeholder in production', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('JWT_SECRET', 'prod-jwt-secret');
+    vi.stubEnv('SESSION_SECRET', 'supplycycle-session-secret');
+
+    await expect(loadEnv()).rejects.toThrow(
+      'SESSION_SECRET must not be a placeholder value in production'
+    );
+  });
+
   it('keeps dev defaults when secrets are absent (non-production)', async () => {
     vi.stubEnv('NODE_ENV', 'development');
     vi.stubEnv('JWT_SECRET', undefined);
