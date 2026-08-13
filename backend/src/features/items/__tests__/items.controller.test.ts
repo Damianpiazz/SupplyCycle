@@ -13,6 +13,7 @@ const mockPrisma = {
     delete: vi.fn(),
   },
   pedidoItem: { count: vi.fn() },
+  retenido: { count: vi.fn() },
 };
 
 vi.mock('../../../lib/prisma.js', () => ({ prisma: mockPrisma }));
@@ -154,6 +155,7 @@ describe('DELETE /api/v1/items/:id — delete (SPEC-03 AC4/AC6)', () => {
   it('must return 200 and delete the item when ADMIN deletes an unused item', async () => {
     mockPrisma.item.findUnique.mockResolvedValue(baseItem);
     mockPrisma.pedidoItem.count.mockResolvedValue(0);
+    mockPrisma.retenido.count.mockResolvedValue(0);
     mockPrisma.item.delete.mockResolvedValue(baseItem);
 
     const res = await request(app)

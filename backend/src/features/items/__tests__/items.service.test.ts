@@ -12,6 +12,7 @@ const mockPrisma = {
     delete: vi.fn(),
   },
   pedidoItem: { count: vi.fn() },
+  retenido: { count: vi.fn() },
 };
 
 vi.mock('../../../lib/prisma.js', () => ({ prisma: mockPrisma }));
@@ -135,9 +136,23 @@ describe('eliminarItem (SPEC-03 TDD-0061)', () => {
     expect(mockPrisma.item.delete).not.toHaveBeenCalled();
   });
 
+  it('lanza 409 si el ítem está referenciado solo por Retenido (gate fix A)', async () => {
+    mockPrisma.item.findUnique.mockResolvedValue(baseItem);
+    mockPrisma.pedidoItem.count.mockResolvedValue(0);
+    mockPrisma.retenido.count.mockResolvedValue(1);
+
+    await expect(eliminarItem('item-1')).rejects.toMatchObject({
+      statusCode: 409,
+      code: 'CONFLICT',
+    });
+
+    expect(mockPrisma.item.delete).not.toHaveBeenCalled();
+  });
+
   it('elimina el ítem si no está en uso', async () => {
     mockPrisma.item.findUnique.mockResolvedValue(baseItem);
     mockPrisma.pedidoItem.count.mockResolvedValue(0);
+    mockPrisma.retenido.count.mockResolvedValue(0);
     mockPrisma.item.delete.mockResolvedValue(baseItem);
 
     const result = await eliminarItem('item-1');

@@ -88,9 +88,15 @@ export async function eliminarItem(id: string) {
     throw ApiError.notFound('Ítem no encontrado');
   }
 
-  const enUso = await prisma.pedidoItem.count({ where: { itemId: id } });
-  if (enUso > 0) {
-    throw ApiError.conflict('No se puede eliminar un ítem que está en uso en pedidos');
+  // Gate fix A: an item referenced by PedidoItem OR Retenido cannot be
+  // deleted. Counting only PedidoItem allowed a Retenido-only reference to
+  // pass the guard and then throw P2003 (500) instead of the SPEC-03 AC4 409.
+  const [enPedidos, enRetenidos] = await Promise.all([
+    prisma.pedidoItem.count({ where: { itemId: id } }),
+    prisma.retenido.count({ where: { itemId: id } }),
+  ]);
+  if (enPedidos > 0 || enRetenidos > 0) {
+    throw ApiError.conflict('No se puede eliminar un ítem que está en uso');
   }
 
   await prisma.item.delete({ where: { id } });
