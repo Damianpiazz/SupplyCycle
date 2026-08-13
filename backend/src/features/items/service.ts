@@ -23,6 +23,7 @@ export async function crearItem(data: {
   unidad: string;
   precio?: number;
   activo?: boolean;
+  retornable?: boolean;
 }) {
   const existente = await prisma.item.findFirst({
     where: { nombre: { equals: data.nombre, mode: 'insensitive' } },
@@ -38,6 +39,7 @@ export async function crearItem(data: {
       unidad: data.unidad,
       precio: data.precio ?? null,
       activo: data.activo ?? true,
+      retornable: data.retornable ?? false,
     },
   });
 }
@@ -50,6 +52,7 @@ export async function actualizarItem(
     unidad?: string;
     precio?: number | null;
     activo?: boolean;
+    retornable?: boolean;
   }
 ) {
   const existing = await prisma.item.findUnique({ where: { id } });
@@ -74,6 +77,7 @@ export async function actualizarItem(
       ...(data.unidad !== undefined ? { unidad: data.unidad } : {}),
       ...(data.precio !== undefined ? { precio: data.precio } : {}),
       ...(data.activo !== undefined ? { activo: data.activo } : {}),
+      ...(data.retornable !== undefined ? { retornable: data.retornable } : {}),
     },
   });
 }
