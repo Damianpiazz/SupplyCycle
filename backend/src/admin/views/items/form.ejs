@@ -34,6 +34,11 @@
       <% } %>
     </div>
 
+    <label for="retornable" style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem;">
+      <input type="checkbox" id="retornable" name="retornable" value="true" <%= item && item.retornable ? 'checked' : '' %>>
+      Retornable (envase que se devuelve)
+    </label>
+
     <footer class="flex gap-2">
       <button type="submit" class="primary"><%= item ? 'Guardar Cambios' : 'Crear Item' %></button>
       <a href="/admin/items" role="button" class="secondary outline">Cancelar</a>

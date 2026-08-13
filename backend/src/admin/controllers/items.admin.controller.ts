@@ -33,6 +33,7 @@ export async function create(req: Request, res: Response, next: NextFunction): P
       descripcion: b.descripcion || undefined,
       unidad: b.unidad!,
       precio: b.precio ? parseFloat(b.precio) : undefined,
+      retornable: b.retornable === 'true',
     });
 
     req.session.success = 'Item creado exitosamente';
@@ -68,6 +69,7 @@ export async function update(req: Request, res: Response, next: NextFunction): P
       unidad: b.unidad || undefined,
       precio: b.precio !== undefined ? (b.precio ? parseFloat(b.precio) : null) : undefined,
       activo: b.activo === 'true',
+      retornable: b.retornable === 'true',
     });
 
     req.session.success = 'Item actualizado exitosamente';
