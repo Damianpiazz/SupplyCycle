@@ -38,4 +38,21 @@ describe('calcularIntervaloPromedioDias (SPEC-04 TDD-0062)', () => {
   it('exposes the default fallback of 7 days', () => {
     expect(DEFAULT_FRECUENCIA_DIAS).toBe(7);
   });
+
+  it('clamps a same-day interval to a minimum of 1 day (F5 gate-review)', () => {
+    const d1 = new Date('2026-07-20T08:00:00Z');
+    const d2 = new Date('2026-07-20T12:00:00Z');
+
+    // Dos pedidos el mismo día → intervalo 0 días, nunca "cada 0 días".
+    expect(calcularIntervaloPromedioDias([d1, d2])).toBe(1);
+  });
+
+  it('averages clamped intervals together with real gaps (F5 gate-review)', () => {
+    const d1 = new Date('2026-07-10T12:00:00Z');
+    const d2 = new Date('2026-07-20T12:00:00Z');
+    const d3 = new Date('2026-07-20T08:00:00Z');
+
+    // Intervalos: 10 días y 0 (mismo día) → clamp a 1 → (10 + 1) / 2 = 5.5 → 6
+    expect(calcularIntervaloPromedioDias([d1, d2, d3])).toBe(6);
+  });
 });

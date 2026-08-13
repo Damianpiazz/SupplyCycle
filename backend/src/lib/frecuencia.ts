@@ -19,7 +19,9 @@ export function calcularIntervaloPromedioDias(fechas: Date[]): number | null {
   let sumaIntervalos = 0;
   for (let i = 1; i < sorted.length; i++) {
     const diffMs = sorted[i]!.getTime() - sorted[i - 1]!.getTime();
-    sumaIntervalos += Math.round(diffMs / (1000 * 60 * 60 * 24));
+    // F5 gate-review: dos pedidos el mismo día dan 0 días de intervalo — se
+    // acota a 1 para no estimar "cada 0 días" ni anclar mal el próximo pedido.
+    sumaIntervalos += Math.max(1, Math.round(diffMs / (1000 * 60 * 60 * 24)));
   }
 
   return Math.round(sumaIntervalos / (sorted.length - 1));
