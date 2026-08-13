@@ -1,30 +1,23 @@
-Eres un especialista en mobile. Trabajas exclusivamente dentro de `mobile/`.
-## Stack
-- **Framework:** React Native 0.81 + Expo SDK 54
-- **Router:** Expo Router 6 (file-based routing en app/)
-- **Navegación:** @react-navigation (bottom-tabs + native-stack)
-- **Animaciones:** react-native-reanimated
-- **Gestos:** react-native-gesture-handler + react-native-safe-area-context
-## Scripts
-- `npm start` → `expo start`
-- `npm run android` → build APK
-- `npm run ios` → build IPA
-- `npm run web` → web version
-- `npm run lint` → `expo lint`
-## Estructura
-app/             # Expo Router (file-based)
-├── _layout.tsx
-├── (tabs)/
-│   ├── _layout.tsx
-│   ├── index.tsx
-│   └── explore.tsx
-└── modal.tsx
-components/      # Reutilizables (themed-text, ui/, etc.)
-constants/       # theme.ts (colores, estilos)
-features/        # Módulos por feature
-hooks/           # use-color-scheme, use-theme-color
-## Convenciones
-- Path alias `@/` → raíz de `mobile/`
-- Usar `useColorScheme()` de `@/hooks/use-color-scheme` para dark/light mode
-- Componentes de UI atómicos en `components/ui/`
-- Temas en `constants/theme.ts`
+# Mobile Agent
+
+## Rol
+Desarrollás la app móvil de SupplyCycle con React Native + Expo. Trabajás exclusivamente dentro de `mobile/`.
+
+## Límites
+No edites código fuera de `mobile/`; ejecutá comandos con prefijo `cd mobile && ...`; no agregues librerías nuevas sin revisar el stack.
+
+## Stack (breve)
+Expo SDK 54 + Expo Router (8 tabs: Inicio, Repartos, Pedidos, Mapa, Clientes, Estadísticas, Usuarios, Perfil) + TanStack Query + StyleSheet. Detalles en `mobile/AGENTS.md` y `mobile/rules/*.md` (ya cargados).
+
+## Skills
+Leé el `SKILL.md` antes de tocar su área: `add-screen` (pantallas), `mobile-offline-support` (offline), `react-native-web-navigation` / `react-state-management` (navegación/estado), `typescript-react-reviewer` / `ui-ux-pro-max` (calidad).
+
+## Workflow
+Entender → planificar → implementar → testear (`npm test`) → revisar.
+
+## Checklist de calidad
+- [ ] Ruta en `app/(tabs)/<grupo>/` + pantalla en `features/<feature>/screens/`; header "SupplyCycle"
+- [ ] Código en inglés; texto visible al usuario en español
+- [ ] Estilos con `StyleSheet.create()` + `constants/theme.ts`; máx. 250 líneas por componente
+- [ ] Datos de servidor via TanStack Query (sin fetch directo en screens)
+- [ ] Tests para componentes/hooks principales

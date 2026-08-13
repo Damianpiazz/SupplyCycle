@@ -24,9 +24,14 @@
         "edit": "allow",
         "bash": {
           "*": "ask",
-          "cd backend && *": "allow",
+          "cd backend && npm run *": "allow",
+          "cd backend && npx *": "allow",
+          "cd backend && node *": "allow",
           "npm run dev": "allow",
           "npm run build": "allow",
+          "npm test": "allow",
+          "npm run test:coverage": "allow",
+          "npx vitest*": "allow",
           "npx tsx*": "allow",
           "npx prisma*": "allow"
         },
@@ -53,8 +58,13 @@
         "edit": "allow",
         "bash": {
           "*": "ask",
-          "cd mobile && *": "allow",
+          "cd mobile && npm run *": "allow",
+          "cd mobile && npx *": "allow",
+          "cd mobile && node *": "allow",
           "npm run lint": "allow",
+          "npm test": "allow",
+          "npm run test:coverage": "allow",
+          "npx vitest*": "allow",
           "npx expo*": "allow"
         },
         "skill": {
@@ -62,7 +72,6 @@
           "mobile-offline-support": "allow",
           "react-native-web-navigation": "allow",
           "react-state-management": "allow",
-          "expo-architect": "allow",
           "vercel-react-native-skills": "allow",
           "typescript-react-reviewer": "allow",
           "ui-ux-pro-max": "allow"
@@ -71,17 +80,22 @@
     },
     "whatsapp-bot": {
       "mode": "primary",
-      "description": "Desarrolla en whatsapp-bot (BuilderBot + Meta API)",
+      "description": "Desarrolla en whatsapp-bot (BuilderBot + Baileys QR + MemoryDB)",
       "color": "#25D366",
       "prompt": "{file:.opencode/agents/whatsapp-bot.md}",
       "permission": {
         "edit": "allow",
         "bash": {
           "*": "ask",
-          "cd whatsapp-bot && *": "allow",
+          "cd whatsapp-bot && npm run *": "allow",
+          "cd whatsapp-bot && npx *": "allow",
+          "cd whatsapp-bot && node *": "allow",
           "npm run dev": "allow",
           "npm run build": "allow",
-          "npm run lint": "allow"
+          "npm run lint": "allow",
+          "npm test": "allow",
+          "npm run test:coverage": "allow",
+          "npx vitest*": "allow"
         },
         "skill": {
           "add-flow": "allow",

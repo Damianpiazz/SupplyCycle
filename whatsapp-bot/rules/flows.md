@@ -7,7 +7,7 @@
 - Flows anidados van como último argumento de `addAnswer`
 ## State Management
 - Usar `state.update()` y `state.get()` en lugar de variables globales
-- State persiste automáticamente en PostgreSQL
+- State persiste en MemoryDB (en memoria, no persiste entre reinicios)
 ## Endpoints HTTP
 - Provider expone endpoints automáticos en el puerto configurado
 - No agregar Express aparte

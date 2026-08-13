@@ -1,0 +1,62 @@
+{
+  "_description": "Plantilla de configuracion MCP para OpenCode. Copia este archivo como mcp.json (archivo LOCAL, no versionado) y completa los valores. Nunca commitees secrets ni tokens: el mcp.json real no se sube a git. La key 'mcp' va en mcp.json, NO en opencode.json.",
+  "mcp": {
+    "codegraph": {
+      "_doc": "Servidor local: grafo de conocimiento del codigo. Requiere indexar el proyecto primero con 'codegraph init <project-root>' (crea .codegraph/).",
+      "_required": { "type": true, "command": true, "environment": false, "enabled": false },
+      "type": "local",
+      "command": ["codegraph", "--project-path", "E:/Repo/SupplyCycle"],
+      "environment": {},
+      "enabled": true
+    },
+    "context7": {
+      "_doc": "Servidor local: documentacion actualizada de librerias y frameworks (Context7).",
+      "_required": { "type": true, "command": true, "enabled": false },
+      "type": "local",
+      "command": ["npx", "-y", "@upstash/context7-mcp"],
+      "enabled": true
+    },
+    "engram": {
+      "_doc": "Servidor local: memoria persistente entre sesiones (observaciones, busquedas, resumenes). El comando exacto depende de la instalacion (ver docs de Engram).",
+      "_required": { "type": true, "command": true, "enabled": false },
+      "type": "local",
+      "command": ["engram"],
+      "enabled": true
+    },
+    "my-remote-server": {
+      "_doc": "Ejemplo de servidor remoto (MCP over HTTP) con API key. Reemplazar url y token con valores reales en el mcp.json local.",
+      "_required": { "type": true, "url": true, "headers": true, "enabled": false },
+      "type": "remote",
+      "url": "https://api.example.com/mcp",
+      "headers": { "Authorization": "Bearer TU_API_KEY_AQUI" },
+      "enabled": false
+    }
+  },
+  "_examples": {
+    "codegraph": {
+      "description": "Indexa y explora el codigo del proyecto (simbolos, dependencias, blast radius). Requiere 'codegraph init' la primera vez.",
+      "type": "local",
+      "command": ["codegraph", "--project-path", "<ruta-absoluta-al-proyecto>"],
+      "required": ["type", "command"]
+    },
+    "context7": {
+      "description": "Documentacion actualizada de librerias (APIs, migraciones, configuracion).",
+      "type": "local",
+      "command": ["npx", "-y", "@upstash/context7-mcp"],
+      "required": ["type", "command"]
+    },
+    "engram": {
+      "description": "Memoria persistente entre sesiones: mem_save, mem_search, mem_context, mem_session_summary.",
+      "type": "local",
+      "command": ["engram"],
+      "required": ["type", "command"]
+    },
+    "remote-with-api-key": {
+      "description": "Servidor remoto MCP sobre HTTP con autenticacion por headers (Authorization / API key).",
+      "type": "remote",
+      "url": "https://tu-servidor.example.com/mcp",
+      "headers": { "Authorization": "Bearer <API_KEY>" },
+      "required": ["type", "url", "headers"]
+    }
+  }
+}

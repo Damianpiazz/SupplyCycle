@@ -69,8 +69,9 @@ Detailed implementations in the `references/` directory:
 | Guide | Contents |
 |---|---|
 | [Node.js/Express API Security](references/nodejsexpress-api-security.md) | Node.js/Express API Security |
-| [Python FastAPI Security](references/python-fastapi-security.md) | Python FastAPI Security |
 | [API Gateway Security Configuration](references/api-gateway-security-configuration.md) | API Gateway Security Configuration |
+
+> Nota: la guía Python FastAPI quedó archivada en `references/_unused-python/python-fastapi-security.md` — este proyecto es Node.js/Express y no aplica al stack actual.
 
 ## Best Practices
 

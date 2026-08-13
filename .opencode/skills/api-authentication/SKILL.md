@@ -84,10 +84,7 @@ app.use((req, res, next) => {
 
 ## Additional Implementations
 
-See [references/python-flask.md](references/python-flask.md) for:
-- Flask JWT with role-based access control decorators
-- OAuth 2.0 Google integration with Authlib
-- API key authentication with secure hashing
+> Nota: este proyecto (SupplyCycle) es Node.js/Express. Las implementaciones Python (Flask, Authlib, API keys) quedaron archivadas en `references/_unused-python/` y no aplican al stack actual.
 
 ## Common Mistakes to Avoid
 

@@ -1,3 +1,8 @@
+---
+name: reglas-negocio
+description: Reglas de negocio del dominio de reparto de bidones: frecuencia de pedidos, estimación de demanda futura, detección de demoras de envases y gestión autónoma del cliente por WhatsApp.
+---
+
 # Reglas de Negocio: Gestión de Reparto de Bidones
 
 Actúa como un Analista Funcional y Desarrollador Backend. El dominio del proyecto es un sistema de reparto de bidones de agua. Debes implementar las siguientes lógicas de negocio utilizando servicios independientes (Clean Architecture) y tareas programadas (CRON jobs).
