@@ -24,7 +24,7 @@ Automatiza la logística de reparto: pedidos, rutas y comunicación con el clien
 
 ## ✨ ¿Qué es?
 
-SupplyCycle es un **MVP** desarrollado para la materia **Desarrollo de Aplicaciones Móviles** de la **Universidad Nacional de La Plata**. Integra tres frentes de la operación de reparto de envases de agua:
+SupplyCycle es un **MVP** desarrollado para la materia **Desarrollo de Aplicaciones Móviles** de la **Universidad Tecnológica Nacional**. Integra tres frentes de la operación de reparto de envases de agua:
 
 | Frente | Descripción |
 |---|---|
