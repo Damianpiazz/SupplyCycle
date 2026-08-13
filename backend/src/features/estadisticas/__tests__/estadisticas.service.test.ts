@@ -287,6 +287,7 @@ describe('estimarDemanda', () => {
     expect(result.clientesConEstimacion).toBe(0);
     expect(result.demandaPorProducto).toEqual([]);
     expect(result.demandaTotalUnidades).toBe(0);
+    expect(result.frecuenciaPromedioGlobal).toBe(7); // sin clientes → default
   });
 
   it('retorna demanda con un cliente que tiene un solo pedido', async () => {
@@ -321,6 +322,8 @@ describe('estimarDemanda', () => {
     expect(result.demandaPorProducto).toHaveLength(1);
     expect(result.demandaPorProducto[0]?.cantidadEstimada).toBe(5);
     expect(result.demandaTotalUnidades).toBe(5);
+    // 1 solo pedido → sin intervalo → fallback DEFAULT_FRECUENCIA_DIAS
+    expect(result.frecuenciaPromedioGlobal).toBe(7);
   });
 
   it('incluye desglose por cliente cuando incluirClientes es true', async () => {
@@ -354,6 +357,9 @@ describe('estimarDemanda', () => {
     expect(result.clientes).toHaveLength(1);
     expect(result.clientes![0]?.nombre).toBe('Juan');
     expect(result.clientes![0]?.unidadesEstimadas).toBeGreaterThan(0);
+    // Frecuencia real por cliente: 1 pedido → fallback 7
+    expect(result.clientes![0]?.frecuenciaPromedioDias).toBe(7);
+    expect(result.frecuenciaPromedioGlobal).toBe(7);
   });
 
   it('excluye clientes cuyo próximo pedido está fuera del periodo', async () => {
@@ -387,14 +393,19 @@ describe('estimarDemanda', () => {
       { id: 'item-1', nombre: 'Bidón 12L', unidad: 'unidad' },
     ]);
 
-    // Ahora con frecuencia=7 fija, el cliente tiene pedido hoy → nextDate = today + 7 = dentro del periodo de 1 día? NO, 7 > 1
-    // Con periodo=1 y frecuencia=7, nextDate = today + 7 > endDate (today + 1), debería excluirse
+    // Frecuencia real (hace 1 año → hoy = ~365 días): nextDate = hoy + 365 > endDate (hoy + 1) → excluido
+    // Además prueba que el promedio global usa la frecuencia REAL (365), no la constante 7.
     const result = await import('../service.js').then((m) => m.estimarDemanda(1, false));
 
     expect(result.clientesConEstimacion).toBe(0);
+    expect(result.frecuenciaPromedioGlobal).toBe(365);
   });
 
   it('agrupa múltiples clientes en el mismo producto', async () => {
+    const hoy = new Date();
+    const hace10Dias = new Date(hoy);
+    hace10Dias.setDate(hace10Dias.getDate() - 10);
+
     mockPrisma.cliente.findMany.mockResolvedValue([
       {
         id: 'cliente-1',
@@ -402,9 +413,14 @@ describe('estimarDemanda', () => {
         apellido: 'Perez',
         domicilios: [
           {
+            // 2 pedidos con 10 días de intervalo → frecuencia real 10
             pedidos: [
               {
-                fecha: new Date(),
+                fecha: hace10Dias,
+                items: [{ itemId: 'item-1', cantidad: 2 }],
+              },
+              {
+                fecha: hoy,
                 items: [{ itemId: 'item-1', cantidad: 2 }],
               },
             ],
@@ -417,6 +433,7 @@ describe('estimarDemanda', () => {
         apellido: 'Lopez',
         domicilios: [
           {
+            // 1 solo pedido → sin intervalo → fallback 7
             pedidos: [
               {
                 fecha: new Date(),
@@ -440,5 +457,11 @@ describe('estimarDemanda', () => {
     expect(result.demandaPorProducto[0]?.cantidadEstimada).toBe(5);
     expect(result.demandaPorProducto[0]?.clientesEstimados).toBe(2);
     expect(result.clientes).toHaveLength(2);
+
+    // Frecuencia real por cliente + promedio global = media (1 decimal)
+    const clientes = result.clientes!.sort((a, b) => a.clienteId.localeCompare(b.clienteId));
+    expect(clientes[0]).toMatchObject({ clienteId: 'cliente-1', frecuenciaPromedioDias: 10 });
+    expect(clientes[1]).toMatchObject({ clienteId: 'cliente-2', frecuenciaPromedioDias: 7 });
+    expect(result.frecuenciaPromedioGlobal).toBe(8.5); // (10 + 7) / 2
   });
 });

@@ -1,5 +1,6 @@
 import { prisma } from '../../lib/prisma.js';
 import { ApiError } from '../../utils/api-error.js';
+import { calcularIntervaloPromedioDias, DEFAULT_FRECUENCIA_DIAS } from '../../lib/frecuencia.js';
 import type {
   EstadisticasDiarias,
   EstadisticasMensuales,
@@ -190,14 +191,13 @@ export async function obtenerEstadisticasMensuales(
 
 // ─── RF-11: Estimar demanda ───────────────────────────────────────────────
 
-const DEFAULT_FRECUENCIA_DIAS = 7; // TODO: reemplazar con cálculo de RF-10
-
 type ClienteHistory = {
   id: string;
   nombre: string;
   apellido: string;
   pedidos: Array<{
     fecha: Date;
+    estado: string;
     items: Array<{ itemId: string; cantidad: number }>;
   }>;
 };
@@ -246,6 +246,7 @@ export async function estimarDemanda(
             orderBy: { fecha: 'asc' },
             select: {
               fecha: true,
+              estado: true,
               items: {
                 select: {
                   itemId: true,
@@ -263,7 +264,11 @@ export async function estimarDemanda(
     id: c.id,
     nombre: c.nombre,
     apellido: c.apellido,
-    pedidos: c.domicilios.flatMap((d) => d.pedidos),
+    // Pedidos ya cargados: sin N+1. CANCELADO no cuenta para la frecuencia
+    // ni para la demanda estimada.
+    pedidos: c.domicilios
+      .flatMap((d) => d.pedidos)
+      .filter((p) => p.estado !== 'CANCELADO'),
   }));
 
   // 2. Calcular demanda estimada por cliente
@@ -280,6 +285,8 @@ export async function estimarDemanda(
   const itemInfo = new Map(items.map((i) => [i.id, { nombre: i.nombre, unidad: i.unidad }]));
 
   const clientesConEstimacion: ClienteDemandaResumen[] = [];
+  // Frecuencias resueltas por cliente (real o fallback) para el promedio global
+  const frecuencias: number[] = [];
 
   for (const cliente of clientesHistory) {
     if (cliente.pedidos.length === 0) continue;
@@ -287,8 +294,12 @@ export async function estimarDemanda(
     const pedidos = cliente.pedidos;
     const lastDate = pedidos[pedidos.length - 1]!.fecha;
 
-    // TODO: reemplazar con cálculo de RF-10 cuando esté disponible
-    const frecuencia = DEFAULT_FRECUENCIA_DIAS;
+    // RF-10: frecuencia real por cliente (sobre pedidos ya cargados);
+    // fallback a 7 días cuando no hay intervalo (0-1 pedido completado)
+    const frecuencia =
+      calcularIntervaloPromedioDias(pedidos.map((p) => p.fecha)) ??
+      DEFAULT_FRECUENCIA_DIAS;
+    frecuencias.push(frecuencia);
 
     const nextDate = addDays(lastDate, frecuencia);
 
@@ -370,7 +381,12 @@ export async function estimarDemanda(
     clientesConEstimacion: clientesConEstimacion.length,
     demandaPorProducto,
     demandaTotalUnidades,
-    frecuenciaPromedioGlobal: DEFAULT_FRECUENCIA_DIAS,
+    // Promedio global = media de las frecuencias por cliente (1 decimal);
+    // sin clientes con historial → default
+    frecuenciaPromedioGlobal:
+      frecuencias.length > 0
+        ? Math.round((frecuencias.reduce((a, b) => a + b, 0) / frecuencias.length) * 10) / 10
+        : DEFAULT_FRECUENCIA_DIAS,
     ...(incluirClientes ? { clientes: clientesConEstimacion.sort((a, b) => b.unidadesEstimadas - a.unidadesEstimadas) } : {}),
   };
 }
