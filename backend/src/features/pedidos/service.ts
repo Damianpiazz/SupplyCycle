@@ -680,14 +680,29 @@ export async function agregarItem(
     throw ApiError.conflict('El ítem ya existe en el pedido');
   }
 
-  await prisma.pedidoItem.create({
-    data: {
-      pedidoId,
-      itemId: data.itemId,
-      cantidad: data.cantidad,
-      precioUnitario: dbItem.precio,
-    },
-  });
+  try {
+    await prisma.pedidoItem.create({
+      data: {
+        pedidoId,
+        itemId: data.itemId,
+        cantidad: data.cantidad,
+        precioUnitario: dbItem.precio,
+      },
+    });
+  } catch (err) {
+    // D2: the DB unique constraint is the source of truth. The findFirst
+    // check above is a fast path — a concurrent insert can still trip the
+    // unique index (P2002). Surface it as 409, never a 500.
+    if (
+      typeof err === 'object' &&
+      err !== null &&
+      'code' in err &&
+      (err as { code?: string }).code === 'P2002'
+    ) {
+      throw ApiError.conflict('El ítem ya existe en el pedido');
+    }
+    throw err;
+  }
 
   // Re-fetch con relaciones
   const updated = await findPedidoActivo(pedidoId);

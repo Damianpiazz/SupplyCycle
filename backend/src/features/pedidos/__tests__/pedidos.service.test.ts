@@ -547,6 +547,38 @@ describe('PedidosService', () => {
       await expect(service.agregarItem('ped-001', { itemId: 'prod-001', cantidad: 1 }))
         .rejects.toThrow('El ítem ya existe en el pedido');
     });
+
+    it('must return 409 (not 500) when the DB unique constraint fires (SPEC-06 AC2)', async () => {
+      mockPrisma.pedido.findUnique.mockResolvedValue(buildMockPedido({ estado: 'PENDIENTE' }));
+      mockPrisma.item.findUnique.mockResolvedValue({ id: 'prod-002', nombre: 'Bidón 12L', activo: true });
+      // Fast path passes — the constraint is the source of truth (D2)
+      mockPrisma.pedidoItem.findFirst.mockResolvedValue(null);
+      mockPrisma.pedidoItem.create.mockRejectedValue({ code: 'P2002' });
+
+      await expect(service.agregarItem('ped-001', { itemId: 'prod-002', cantidad: 1 }))
+        .rejects.toMatchObject({ statusCode: 409, message: 'El ítem ya existe en el pedido' });
+    });
+
+    it('must block a concurrent duplicate with 409 when both calls pass findFirst (SPEC-06 AC5)', async () => {
+      mockPrisma.pedido.findUnique.mockResolvedValue(buildMockPedido({ estado: 'PENDIENTE' }));
+      mockPrisma.item.findUnique.mockResolvedValue({ id: 'prod-002', nombre: 'Bidón 12L', activo: true });
+      // Both racing calls pass the findFirst fast path
+      mockPrisma.pedidoItem.findFirst.mockResolvedValue(null);
+      mockPrisma.pedidoItem.create
+        .mockResolvedValueOnce({ id: 'new-item-001', pedidoId: 'ped-001', itemId: 'prod-002', cantidad: 3, precioUnitario: 900 })
+        .mockRejectedValueOnce({ code: 'P2002' });
+
+      const results = await Promise.allSettled([
+        service.agregarItem('ped-001', { itemId: 'prod-002', cantidad: 3 }),
+        service.agregarItem('ped-001', { itemId: 'prod-002', cantidad: 3 }),
+      ]);
+
+      expect(results.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
+      const rejected = results.filter((r): r is PromiseRejectedResult => r.status === 'rejected');
+      expect(rejected).toHaveLength(1);
+      expect(rejected[0]!.reason).toBeInstanceOf(ApiError);
+      expect(rejected[0]!.reason).toMatchObject({ statusCode: 409 });
+    });
   });
 
   // ─── TDD-0032: Actualizar Cantidad de Item ──────────────────────────────────
