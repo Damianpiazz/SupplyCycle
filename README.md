@@ -1,231 +1,91 @@
-# SupplyCycle
+<div align="center">
 
-Proyecto monorepo que contiene:
+# 🚚 SupplyCycle
 
-* `backend/` → API (Express + TypeScript + Prisma)
-* `mobile/` → App mobile (React Native + Expo)
+**Plataforma integral para la gestión del ciclo de entregas**
+
+Automatiza la logística de reparto: pedidos, rutas y comunicación con el cliente desde una sola solución.
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+![Node.js](https://img.shields.io/badge/Node.js-339933?logo=nodedotjs&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)
+![Express](https://img.shields.io/badge/Express-000000?logo=express&logoColor=white)
+![Prisma](https://img.shields.io/badge/Prisma-2D3748?logo=prisma&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?logo=postgresql&logoColor=white)
+![React Native](https://img.shields.io/badge/React_Native-20232A?logo=react&logoColor=61DAFB)
+![Expo](https://img.shields.io/badge/Expo-000020?logo=expo&logoColor=white)
+![WhatsApp](https://img.shields.io/badge/WhatsApp_Bot-25D366?logo=whatsapp&logoColor=white)
+
+</div>
 
 ---
 
-## 👥 Integrantes
+## ✨ ¿Qué es?
 
-* Manuela Chanquía
-* Lucia Meza
-* Martina García Améndola
-* Tiago Solis
-* Damian Piazza
+SupplyCycle es un monorepo que integra tres frentes de la operación de reparto:
+
+| Frente | Descripción |
+|---|---|
+| 🗄️ `backend/` | API REST con Express + Prisma + PostgreSQL |
+| 📱 `mobile/` | App móvil para repartidores (React Native + Expo) |
+| 💬 `whatsapp-bot/` | Bot de WhatsApp para comunicación con clientes (BuilderBot) |
 
 ---
 
-## 🌿 Estrategia de ramas
+## 🏗️ Estructura del monorepo
 
-Se utiliza una convención basada en **tipo de cambio + plataforma + descripción**.
-
-### 📌 Formato
-
-```bash
-<tipo>/<plataforma>/<descripcion>
+```
+├── backend/          🗄️  API REST (Express + TypeScript + Prisma + PostgreSQL)
+├── mobile/           📱  App móvil (React Native + Expo Router)
+├── whatsapp-bot/     💬  Bot de WhatsApp (BuilderBot + Baileys)
+├── docs/             📚  Documentación del proyecto
+└── ia/               🤖  Entregas de investigación
 ```
 
 ---
 
-### 🧩 Tipos permitidos
+## 🚀 Puesta en marcha
 
-* `feature` → nueva funcionalidad
-* `fix` → corrección de errores
-* `refactor` → mejora interna sin cambio funcional
-* `chore` → tareas de mantenimiento
-* `docs` → cambios en documentación
+### Requisitos
 
----
+- **Node.js** 20+
+- **Docker** + Docker Compose
 
-### 📱 Plataformas
-
-* `backend`
-* `mobile`
-
----
-
-### ✅ Ejemplos
+### Entorno completo
 
 ```bash
-feature/backend/auth-login
-feature/mobile/login-screen
+git clone https://github.com/Damianpiazz/SupplyCycle.git
+cd SupplyCycle
 
-fix/backend/token-expiration
-refactor/mobile/navigation-structure
-```
-
----
-
-### ⚠️ Reglas
-
-* usar kebab-case
-* no usar mayúsculas
-* descripción breve y clara
-* una sola responsabilidad por rama
-
----
-
-## 🧠 Convención de commits
-
-Se utiliza **Conventional Commits**, validado automáticamente.
-
-### 📌 Formato
-
-```bash
-<type>(<scope>): <description>
-```
-
----
-
-### 🧩 Tipos
-
-* `feat`
-* `fix`
-* `refactor`
-* `chore`
-* `docs`
-
----
-
-### 🎯 Scope
-
-* `backend`
-* `mobile`
-
----
-
-### ✅ Ejemplos
-
-```bash
-feat(backend): add auth module
-fix(mobile): resolve login crash
-refactor(backend): improve service structure
-```
-
----
-
-### ❌ Ejemplos inválidos
-
-```bash
-update code
-fix stuff
-feat: cambio
-```
-
----
-
-## 🔒 Validación
-
-Los commits son validados automáticamente mediante:
-
-* Husky
-* Commitlint
-
----
-
-## 🚀 Flujo de trabajo
-
-1. crear rama desde `main`
-2. desarrollar el cambio
-3. realizar commits siguiendo la convención
-4. abrir Pull Request
-5. revisión
-6. merge
-
----
-
-## 🐳 Ejecución con Docker
-
-### 📦 Levantar el entorno completo
-
-```bash
 docker compose -f docker-compose.dev.yml up --build
 ```
 
----
+### Servicios
 
-### ⛔ Detener contenedores
+| Servicio   | URL                   | Credenciales (dev)        |
+| ---------- | --------------------- | ------------------------- |
+| Backend    | http://localhost:3000 | —                         |
+| PostgreSQL | localhost:5433        | `postgres` / `postgres`   |
+| pgAdmin    | http://localhost:5050 | `admin@supplycycle.com` / `admin` |
 
-```bash
-docker compose down
-```
-
----
-
-### 🔄 Reiniciar entorno
-
-```bash
-docker compose down -v
-docker compose -f docker-compose.dev.yml up --build
-```
-
-> ⚠️ `-v` elimina volúmenes (borra datos de la base)
+> ⚠️ `docker compose down -v` elimina los volúmenes (borra datos de la base).
 
 ---
 
-## 🌐 Puertos del sistema
+## 📚 Documentación
 
-| Servicio   | Contenedor              | Puerto Host | Puerto Contenedor | URL                   |
-| ---------- | ----------------------- | ----------- | ----------------- | --------------------- |
-| Backend    | supplycycle_backend_dev | 3000        | 3000              | http://localhost:3000 |
-| PostgreSQL | supplycycle_db_dev      | 5432        | 5432              | localhost:5432        |
-| pgAdmin    | supplycycle_pgadmin_dev | 5050        | 80                | http://localhost:5050 |
-
----
-
-## 📌 Notas sobre Docker
-
-* El backend se conecta a la DB usando el host `db`
-* No usar `localhost` dentro de contenedores
-* Los datos de PostgreSQL se persisten en volúmenes
+| Documento | Contenido |
+| --------- | --------- |
+| [CONTRIBUTING.md](./CONTRIBUTING.md) | Convenciones de ramas, commits y Pull Requests |
+| [LICENSE](./LICENSE) | Licencia del proyecto |
 
 ---
 
-## 📌 Convención de Pull Requests
+<div align="center">
 
-Las Pull Requests deben ser claras, consistentes y facilitar la revisión.
+**SupplyCycle** · 2026
 
----
+*Hecho por Manuela, Lucia, Martina, Tiago y Damian* 🚀
 
-### 🧾 Título
-
-```bash
-<type>(<scope>): <descripcion breve>
-```
-
----
-
-### 📄 Estructura del cuerpo
-
-```md
-## Descripción
-Resumen del cambio y su propósito.
-
----
-
-## Cambios realizados
-- Lista de cambios relevantes
-
----
-
-## Impacto
-- Componentes o módulos afectados
-
----
-
-## Consideraciones
-- Notas adicionales, dependencias o advertencias
-
----
-
-## Testing
-- Cómo se probó el cambio
-- Casos cubiertos
-
----
-
-## Resultado
-- Estado final del sistema tras el cambio
-```
+</div>
