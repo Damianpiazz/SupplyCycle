@@ -477,6 +477,23 @@ export async function obtenerPedidosCliente(clienteId: string) {
   }));
 }
 
+/** Empty-demand shape shared by the no-pedidos and all-CANCELADO early returns (gate fix D). */
+function demandaVacia(
+  cliente: { id: string; nombre: string; apellido: string },
+  historicoPedidos: number
+) {
+  return {
+    clienteId: cliente.id,
+    nombre: cliente.nombre,
+    apellido: cliente.apellido,
+    frecuenciaPromedioDias: DEFAULT_FRECUENCIA_DIAS,
+    proximoPedidoEstimado: null,
+    demandaPorProducto: [],
+    totalUnidadesEstimadas: 0,
+    historicoPedidos,
+  };
+}
+
 export async function obtenerDemandaCliente(clienteId: string, periodo: number = 30) {
   const cliente = await prisma.cliente.findUnique({ where: { id: clienteId } });
   if (!cliente) {
@@ -503,16 +520,7 @@ export async function obtenerDemandaCliente(clienteId: string, periodo: number =
   });
 
   if (pedidos.length === 0) {
-    return {
-      clienteId,
-      nombre: cliente.nombre,
-      apellido: cliente.apellido,
-      frecuenciaPromedioDias: DEFAULT_FRECUENCIA_DIAS,
-      proximoPedidoEstimado: null,
-      demandaPorProducto: [],
-      totalUnidadesEstimadas: 0,
-      historicoPedidos: 0,
-    };
+    return demandaVacia(cliente, pedidos.length);
   }
 
   // RF-10 + F2 gate-review: CANCELADO se excluye ANTES de estimar, igual que
@@ -521,22 +529,13 @@ export async function obtenerDemandaCliente(clienteId: string, periodo: number =
   const pedidosValidos = pedidos.filter((p) => p.estado !== 'CANCELADO');
 
   if (pedidosValidos.length === 0) {
-    return {
-      clienteId,
-      nombre: cliente.nombre,
-      apellido: cliente.apellido,
-      frecuenciaPromedioDias: DEFAULT_FRECUENCIA_DIAS,
-      proximoPedidoEstimado: null,
-      demandaPorProducto: [],
-      totalUnidadesEstimadas: 0,
-      historicoPedidos: pedidos.length,
-    };
+    return demandaVacia(cliente, pedidos.length);
   }
 
   const lastDate = pedidosValidos[pedidosValidos.length - 1]!.fecha;
 
-  // RF-10: frecuencia real sobre pedidos completados (CANCELADO excluido);
-  // fallback a 7 días cuando no hay intervalo (0-1 pedido completado)
+  // RF-10: frecuencia real sobre pedidos NO cancelados (CANCELADO excluido);
+  // fallback a 7 días cuando no hay intervalo (0-1 pedido no cancelado)
   const frecuencia =
     calcularIntervaloPromedioDias(pedidosValidos.map((p) => p.fecha)) ??
     DEFAULT_FRECUENCIA_DIAS;
