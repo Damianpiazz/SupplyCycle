@@ -200,6 +200,25 @@ describe('PedidosService', () => {
       await expect(service.crearPedido(validPayload))
         .rejects.toThrow('no está disponible');
     });
+
+    it('must reject duplicate itemIds with 400 before any write (SPEC-06 AC3)', async () => {
+      const payload = {
+        clienteId: 'cli-001',
+        items: [
+          { itemId: 'prod-001', cantidad: 1 },
+          { itemId: 'prod-001', cantidad: 2 },
+        ],
+      };
+
+      await expect(service.crearPedido(payload))
+        .rejects.toMatchObject({
+          statusCode: 400,
+          message: expect.stringContaining('duplicado'),
+        });
+      // No DB write may happen: the pedido is rejected before create
+      expect(mockPrisma.pedido.create).not.toHaveBeenCalled();
+      expect(mockPrisma.$transaction).not.toHaveBeenCalled();
+    });
   });
 
   // ─── TDD-0026: Obtener Pedido ───────────────────────────────────────────────

@@ -441,6 +441,13 @@ export async function crearPedido(data: {
   orden?: number;
   items: Array<{ itemId: string; cantidad: number }>;
 }) {
+  // SPEC-06 AC3: reject duplicate itemIds before any DB read/write, so the
+  // nested create can never insert two rows for the same item.
+  const itemIds = data.items.map((item) => item.itemId);
+  if (new Set(itemIds).size !== itemIds.length) {
+    throw ApiError.badRequest('El pedido contiene items duplicados');
+  }
+
   // Resolver domicilio: priorizar domicilioId explícito, fallback a principal del cliente
   let domicilio;
   if (data.domicilioId) {
