@@ -413,6 +413,9 @@ describe('ClientesService', () => {
       expect(result.demandaPorProducto).toEqual([]);
       expect(result.totalUnidadesEstimadas).toBe(0);
       expect(result.proximoPedidoEstimado).toBeNull();
+      // F4 gate-review: sin historial → fallback DEFAULT_FRECUENCIA_DIAS (7),
+      // consistente con "1 pedido → 7" (antes devolvía 0).
+      expect(result.frecuenciaPromedioDias).toBe(7);
     });
 
     it('calcula demanda basada en historial de pedidos', async () => {
