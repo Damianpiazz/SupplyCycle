@@ -443,7 +443,35 @@ describe('ClientesService', () => {
       expect(result.demandaPorProducto).toHaveLength(1);
       expect(result.demandaPorProducto[0]?.cantidadEstimada).toBe(4); // avg(3, 5) = 4
       expect(result.totalUnidadesEstimadas).toBe(4);
-      expect(result.frecuenciaPromedioDias).toBe(7); // TODO: cambiar cuando RF-10 esté implementado
+      // RF-10: frecuencia real sobre el fixture (hoy - ayer = 1 día)
+      expect(result.frecuenciaPromedioDias).toBe(1);
+    });
+
+    it('retorna 7 (fallback) si hay <=1 pedido completado (CANCELADO excluido)', async () => {
+      mockPrisma.cliente.findUnique.mockResolvedValue({
+        id: 'cliente-1',
+        nombre: 'Juan',
+        apellido: 'Perez',
+      });
+
+      const hoy = new Date();
+      const hace10Dias = new Date(hoy);
+      hace10Dias.setDate(hace10Dias.getDate() - 10);
+
+      // 1 solo pedido completado: el CANCELADO no cuenta para el intervalo
+      mockPrisma.pedido.findMany.mockResolvedValue([
+        { fecha: hace10Dias, estado: 'CANCELADO', items: [] },
+        {
+          fecha: hoy,
+          estado: 'ENTREGADO',
+          items: [{ itemId: 'item-1', cantidad: 2, item: { nombre: 'Bidón 12L', unidad: 'unidad' } }],
+        },
+      ]);
+
+      const result = await obtenerDemandaCliente('cliente-1');
+
+      expect(result.frecuenciaPromedioDias).toBe(7); // DEFAULT_FRECUENCIA_DIAS
+      expect(result.historicoPedidos).toBe(2);
     });
   });
 });

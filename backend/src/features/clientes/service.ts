@@ -2,6 +2,7 @@ import { prisma } from '../../lib/prisma.js';
 import { ApiError } from '../../utils/api-error.js';
 import { timeStringToDate, dateToTimeString } from '../../lib/date-utils.js';
 import { calcularDatosDemora } from '../../lib/retenidos-utils.js';
+import { calcularIntervaloPromedioDias, DEFAULT_FRECUENCIA_DIAS } from '../../lib/frecuencia.js';
 import type { z } from 'zod';
 import type { clienteSchema, actualizarClienteSchema } from './schema.js';
 
@@ -490,6 +491,7 @@ export async function obtenerDemandaCliente(clienteId: string, periodo: number =
     orderBy: { fecha: 'asc' },
     select: {
       fecha: true,
+      estado: true,
       items: {
         select: {
           itemId: true,
@@ -515,8 +517,12 @@ export async function obtenerDemandaCliente(clienteId: string, periodo: number =
 
   const lastDate = pedidos[pedidos.length - 1]!.fecha;
 
-  // TODO: reemplazar con cálculo de RF-10 cuando esté disponible
-  const frecuencia = 7;
+  // RF-10: frecuencia real sobre pedidos completados (CANCELADO excluido);
+  // fallback a 7 días cuando no hay intervalo (0-1 pedido completado)
+  const pedidosCompletados = pedidos.filter((p) => p.estado !== 'CANCELADO');
+  const frecuencia =
+    calcularIntervaloPromedioDias(pedidosCompletados.map((p) => p.fecha)) ??
+    DEFAULT_FRECUENCIA_DIAS;
 
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
