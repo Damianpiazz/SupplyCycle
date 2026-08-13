@@ -473,5 +473,55 @@ describe('ClientesService', () => {
       expect(result.frecuenciaPromedioDias).toBe(7); // DEFAULT_FRECUENCIA_DIAS
       expect(result.historicoPedidos).toBe(2);
     });
+
+    it('ancla el próximo pedido al último COMPLETADO y excluye items CANCELADO (F2 gate-review)', async () => {
+      mockPrisma.cliente.findUnique.mockResolvedValue({
+        id: 'cliente-1',
+        nombre: 'Juan',
+        apellido: 'Perez',
+      });
+
+      const hoy = new Date();
+      const hace10Dias = new Date(hoy);
+      hace10Dias.setDate(hace10Dias.getDate() - 10);
+      const hace20Dias = new Date(hoy);
+      hace20Dias.setDate(hace20Dias.getDate() - 20);
+
+      // El pedido más reciente es CANCELADO: no debe anclar la estimación
+      // (consistente con /estadisticas/demanda, que excluye CANCELADO antes
+      // de estimar). Sus items tampoco deben contar en la demanda.
+      mockPrisma.pedido.findMany.mockResolvedValue([
+        {
+          fecha: hace20Dias,
+          estado: 'ENTREGADO',
+          items: [{ itemId: 'item-1', cantidad: 2, item: { nombre: 'Bidón 12L', unidad: 'unidad' } }],
+        },
+        {
+          fecha: hace10Dias,
+          estado: 'ENTREGADO',
+          items: [{ itemId: 'item-1', cantidad: 3, item: { nombre: 'Bidón 12L', unidad: 'unidad' } }],
+        },
+        {
+          fecha: hoy,
+          estado: 'CANCELADO',
+          items: [{ itemId: 'item-1', cantidad: 99, item: { nombre: 'Bidón 12L', unidad: 'unidad' } }],
+        },
+      ]);
+
+      const result = await obtenerDemandaCliente('cliente-1');
+
+      // Frecuencia sobre los 2 ENTREGADO (hace20Dias → hace10Dias = 10 días)
+      expect(result.frecuenciaPromedioDias).toBe(10);
+      // Demanda solo con items de pedidos completados: avg(2, 3) = 2.5 → 3 (no 35)
+      expect(result.demandaPorProducto[0]?.cantidadEstimada).toBe(3);
+      expect(result.totalUnidadesEstimadas).toBe(3);
+      // Ancla = último COMPLETADO (hace10Dias) + 10 días; si el CANCELADO (hoy)
+      // anclara, el próximo pedido estimado caería 10 días más tarde.
+      const expectedNext = new Date(hace10Dias);
+      expectedNext.setDate(expectedNext.getDate() + 10);
+      expect(result.proximoPedidoEstimado).toBe(expectedNext.toISOString());
+      // historicoPedidos conserva el conteo total (incluye CANCELADO)
+      expect(result.historicoPedidos).toBe(3);
+    });
   });
 });

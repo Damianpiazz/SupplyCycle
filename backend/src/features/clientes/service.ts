@@ -515,13 +515,30 @@ export async function obtenerDemandaCliente(clienteId: string, periodo: number =
     };
   }
 
-  const lastDate = pedidos[pedidos.length - 1]!.fecha;
+  // RF-10 + F2 gate-review: CANCELADO se excluye ANTES de estimar, igual que
+  // en /estadisticas/demanda — no ancla el próximo pedido (lastDate), no
+  // participa del intervalo de frecuencia ni aporta items a la demanda.
+  const pedidosValidos = pedidos.filter((p) => p.estado !== 'CANCELADO');
+
+  if (pedidosValidos.length === 0) {
+    return {
+      clienteId,
+      nombre: cliente.nombre,
+      apellido: cliente.apellido,
+      frecuenciaPromedioDias: 0,
+      proximoPedidoEstimado: null,
+      demandaPorProducto: [],
+      totalUnidadesEstimadas: 0,
+      historicoPedidos: pedidos.length,
+    };
+  }
+
+  const lastDate = pedidosValidos[pedidosValidos.length - 1]!.fecha;
 
   // RF-10: frecuencia real sobre pedidos completados (CANCELADO excluido);
   // fallback a 7 días cuando no hay intervalo (0-1 pedido completado)
-  const pedidosCompletados = pedidos.filter((p) => p.estado !== 'CANCELADO');
   const frecuencia =
-    calcularIntervaloPromedioDias(pedidosCompletados.map((p) => p.fecha)) ??
+    calcularIntervaloPromedioDias(pedidosValidos.map((p) => p.fecha)) ??
     DEFAULT_FRECUENCIA_DIAS;
 
   const now = new Date();
@@ -542,7 +559,7 @@ export async function obtenerDemandaCliente(clienteId: string, periodo: number =
   endDate.setDate(endDate.getDate() + periodo);
 
   const itemQtyMap = new Map<string, { nombre: string; unidad: string; cantidades: number[] }>();
-  for (const pedido of pedidos) {
+  for (const pedido of pedidosValidos) {
     for (const item of pedido.items) {
       const existing = itemQtyMap.get(item.itemId);
       if (existing) {
