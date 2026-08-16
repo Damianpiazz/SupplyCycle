@@ -90,12 +90,135 @@ flowchart LR
 ├── backend/               🗄️  API REST (Express + TypeScript + Prisma + PostgreSQL)
 ├── mobile/                📱  App móvil (React Native + Expo Router)
 ├── whatsapp-bot/          💬  Bot de WhatsApp (BuilderBot + Baileys)
-├── docs/                  📚  ADRs, TDDs, diagramas, especificación y skill-registry
+├── docs/                  📚  ADRs, TDDs, diagramas, especificación, testing y skill-registry
 ├── docker-compose.dev.yml 🐳  Entorno de desarrollo (PostgreSQL + backend + pgAdmin)
 ├── package.json           🔧  Husky + commitlint (raíz del monorepo)
 ├── CONTRIBUTING.md        🤝  Guía de contribución
 └── LICENSE                ⚖️  Licencia MIT
 ```
+
+### 🗄️ `backend/`
+
+API REST + panel de administración web. Feature-based: cada dominio vive en `src/features/<feature>/` con su `controller`, `routes`, `service`, `schema` y `types`.
+
+```
+backend/
+├── src/
+│   ├── app.ts                    # Configura la app Express (middlewares, monta API + panel admin)
+│   ├── server.ts                 # Punto de entrada: levanta el servidor HTTP
+│   ├── config/
+│   │   └── env.ts                # Validación de variables de entorno con Zod
+│   ├── constants/                # Constantes compartidas
+│   ├── features/                 # Módulos por dominio:
+│   │   ├── auth/                 #   Login JWT, /auth/me (perfil)
+│   │   ├── clientes/             #   Clientes + historial/consumo/frecuencia/demanda
+│   │   ├── domicilios/           #   Domicilios, días y horarios de entrega
+│   │   ├── envases/              #   Scheduler RF-12: detección de envases demorados
+│   │   ├── estadisticas/         #   Estadísticas diarias/mensuales/demanda
+│   │   ├── items/                #   Catálogo de productos
+│   │   ├── pedidos/              #   Pedidos + ítems + dedupe
+│   │   ├── reclamos/             #   Reclamos de clientes
+│   │   ├── repartos/             #   Repartos y asignación de pedidos
+│   │   └── usuarios/             #   Usuarios del sistema
+│   │   └── (cada feature trae su propio __tests__/)
+│   ├── admin/                    # Panel web EJS
+│   │   ├── controllers/          #   Handlers por entidad (pedidos, clientes, repartos…)
+│   │   ├── middleware/           #   require-admin-session
+│   │   ├── routes/               #   Rutas del panel (/admin/...)
+│   │   └── views/                #   Plantillas EJS por sección + layouts
+│   ├── public/                   # Estáticos del admin (css/ y js/)
+│   ├── lib/                      # Utilidades compartidas (prisma, logger, fechas, frecuencias…)
+│   ├── middleware/               # auth.middleware, api-key-auth, error-handler
+│   ├── test-utils/               # Helpers de test (makeToken)
+│   └── utils/                    # Helpers (api-error, response, dates)
+├── prisma/
+│   ├── schema.prisma             # Modelo de datos (PostgreSQL)
+│   ├── migrations/               # Migraciones SQL aplicadas
+│   └── seed/                     # Seeds numerados (00-clean … 18-configuracion)
+├── scripts/                      # Scripts de mantenimiento (limpiar repartos colgados…)
+├── vitest.config.ts              # Configuración de tests
+├── .env.example                  # Variables de entorno de referencia
+└── package.json
+```
+
+### 📱 `mobile/`
+
+App del repartidor con Expo Router. Las rutas de `app/` son wrappers que montan las pantallas reales de `features/` (patrón container/presentational).
+
+```
+mobile/
+├── app/                          # Rutas de Expo Router
+│   ├── _layout.tsx               #   Root layout: fonts, bootstrap de auth, providers
+│   ├── login.tsx                 #   Pantalla de login
+│   ├── modal.tsx                 #   Modal global
+│   └── (tabs)/                   #   Navegación por pestañas
+│       ├── _layout.tsx           #     Definición de las 8 pestañas + banner conectividad
+│       ├── index.tsx             #     Inicio
+│       ├── clientes/             #     Lista/alta/detalle/editar/historial
+│       ├── repartos/             #     Lista/crear/detalle (repartidor y admin)
+│       ├── pedidos/              #     Lista/alta/detalle
+│       ├── inicio/               #     Detalle de reparto del repartidor
+│       ├── mapa/                 #     Mapa y detalle
+│       ├── estadisticas/         #     Diarias/mensuales/demanda
+│       ├── usuarios/             #     Usuarios (solo admin)
+│       └── perfil.tsx            #     Perfil
+├── components/
+│   ├── ui/                       # Componentes de UI reutilizables (button, card, input, modales…)
+│   └── (componentes de layout: themed-text, haptic-tab, error-boundary…)
+├── constants/
+│   ├── theme.ts                  # Colores, tipografías, tamaños
+│   └── motivosCancelacion.ts     # Motivos de cancelación de pedidos
+├── features/                     # Lógica por feature (auth, clientes, pedidos, repartos…):
+│   ├── components/               #   Componentes propios de la feature
+│   ├── hooks/                    #   Hooks de datos (useClientes, useReparto…)
+│   ├── screens/                  #   Pantallas reales
+│   ├── services/                 #   Clientes HTTP por entidad
+│   └── utils/                    #   Utilidades de dominio
+├── hooks/                        # Hooks globales (useNetworkStatus, useOfflineSync…)
+├── lib/                          # Cliente de react-query, haversine
+├── mocks/                        # Datos mock para desarrollo/offline
+├── services/                     # Cliente HTTP base (api.ts) + servicios genéricos
+├── stores/                       # Stores Zustand (auth, offline, toast, ui, apiStatus)
+├── types/                        # Tipos por entidad (cliente, pedido, reparto…)
+├── utils/                        # Helpers (date, confirmAction…)
+├── __mocks__/                    # Mocks de módulos nativos (react-native, vector-icons)
+├── assets/                       # Imágenes (iconos, splash)
+├── scripts/                      # Scripts de soporte (reset-project, rn-mock-hook)
+├── test-setup.ts                 # Mocks globales de tests (RN, expo, react-query…)
+├── vitest.config.ts              # Configuración de tests
+├── .env.example                  # Variables EXPO_PUBLIC_* de referencia
+└── package.json
+```
+
+### 💬 `whatsapp-bot/`
+
+Bot conversacional de WhatsApp (BuilderBot + Baileys). `src/flows/` contiene cada menú conversacional y `src/services/` son los clientes hacia la API del backend.
+
+```
+whatsapp-bot/
+├── src/
+│   ├── app.ts                    # Bootstrap del bot (BuilderBot + Baileys) y servidor HTTP
+│   ├── flows/                    # Flujos conversacionales:
+│   │   ├── welcome.flow.ts       #   Bienvenida / menú principal
+│   │   ├── alta.flow.ts          #   Alta de cliente
+│   │   ├── pedido.flow.ts        #   Pedido
+│   │   ├── cancelar.flow.ts      #   Cancelación (con motivo)
+│   │   ├── reclamo.flow.ts       #   Reclamo
+│   │   ├── baja.flow.ts          #   Baja
+│   │   └── index.ts              #   Registro de flujos
+│   ├── routes/                   # Endpoints propios del bot:
+│   │   ├── send-message.route.ts #   POST /v1/send-message (canal backend → bot)
+│   │   └── blacklist.route.ts    #   POST/GET /v1/blacklist
+│   ├── services/                 # Clientes de la API del backend (cliente, item, pedido, reclamo)
+│   ├── lib/                      # Configuración de axios hacia el backend
+│   ├── types/                    # Tipos compartidos
+│   └── utils/                    # Helpers (normalize-phone…)
+├── vitest.config.ts              # Configuración de tests
+├── .env.example                  # Variables de entorno de referencia
+└── package.json
+```
+
+> 📖 Para saber **cómo correr los tests** de cada módulo, ver [docs/TESTING.md](./docs/TESTING.md).
 
 ---
 
@@ -323,6 +446,7 @@ Base URL: `http://localhost:3000` (backend) · `http://localhost:3008` (bot).
 | Documento | Contenido |
 | --------- | --------- |
 | [CONTRIBUTING.md](./CONTRIBUTING.md) | Convenciones de ramas, commits y Pull Requests |
+| [docs/TESTING.md](./docs/TESTING.md) | Cómo testear cada módulo (backend, mobile, whatsapp-bot) |
 | [LICENSE](./LICENSE) | Licencia del proyecto |
 | [docs/ADRs/](./docs/ADRs/) | Decisiones de arquitectura (ADR-0000 … ADR-0021) |
 | [docs/TDDs/](./docs/TDDs/) | Especificaciones técnicas por caso de uso (TDD-0001 … TDD-0058) |
